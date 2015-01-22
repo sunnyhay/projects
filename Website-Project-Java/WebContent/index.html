@@ -1,0 +1,448 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>旅游宰客榜</title>
+<script type="text/javascript" src="jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="jslib/jquery.bxslider2.min.js"></script>
+<script type="text/javascript" src="jslib/jquery.easing.1.3.min.js"></script>
+<script type="text/javascript" src="jslib/jquery.jqplot.min.js"></script>
+<script type="text/javascript" src="jslib/jqplot.pieRenderer.min.js"></script>
+<script type="text/javascript" src="jslib/jquery.ui.core.js"></script>
+<script type="text/javascript" src="jslib/jquery.ui.widget.js"></script>
+<script type="text/javascript" src="jslib/jquery.ui.tabs.js"></script>
+<link rel="stylesheet" type="text/css" href="style/jquery.jqplot.css" />
+<link type="text/css" rel="stylesheet" href="style/jquery.ui.all.css" />
+<link type="text/css" rel="stylesheet" href="style/bxstyle.css" />
+<link type="text/css" rel="stylesheet" href="style/style2.css" />
+<link type="text/css" rel="stylesheet" href="style/index.css" />
+<link rel="stylesheet" type="text/css" href="style/search.css" />
+
+<script type="text/javascript">
+$(function(){
+	//disable all input radios
+	$("#pollzaike :input[type=radio]").attr("disabled","disabled");
+	$("#pollmoney :input[type=radio]").attr("disabled","disabled");
+		
+	//activate jquery ui tabs
+	$( "#list" ).tabs({
+		//event: "mouseover"
+	});
+	
+	//activate bxslider in div #newsframe 
+	$('#slides1').bxSlider({
+		prev_image: 'images/btn_arrow_left.jpg',
+		next_image: 'images/btn_arrow_right.jpg',
+		wrapper_class: 'slides1_wrap',
+		auto: true,
+		autoHover: true,
+		pause: 10000,
+		speed: 2000,
+		auto_controls: false
+	});
+	
+	/*
+	 * when the window is loaded, get the poll zaike count
+	 */
+	$.post("pollzaikeAction!getExpressCount", {},function(returnedData,status){
+		if("success" == status){
+			$("#totalzaike").html(returnedData);
+			//activate those radio inputs in pollzaike
+			$("#pollzaike :input[type=radio]").removeAttr("disabled");
+		}
+	});
+	
+	/*
+	 * when the window is loaded, get the poll money count
+	 */
+	$.post("pollmoneyAction!getExpressCount", {},function(returnedData,status){
+		if("success" == status){
+			$("#totalmoney").html(returnedData);
+			//activate those radio inputs in pollmoney
+			$("#pollmoney :input[type=radio]").removeAttr("disabled");
+		}
+	});
+	
+	/* //check whether the pollzaike is expressed
+	if($("#pollzaike :input[type=radio]").attr("disabled") =="disabled"){
+		$("#chart1").show(1500);
+		$("#chart1").html("谢谢，您已经表达过意见了");		
+	}
+	
+	//check whether the pollmoney is expressed
+	if($("#pollmoney :input[type=radio]").attr("disabled") =="disabled"){
+		$("#chart2").show(1500);
+		$("#chart2").html("谢谢，您已经表达过意见了");		
+	} */
+	
+	/*
+	 * bind the click event to pollzaike radio box to vote the yes or no zaike on the first poll
+	 */
+	$("#pollzaike :input[type=radio]").click(function() {
+		//alert("ok");
+		//1. if any pollzaike radio box is selected, disable all;
+		$("#pollzaike :input[type=radio]").attr("disabled","disabled"); 
+		//1.5 increment the total pollzaike count
+		$("#totalzaike").html(parseInt($("#totalzaike").html()) + 1);
+		//2.show chart1 div
+		$("#chart1").show();
+		//$("#chart1").html("请稍候...");
+		if($(this).val() == "pollzaike1")
+			$("#chart1").html("<img src=images/index/index-aizai.jpg alt=哇！同病相怜！您也中招了！ width=358 height=240 title=哇！同病相怜！您也中招了！/>");
+		else	
+			$("#chart1").html("<img src=images/index/index-meizaiguo.jpg alt=哇！不可思议！您居然如此幸运，恭喜恭喜！ width=378 height=226 title=哇！不可思议！您居然如此幸运，恭喜恭喜！/>");
+		//3.pass the user choice to action via ajax post() method
+		$.post("pollzaikeAction!zaike", {zaike:$(this).val()}, function(returnedData,status) {
+			if ("success" == status) {
+				var result = eval(returnedData);
+				var item1 = result[0];  //yes
+				var item2 = result[1];  //no
+								
+				$("#chart1").html("");
+								
+				//4. define plot element to be shown
+				$.jqplot.config.enablePlugins = true;
+						    
+			    var data = new Array();
+			    
+			    var p1 = ['被宰过',item1];
+			    var p2 = ['没有被宰过',item2];
+			    			    
+			    data.push(p1);
+			    data.push(p2);
+			     
+			    plot1 = $.jqplot('chart1', [data], {
+			        // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
+			        animate: !$.jqplot.use_excanvas,
+			        seriesDefaults: {
+			            // Make this a pie chart.
+			            renderer: $.jqplot.PieRenderer,
+			            rendererOptions: {
+			              // Put data labels on the pie slices.
+			              // By default, labels show the percentage of the slice.
+			              showDataLabels: true,
+			              diameter: 180,
+			              padding: 10
+			            }
+			          },
+			          legend: { show:true, location: 'e' }			        
+			    }); 			 	
+			}
+		});  
+ 	});
+	
+	/*
+	 * bind the click event to pollmoney radio box to vote the 5 levels money on the second poll
+	 */
+	$("#pollmoney :input[type=radio]").click(function() {
+		//alert("ok");
+		//1. if any pollzaike radio box is selected, disable all;
+		$("#pollmoney :input[type=radio]").attr("disabled","disabled"); 
+		//1.5 increment the total pollmoney count
+		$("#totalmoney").html(parseInt($("#totalmoney").html()) + 1);
+		//2.show chart2 div
+		$("#chart2").show();
+		$("#chart2").html("请稍候...");
+		
+		if($(this).val() == "pollmoney1")
+			$("#chart2").html("<img src=images/index/index-zaideshao.jpg alt=朋友，您真走运，不过下回就不一定了！ width=343 height=240 title=朋友，您真走运，不过下回就不一定了！ />");
+		else if($(this).val() == "pollmoney5")	
+			$("#chart2").html("<img src=images/index/index-zaidechaojiduo.jpg alt=深刻同情中！ width=372 height=240 title=深刻同情中！ />");
+		else
+			$("#chart2").html("<img src=images/index/index-zaibushao.jpg alt=同是天涯沦落人啊！ width=330 height=240 title=同是天涯沦落人啊！ />");
+		//3.pass the user choice to action via ajax post() method
+		$.post("pollmoneyAction!money", {money:$(this).val()}, function(returnedData,status) {
+			if ("success" == status) {
+				//alert(returnedData);
+				var result = eval(returnedData);
+				var item1 = result[0];  //level1
+				var item2 = result[1];  //level2
+				var item3 = result[2];  //level3
+				var item4 = result[3];  //level4
+				var item5 = result[4];  //level5
+								
+				$("#chart2").html("");
+								
+				//4. define plot element to be shown
+				$.jqplot.config.enablePlugins = true;
+						    
+			    var data = new Array();
+			    
+			    var p1 = ['很幸运，几乎没被放过血',item1];
+			    var p2 = ['1000元以内',item2];
+			    var p3 = ['1000元至5000元',item3];
+			    var p4 = ['5000元至20000元',item4];
+			    var p5 = ['2000元以上',item5];
+			    			    
+			    data.push(p1);
+			    data.push(p2);
+			    data.push(p3);
+			    data.push(p4);
+			    data.push(p5);
+			     
+			    plot1 = $.jqplot('chart2', [data], {
+			        // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
+			        animate: !$.jqplot.use_excanvas,
+			        seriesDefaults: {
+			            // Make this a pie chart.
+			            renderer: $.jqplot.PieRenderer,
+			            rendererOptions: {
+			              // Put data labels on the pie slices.
+			              // By default, labels show the percentage of the slice.
+			              showDataLabels: true,
+			              diameter: 180,
+			              padding: 10
+			            }
+			          },
+			          legend: { show:true, location: 'e' }			        
+			    });  			 	
+			}
+		}); 
+   	});
+	
+});
+</script>
+</head>
+
+<body>
+<div id="header">
+  <iframe src="header.html" width=980 height=91 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="nav">
+  <iframe src="nav.html" width=980 height=40 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="primary">
+  <div id="baike">
+    <iframe src="baike.html" width=120 height=1328 frameborder="0" scrolling="no"></iframe>    
+  </div>
+  <div id="main">
+	<div id="newsframe">
+		<div id="content">
+			<div id="content_inner">
+				<ul id="slides1">
+					<li><a href="news/zaike/news_000003.html"><img src="images/news/news_000003_001.jpg" width="420" height="265"
+						alt="一碗炒面165元”，岂止是疯狂" title="一碗炒面165元”，岂止是疯狂"/>
+						</a>
+						<div class="content">
+							你好阿！
+						</div>
+					</li>
+					<li><a href="news/zaike/news_000002.html"><img src="images/news/news_000002_001.jpg" width="420" height="265"
+						alt="45万自驾车涌入厦门 停车场宰客5元/小时变成一口价30元”" title="45万自驾车涌入厦门 停车场宰客5元/小时变成一口价30元"/>
+						</a>
+						<div class="content">
+							
+						</div>
+					</li>
+					<li><a href="news/safe/safe_000001.html"><img src="images/news/safe_000001_001.jpg" width="420" height="265"
+						alt="华山被捅游客称保安围殴 望目击者现身做证" title="华山被捅游客称保安围殴 望目击者现身做证"/>
+						</a>
+						<div class="content">
+							
+						</div>
+					</li>
+					<li><a href="news/rule/rule_000002.html"><img src="images/news/rule_000002_001.jpg" width="420" height="265"
+						alt="广西北海严查旅游餐饮宰客乱象" title="广西北海严查旅游餐饮宰客乱象"/>
+						</a>
+						<div class="content">
+							
+						</div>
+					</li>
+				</ul>
+			</div>
+		</div>
+	</div>
+	<div id="news">
+	  <h3 class="title">新闻焦点</h3>
+	  <ul>
+        <li><em>[10-04]</em><a href="news/zaike/news_000003.html">一碗炒面165元”，岂止是疯狂</a></li>
+        <li><em>[10-04]</em><a href="news/zaike/news_000002.html">45万自驾车涌入厦门 停车场宰客5元/小时变成一口价30元</a></li>
+        <li><em>[10-04]</em><a href="news/safe/safe_000001.html">华山被捅游客称保安围殴 望目击者现身做证</a></li>
+        <li><em>[10-04]</em><a href="news/rule/rule_000002.html">广西北海严查旅游餐饮宰客乱象</a></li>
+        <li><em>[10-04]</em><a href="news/shilu/shilu_000001.html">景区遭遇天价饭 过节宰客VS个别现象？</a></li>        
+        <li><em>[09-20]</em><a href="news/newsindex.html">更多旅游宰客新闻</a></li>
+      </ul>
+	</div>
+	<div id="pollzaike">
+	  <h3 class="title">宰客与否小测验 （累计已有<label id="totalzaike"></label>人次投票）</h3>
+	  <h4 class="question">您出门旅行被宰（骗）过吗？请选择</h4>
+      <input type="radio" name="zaike1" value="pollzaike1" /><b>有</b>
+      <input type="radio" name="zaike1" value="pollzaike2" /><b>没有</b>
+      <div id="chart1"></div>
+    </div>
+	<div id="pollmoney">
+	  <h3 class="title">宰客程度小测验 （累计已有<label id="totalmoney"></label>人次投票）</h3>
+	  <h4 class="question">您如果被宰（骗）过，估计损失了多少呢？请选择</h4>
+      <input type="radio" name="zaike2" value="pollmoney1" />我运气好，可忽略不计
+      <input type="radio" name="zaike2" value="pollmoney2" />1000元以内
+      <input type="radio" name="zaike2" value="pollmoney3" />1000元到5000元<br />
+      <input type="radio" name="zaike2" value="pollmoney4" />5000元到20000元
+      <input type="radio" name="zaike2" value="pollmoney5" />20000元以上
+      <div id="chart2"></div>
+    </div>
+	<div id="list">
+		<ul>
+			<li><a href="#tabs-1"><label class="tablabel">宰客榜简介</label></a></li>
+			<li><a href="#tabs-2"><label class="tablabel">国内城市榜</label></a></li>
+			<li><a href="#tabs-3"><label class="tablabel">国内景区榜</label></a></li>
+			<li><a href="#tabs-4"><label class="tablabel">名山宰客榜</label></a></li>
+			<li><a href="#tabs-5"><label class="tablabel">烧香拜佛榜</label></a></li>
+			<li><a href="#tabs-6"><label class="tablabel">过路费对比榜</label></a></li>
+		</ul>
+		<div id="tabs-1">
+			<ul>
+				<li>起来！不愿被痛宰的人们！把我们的愤怒，吼向每个坑爹地方！</li>
+				<li>中华旅游到了最黑暗的时候，每个人被迫着发出最后的吼声。</li>
+				<li>起来！起来！起来！</li>
+				<li>我们万众一心，越过宰客的陷阱前进！越过宰客的陷阱前进！</li>
+				<li>前进！前进！进！</li>　　			
+			</ul>
+			<p>投出您的一票，吼出您的憋屈！<b><a href="commonlist/listindex.html"  title="旅游宰客榜单总汇">旅游宰客榜</a></b>，聆听您的心声！</p>
+			<p>点击<b><a href="commonlist/listindex.html" title="旅游宰客榜单总汇">这里</a></b>查看更多的旅游宰客榜！
+			还等什么！去<b><a href="commonlist/vote.html" title="旅游宰客榜投票页">投票</a></b>吧！</p>	
+		</div>
+		<div class="lp" id="tabs-2">
+			<p>三亚？！海鲜门！</p>
+			<p>青岛？！天价扎啤！</p>
+			<p>张家界？！黑导游！</p>
+			<p>丽江？！酒吧被艳遇！</p>
+			<p>有完没完？！去<a href="commonlist/city.html"><strong>国内城市宰客榜</strong></a>看看，了解一下哪些热门旅游城市上了这个黑心榜！
+			还有<a href="commonlist/intercity.html"><strong>海外国家宰客榜</strong></a>，让您今后出国旅游多留几个心眼！</p>
+		</div>
+		<div class="lp" id="tabs-3">
+			<p>兵马俑，举世无双的世界奇迹！天涯海角，秀丽旖旎的热带景色！</p>
+			<p>西双版纳，奇异醉人的民族风情！九寨沟，变幻瑰丽的地质奇观！</p>
+			<p>此间风景无限好，奈何身边宰客人！洞悉这些热门景区背后的不堪，上<a href="commonlist/resort.html"><strong>国内景区宰客榜</strong></a>瞅瞅，以后倍加小心啊！
+			同样，<a href="commonlist/resort.html"><strong>海外景区宰客榜</strong></a>总结中国游客血泪斑斑的出境游被骗经历。</p>
+		</div>
+		<div class="lp" id="tabs-4">
+			<p>五岳归来不看山，黄山归来不看岳！</p>
+			<p>荆山已去华山来，日出潼关四扇开！</p>
+			<p>庐山秀出南斗傍，屏风九叠云锦张。</p>
+			<p>请参考<a href="download/download.html">《旅游风险红宝书》</a>规避众多名山的宰客风险。一册在手，出门放心！</p>
+			<p>名山大川，暗布荆棘。来<a href="individual/hill.html"><strong>名山宰客榜</strong></a>逛逛，分享您的心得，投出您的感受！</p>
+		</div>
+		<div class="lp" id="tabs-5">
+			<p>嵩山少林寺的和尚会不会72绝技？不知道！</p>
+			<p>崂山道观的道长会不会穿墙？不知道！</p>
+			<p>峨嵋金顶的仙姑是不是剑术通神？不知道！</p>
+			<p>布达拉宫的喇嘛懂不懂藏医？不知道！</p>
+			<p>但是我们却知道——礼拜上香求签问道保平安不是免费的！银子一分不能少，否则大师不搭理！</p>
+			<p>庙宇道观，利欲熏心！到<a href="individual/temple.html"><strong>烧香拜佛榜</strong></a>走走，洞悉道长住持们的鬼把戏！</p>
+		</div>
+		<div class="lp" id="tabs-6">
+			<p>脸只管让你绿，胆只管让你苦！中华大地上的公路收费员们轻轻得笑着：不就是多收了三五斗么！</p>
+			<p>一共6对中美城市之间的过路费对比，有凭有据，翔实可靠。角度独特，结论惊人！足够让国内热爱自驾游的朋友们吐血！</p>
+			<p>郑重警告：胆小的千万别光顾<a href="individual/roadfee.html"><strong>过路费对比榜</strong></a>，会把您的肺气炸的！</p>
+			<p>此外还有<a href="individual/park.html"><strong>公园对比榜</strong></a>和<a href="individual/museum.html"><strong>博物馆对比榜</strong></a>供您出游参考。</p>
+		</div>
+	
+	</div>
+	<div id="mail"><h3 class="title">定制邮件</h3>
+		<br/>
+		<p>出门有风险，行前须谨慎！</p>
+		<p>想获得及时可靠的旅游风险/安全指南吗？请前往<a href="mail/mailindex.html"><strong>邮件服务介绍</strong></a>一探究竟。</p>
+		<p>只是想大概了解，可以订阅标准邮件服务。</p>
+		<p>想了解具体旅游目的地的旅游风险/安全信息，可以在标准邮件服务的基础上自选您感兴趣的城市/景区，请前往<a href="mail/add.html"><strong>邮件订阅服务</strong></a>了解细节。</p>
+		<p>点击<a href="mail/query.html"><strong>查询邮件订阅</strong></a>可以查看您当前的邮件订阅概况。</p>		
+		<p>点击<a href="mail/unsub.html"><strong>取消邮件定制</strong></a>可以中止您的邮件订阅。</p>
+	</div>
+	<div id="box"><h3 class="title">旅游保险箱</h3>
+		<br/>
+		<p><a href="box/boxindex.html"><strong>旅游保险箱</strong></a>针对具体旅游目的地提供一站式旅游风险/安全信息，集中反映宰客多发环节的问题，比如吃、住、行等方面，</p>
+		<p>以‘三亚旅游保险箱’为例。重点提供：当地被曝光的宰客餐馆；
+		被网友投诉较多的旅游景区、旅店和出租车公司；恶性宰客实例，比如广为人知的海鲜门等。</p>
+		<p>针对不同性质的旅游目的地，侧重不同方面的宰客行为。比如北京就是不正规一日游，西安就是古董碰瓷和火车站安全。</p>
+		<p>可以从两种途径获得旅游保险箱：<a href="mail/add.html"><strong>自选邮件服务</strong></a>整合了部分旅游保险箱的内容；
+		<a href="download/download.html"><strong>下载页面</strong></a>提供所有旅游保险箱的下载链接。</p>
+	</div>
+	<div id="guanzhu">
+		<br />
+		<!-- JiaThis Button BEGIN -->
+		<div class="jiathis_style">
+			<span class="jiathis_txt">分享到：</span>
+			<a class="jiathis_button_qzone">QQ空间</a><a class="jiathis_button_tsina">新浪微薄</a>
+			<a class="jiathis_button_tqq">腾讯微薄</a><a class="jiathis_button_renren">人人网</a>
+			<a class="jiathis_button_kaixin001">开心网</a><a class="jiathis_button_tsohu">搜狐微博</a>
+			<a class="jiathis_button_feixin">飞信</a><a class="jiathis_button_douban">豆瓣</a>
+			<a class="jiathis_button_fb">Facebook</a><a class="jiathis_button_tieba">百度贴吧</a>
+			<a class="jiathis_button_tianya">天涯社区</a>	<a class="jiathis_button_twitter">Twitter</a>
+			<a class="jiathis_button_googleplus">Google+</a><a class="jiathis_button_t163">网易微博</a>
+			<a class="jiathis_button_xiaoyou">朋友网</a><a class="jiathis_button_mop">猫扑推客</a>
+			<a class="jiathis_button_tifeng">凤凰微博</a>	<a class="jiathis_button_gmail">Gmail邮箱</a>
+			
+			<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+			<a class="jiathis_counter_style"></a>
+		</div>
+		<script type="text/javascript" >
+			var jiathis_config={
+				boldNum:15,
+				siteNum:15,
+				sm:"taobao,hi,meilishuo,51,sohu,tpeople,189share,huaban,ifensi,hexun,ydnote,ymail,hotmail,tyaolan,toeeee",
+				summary:"",
+				hideMore:false
+			}
+		</script>
+		<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+		<!-- JiaThis Button END -->
+		<br />
+		<table border="0">
+			<tr align="center" valign="middle">
+			<td>
+				<!-- 新浪关注 -->
+				<iframe width="63" height="24" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0" scrolling="no" border="0" src="http://widget.weibo.com/relationship/followbutton.php?language=zh_cn&width=63&height=24&uid=1782515283&style=1&btn=red&dpc=1"></iframe>
+			</td>
+			<td>
+				<!-- 人人喜欢 -->
+				<script type="text/javascript" charset="utf-8">
+					(function(){
+						var p = [], w=92, h=24,
+						lk = {
+						url:'http://www.lyzk.org'||location.href, /*喜欢的URL(不含如分页等无关参数)*/
+						title:'旅游宰客榜'||document.title, /*喜欢标题(可选)*/
+						description:'', /*喜欢简介(可选)*/
+						image:'' /*喜欢相关图片的路径(可选)*/
+						};
+						for(var i in lk){
+							p.push(i + '=' + encodeURIComponent(lk[i]||''));
+						}
+						document.write('<iframe scrolling="no" frameborder="0" allowtransparency="true" src="http://www.connect.renren.com/like/v2?'+p.join('&')+'" style="width:'+w+'px;height:'+h+'px;"></iframe>');
+					})();
+				</script>
+			</td>
+			<td>
+				<!-- 人人关注 -->
+				<iframe scrolling="no" frameborder="0" allowtransparency="true" src="http://widget.renren.com/plugin/followbutton?page_id=601522402&color=0&model=0" style="width:78px;height:24px;" ></iframe>
+			</td>
+			<td>
+				<!-- 开心转贴 -->
+				<script src="http://rest.kaixin001.com/api/Repaste_js.php" type="text/javascript"></script>
+				<div id="kx001_btn_repaste" style="margin: 0px; padding: 0px"></div>
+				<script type="text/javascript">
+					KX001_REPASTE_LINK.init(2,"转帖");
+				</script>
+			</td>
+			<td>
+				<!-- 开心赞 -->
+				<iframe allowTransparency='true'  id='like_view' frameborder='0' scrolling='no' marginheight='0' marginwidth='0' hspace='0' vspace='0' style='height:24px;width:65px;' src='http://www.kaixin001.com/like/like.php?url=http%3A%2F%2Fwww.lyzk.org&show_faces=false'></iframe>
+			</td>
+			<td>
+				<!-- qq赞 -->
+				<a version="1.0" class="qzOpenerDiv" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_likeurl" target="_blank">赞</a>
+				<script  src="http://qzonestyle.gtimg.cn/qzone/app/qzlike/qzopensl.js#jsdate=20110603&style=3&showcount=1&width=87&height=24" charset="utf-8" defer="defer" ></script>
+			</td>
+			</tr>
+		</table>
+		
+		
+	</div>
+  </div>
+  <div id="right">
+    <iframe src="right.html" width=90 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+</div>
+<div id="footer">
+  <iframe src="footer.html" width=980 height=70 frameborder="0" scrolling="no"></iframe>
+</div>
+</body>
+</html>

@@ -1,0 +1,883 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>烧香拜佛榜</title>
+
+<script type="text/javascript" src="../jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="../jslib/jquery.bxslider2.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.easing.1.3.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.jqplot.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.pieRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.barRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.categoryAxisRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.pointLabels.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../style/jquery.jqplot.css" />
+<link rel="stylesheet" type="text/css" href="../style/style2.css" />
+<link rel="stylesheet" type="text/css" href="../style/individual.novote.css" />
+<link rel="stylesheet" type="text/css" href="../style/search.css" />
+
+<script type="text/javascript">
+var arr = new Array();  //hold all the checked temple choices;
+$(function() {
+	//set default comment hint
+	$("#comment").val("请在这里发表您的评论，谢谢");
+	$("#comment").select();
+	$("#comment").click(checkdefault);
+	$("#comment").focusin(checkdefault);
+	
+	//allow #innerscroll1 (in thanscroll) to dynamically scroll
+	$('#innerscroll1').bxSlider({
+		auto: true,
+		autoHover: true,
+		margin: 70,
+	    controls: false,
+	    pause: 15000,
+	    speed: 5000,
+	    pager: false
+	});
+	
+	//show the hint if the support express is voted!
+	if($(":input[type=radio]").attr("disabled") =="disabled"){
+		$("#info1").html("您已经表达过您的支持了");		
+	}
+	
+	/*
+	 * when the window is loaded, show the chart from current votes
+	 */
+	 $("#showVote").html("投票数据正在加载中，请稍候");
+	 $("#showVote").show(); 
+	$.post("../templeListAction!getTempleVotes", {}, function(returnedData,status) {
+		if("success" == status){
+			var result = eval(returnedData);
+			var total = 0;
+			for(var index in result){
+				//alert(index);
+				var c = result[index];
+				total += c;
+				$("#templevote" + index).html(c);
+				$("#toptemplevote" + index).html(c);
+			}
+			$("#totalvote").html(total);
+			
+			//then draw the chart
+			$("#showVote").html("");
+			
+			var item1 = result[0];  //少林寺
+			var item2 = result[1];  //灵隐寺
+			var item3 = result[2];  //普陀山
+			var item4 = result[3];  //正一观
+			var item5 = result[4];  //黄山
+			var item6 = result[5];  //雍和宫
+			var item7 = result[6];  //张家界
+			var item8 = result[7];  //九寨沟
+			var item9 = result[8];  //峨嵋山
+			var item10 = result[9];  //庐山
+			var item11 = result[19];  //泰山
+			var item12 = result[11];  //衡山
+			var item13 = result[12];  //九华山
+			var item14 = result[13];  //法门寺
+			var item15 = result[14];  //武当山
+			var item16 = result[15];  //五台山
+			var item17 = result[16];  //崂山
+			var item18 = result[17];  //恒山
+
+			$.jqplot.config.enablePlugins = true;
+					    
+		    var data = new Array();
+		    
+		    var p1 = ['少林寺',item1];
+		    var p2 = ['灵隐寺',item2];
+		    var p3 = ['普陀山',item3];
+		    var p4 = ['正一观',item4];
+		    var p5 = ['黄山',item5];
+		    var p6 = ['雍和宫',item6];
+		    var p7 = ['张家界',item7];
+		    var p8 = ['九寨沟',item8];
+		    var p9 = ['峨嵋山',item9];
+		    var p10 = ['庐山',item10];
+		    var p11 = ['泰山',item11];
+		    var p12 = ['衡山',item12];
+		    var p13 = ['九华山',item13];
+		    var p14 = ['法门寺',item14];
+		    var p15 = ['武当山',item15];
+		    var p16 = ['五台山',item16];
+		    var p17 = ['崂山',item17];
+		    var p18 = ['恒山',item18];
+		    
+		    data.push(p1);
+		    data.push(p2);
+		    data.push(p3);
+		    data.push(p4);
+		    data.push(p5);
+		    data.push(p6);
+		    data.push(p7);
+		    data.push(p8);
+		    data.push(p9);
+		    data.push(p10);
+		    data.push(p11);
+		    data.push(p12);
+		    data.push(p13);
+		    data.push(p14);
+		    data.push(p15);
+		    data.push(p16);
+		    data.push(p17);
+		    data.push(p18);
+		    		    
+		    plot1 = $.jqplot('showVote', [data], {
+		        // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
+		        animate: !$.jqplot.use_excanvas,
+		        seriesDefaults: {
+		            // Make this a pie chart.
+		            renderer: $.jqplot.PieRenderer,
+		            rendererOptions: {
+		              // Put data labels on the pie slices.
+		              // By default, labels show the percentage of the slice.
+		              showDataLabels: true,
+		            }
+		          },
+		          legend: { show:true, location: 'e' }			        
+		    });  	
+		}
+	});
+	
+	/*
+	 * when the window is loaded, show the express count for temple list
+	 */
+	$.post("../templeListAction!getExpressCount", {},function(returnedData,status){
+		if("success" == status){
+			$("#totalzaike").html(returnedData);
+		}
+	});
+	
+	/*
+	 * when the window is loaded, show the comments for temple list
+	 */
+	$.post("../templeListAction!getTempleComments", {}, function(returnedData,status) {
+		if ("success" == status) {
+			var result = eval(returnedData);
+			
+			$("#content").html("");
+			for ( var index in result) {
+				var c = result[index];
+				//$("#content").prepend("<tr align='center'><td width='10%' bgcolor='#9ff'>" + c.nickname + "</td><td width='70%' bgcolor='#cff'>" + c.comment+ "</td><td bgcolor='#fcf'>" + c.commentDate + "</td>");
+				var nn = c.nickname;
+				if("" == nn)
+					nn = "空";
+				$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + c.comment +"</div><div class='date'>" + c.commentDate + "</div></div>");
+			}
+			
+			//how much items per page to show
+			var show_per_page = 10; 
+			//getting the amount of elements inside content div
+			var number_of_items = $('#content').children().size();
+			//calculate the number of pages we are going to have
+			var number_of_pages = Math.ceil(number_of_items/show_per_page);
+			
+			//set the value of our hidden input fields
+			$('#current_page').val(0);
+			$('#show_per_page').val(show_per_page);
+						
+			//var navigation_html = '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var navigation_html = '<a class="first_link" href="javascript:go_to_page(0);">第一页</a>' + '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var current_link = 0;
+			while(number_of_pages > current_link){
+				navigation_html += '<a class="page_link" href="javascript:go_to_page(' + current_link +')" longdesc="' + current_link +'">'+ (current_link + 1) +'</a>';
+				current_link++;
+			}
+			//navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>';
+			navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>' + '<a class="first_link" href="javascript:go_to_page(' + (number_of_pages-1) + ');">最后一页</a>';
+			
+			$('#page_navigation').html(navigation_html);
+			
+			//add active_page class to the first page link
+			$('#page_navigation .page_link:first').addClass('active_page');
+			
+			//hide all the elements inside content div
+			$('#content').children().css('display', 'none');
+			
+			//and show the first n (show_per_page) elements
+			$('#content').children().slice(0, show_per_page).css('display', 'block');
+		}
+	});
+	
+	//register check
+	$(":checkbox").click(function() {
+		var rem = decodeURI($(this).val());
+		if($(this).attr("checked") == "checked"){
+			arr.push(rem);
+			//alert(arr);
+		}else{
+			arr = jQuery.grep(arr, function(value) {
+				return value != rem;
+				});
+			//alert(arr);
+		}		
+	});
+	
+	//register click event on #vote to add a vote record on temple list
+	$("#vote").click(function() {
+		if($(":input[type=checkbox]:checked").length > 0){
+			$("#showVote").html("<img src=../images/lists/temple_express.jpg alt=悟空该怎么办啊？听苍蝇的话去宰游客？ width=755 height=400 title=悟空该怎么办啊？听苍蝇的话去宰游客？/>");
+			//alert(arr);
+			$.post("../templeListAction!vote", {"templeCheck":encodeURI(arr)}, 
+					function(returnedData,status) {
+						if ("success" == status){
+							$(":checkbox").attr("disabled","disabled");
+							$("#vote").attr("disabled","disabled");
+							var result = eval(returnedData);
+							
+							//new pie chart
+							var total = 0;
+							for(var index in result){
+								//alert(index);
+								var c = result[index];
+								total += c;
+								$("#templevote" + index).html(c);
+								$("#toptemplevote" + index).html(c);
+							}
+							$("#totalvote").html(total);
+							
+							//then draw the chart
+							$("#showVote").html("");
+							
+							var item1 = result[0];  //少林寺
+							var item2 = result[1];  //灵隐寺
+							var item3 = result[2];  //普陀山
+							var item4 = result[3];  //正一观
+							var item5 = result[4];  //黄山
+							var item6 = result[5];  //雍和宫
+							var item7 = result[6];  //张家界
+							var item8 = result[7];  //九寨沟
+							var item9 = result[8];  //峨嵋山
+							var item10 = result[9];  //庐山
+							var item11 = result[19];  //泰山
+							var item12 = result[11];  //衡山
+							var item13 = result[12];  //九华山
+							var item14 = result[13];  //法门寺
+							var item15 = result[14];  //武当山
+							var item16 = result[15];  //五台山
+							var item17 = result[16];  //崂山
+							var item18 = result[17];  //恒山
+									
+							$.jqplot.config.enablePlugins = true;
+									    
+						    var data = new Array();
+						    
+						    var p1 = ['少林寺',item1];
+						    var p2 = ['灵隐寺',item2];
+						    var p3 = ['普陀山',item3];
+						    var p4 = ['正一观',item4];
+						    var p5 = ['黄山',item5];
+						    var p6 = ['雍和宫',item6];
+						    var p7 = ['张家界',item7];
+						    var p8 = ['九寨沟',item8];
+						    var p9 = ['峨嵋山',item9];
+						    var p10 = ['庐山',item10];
+						    var p11 = ['泰山',item11];
+						    var p12 = ['衡山',item12];
+						    var p13 = ['九华山',item13];
+						    var p14 = ['法门寺',item14];
+						    var p15 = ['武当山',item15];
+						    var p16 = ['五台山',item16];
+						    var p17 = ['崂山',item17];
+						    var p18 = ['恒山',item18];
+						    			    
+						    data.push(p1);
+						    data.push(p2);
+						    data.push(p3);
+						    data.push(p4);
+						    data.push(p5);
+						    data.push(p6);
+						    data.push(p7);
+						    data.push(p8);
+						    data.push(p9);
+						    data.push(p10);
+						    data.push(p11);
+						    data.push(p12);
+						    data.push(p13);
+						    data.push(p14);
+						    data.push(p15);
+						    data.push(p16);
+						    data.push(p17);
+						    data.push(p18);
+						    
+						    plot1 = $.jqplot('showVote', [data], {
+						        // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
+						        animate: !$.jqplot.use_excanvas,
+						        seriesDefaults: {
+						            // Make this a pie chart.
+						            renderer: $.jqplot.PieRenderer,
+						            rendererOptions: {
+						              // Put data labels on the pie slices.
+						              // By default, labels show the percentage of the slice.
+						              showDataLabels: true,
+						            }
+						          },
+						          legend: { show:true, location: 'e' }			        
+						    });  
+						}						
+					});
+		}else{
+			$("#vote").after('<span><b>请选择以上至少一项</b></span>');
+			//$("#showVote").html("<b>请选择以上至少一项</b>");
+			return false;
+		}		
+	});
+	
+	//register click event on #btn to add comment on temple_comment
+	$("#btn").click(function() {
+		if($("#comment").val() == "" || $("#comment").val() == "请在这里发表您的评论，谢谢"){//simple validation with empty or default condition
+			$("#commentSpan").html("<p><b>评论不能为空</b></p>");
+			return false;
+		}else{//submit the json object {nickname,comment}
+			$("#commentSpan").html("<p>谢谢您的评论</p>");
+			$.post("../templeListAction!addTempleComment", {"nickname":encodeURI($("#nickname").val()),"comment":encodeURI($("#comment").val())}, 
+				function(returnedData,status) {
+					if ("success" == status){
+						//$("#content").prepend($("#comment").val() + "<br/>");  //insert the new comment firstly;
+						var nn = $("#nickname").val();
+						if("" == nn)
+							nn = "空";
+						$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + $("#comment").val() +"</div><div class='date'>" 
+						+ new Date().toLocaleString() + "</div></div>");
+						$("#commentSpan").html("");
+					}				
+				});
+			$(this).attr("disabled","disabled");
+		}			
+	});
+	
+	/*
+	 * bind the click event to each radio box to vote the express support on this temple list
+	 */
+	$(":input[type=radio]").click(function() {
+		//1. if any radio box is selected, disable all;
+		$(":input[type=radio]").attr("disabled","disabled"); 
+		//1.5 increment the total support count
+		$("#totalzaike").html(parseInt($("#totalzaike").html()) + 1);
+		//2.show chart1 div
+		$("#info1").html("");
+		$("#chart1").show();
+		$("#chart1").html("请稍候...");
+		//3.pass the user choice to action via ajax post() method
+		$.post("../templeListAction!express", {support:$(this).val()}, function(returnedData,status) {
+			if ("success" == status) {
+				$("#chart1").html("");
+				var result = eval(returnedData);
+				temp = result;
+				//4. define plot element to be shown
+				$.jqplot.config.enablePlugins = true;
+			    var ticks = ['完全支持', '支持', '中立', '不太支持', '不支持'];
+			    //5. draw the plot 
+			    plot1 = $.jqplot('chart1', [result], {
+			        // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
+			        animate: !$.jqplot.use_excanvas,
+			        seriesDefaults:{
+			            renderer:$.jqplot.BarRenderer,
+			            pointLabels: { show: true }
+			        },
+			        axes: {
+			            xaxis: {
+			                renderer: $.jqplot.CategoryAxisRenderer,
+			                ticks: ticks
+			            }
+			        },
+			        highlighter: { show: false }
+			    });			 	
+			}
+		});
+	});
+});
+
+//used for default comment hint
+function checkdefault() {
+	var txt = $(this).val();  //the current text in the area
+	if(txt == "请在这里发表您的评论，谢谢")
+		$(this).val("");
+	$(this).focusout(retdefault);	
+}
+//used for default comment hint
+function retdefault(){
+	var txt = $(this).val();
+	if(txt == ""){
+		$(this).val("请在这里发表您的评论，谢谢");
+		$(this).select();
+	}		
+	$(this).click(checkdefault);
+	$(this).focusin(checkdefault);
+}
+
+function previous(){
+	
+	new_page = parseInt($('#current_page').val()) - 1;
+	//if there is an item before the current active link run the function
+	if($('.active_page').prev('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function next(){
+	new_page = parseInt($('#current_page').val()) + 1;
+	//if there is an item after the current active link run the function
+	if($('.active_page').next('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function go_to_page(page_num){
+	//get the number of items shown per page
+	var show_per_page = parseInt($('#show_per_page').val());
+	
+	//get the element number where to start the slice from
+	start_from = page_num * show_per_page;
+	
+	//get the element number where to end the slice
+	end_on = start_from + show_per_page;
+	
+	//hide all children elements of content div, get specific items and show them
+	$('#content').children().css('display', 'none').slice(start_from, end_on).css('display', 'block');
+	
+	/*get the page link that has longdesc attribute of the current page and add active_page class to it
+	and remove that class from previously active page link*/
+	$('.page_link[longdesc=' + page_num +']').addClass('active_page').siblings('.active_page').removeClass('active_page');
+	
+	//update the current page input field
+	$('#current_page').val(page_num);
+};
+</script>
+
+<style>
+#main #front{
+	width: 762px;
+	border: 1px solid gray;
+	margin: 0px;
+	float: left;
+}
+#main #votearea{
+	width: 762px;
+	border: 1px solid gray;
+	margin: 0px;
+	float: left;
+}
+</style>
+</head>
+
+<body>
+<div id="header">
+  <iframe src="../header.html" width=980 height=91 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="nav">
+  <iframe src="../nav.html" width=980 height=40 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="primary">
+  <div id="baike">
+    <iframe src="../baike.html" width=120 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+  <div id="main">
+    <div id="location"><a name="articletop">您的位置</a>： <a href="../index.html">旅游宰客榜首页</a> 》》<a href="../commonlist/listindex.html">旅游宰客榜</a> 》》烧香拜佛榜</div>
+    <div id="front">
+		<h2 align="center">烧香拜佛榜（暂行）  总投票数：<label id="totalvote"></label>张</h2>		
+		<div id="share">
+			<!-- JiaThis Button BEGIN -->
+			<div class="jiathis_style">
+				<span class="jiathis_txt">分享到：</span>
+				<a class="jiathis_button_qzone" /><a class="jiathis_button_tsina" />
+				<a class="jiathis_button_tqq" /><a class="jiathis_button_renren" />
+				<a class="jiathis_button_kaixin001" /><a class="jiathis_button_tsohu" />
+				<a class="jiathis_button_feixin" /><a class="jiathis_button_douban" />
+				<a class="jiathis_button_fb" /><a class="jiathis_button_tieba" />
+				<a class="jiathis_button_tianya" /><a class="jiathis_button_twitter" />
+				<a class="jiathis_button_googleplus" /><a class="jiathis_button_t163" />
+				<a class="jiathis_button_xiaoyou" /><a class="jiathis_button_mop" />
+				<a class="jiathis_button_tifeng" /><a class="jiathis_button_gmail" />
+				
+				<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+				<a class="jiathis_counter_style"></a>
+			</div>
+			<script type="text/javascript" >
+			var jiathis_config={
+				boldNum:15,
+				siteNum:15,
+				sm:"taobao,hi,meilishuo,51,sohu,tpeople,189share,huaban,ifensi,hexun,ydnote,ymail,hotmail,tyaolan,toeeee",
+				summary:"",
+				hideMore:false
+			}
+			</script>
+			<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+			<!-- JiaThis Button END -->
+		</div>
+	</div>
+	<div id="intro">
+		<table border="0" style="color: #060606;" cellspacing="0" cellpadding="0">
+			<tr align="center">
+				<td>前往其他榜单：</td>
+				<td><a href="../commonlist/city.html">国内城市榜&nbsp&nbsp</a></td>
+				<td><a href="../commonlist/resort.html">国内景区榜&nbsp&nbsp</a></td>
+				<td><a href="../commonlist/intercity.html">海外国家榜&nbsp&nbsp</a></td>
+				<td><a href="../commonlist/interresort.html">海外景区榜&nbsp&nbsp</a></td>
+				<td><a href="hill.html">名山宰客榜&nbsp&nbsp</a></td>
+				<td><a href="park.html">公园对比榜&nbsp&nbsp</a></td>
+				<td><a href="museum.html">博物馆榜&nbsp&nbsp</a></td>
+				<td><a href="roadfee.html">过路费榜&nbsp&nbsp</a></td>
+			</tr>
+		</table>
+		<br/>
+		<p style="color: purple;">提示：没有超过500票的情况下，本榜单只是暂行；一旦超过500票，将根据投票定期发布正式榜单。</p>
+		<br/>		
+	</div>
+	<div class="innerlist">
+		<br/>
+		<label class="innertitle"><b>并列榜首：少林寺</b></label>
+		（得票：<label class="innertitle" id="toptemplevote0"></label>张）
+		<br />
+		<img align="left" src="../images/lists/list_temple_shaolinsi.jpg" width="372" height="240" 
+			title="强烈建议李连杰拍《少林寺续集》，以中南海保镖身份惩治这些骗子败类！"  alt="强烈建议李连杰拍《少林寺续集》，以中南海保镖身份惩治这些骗子败类！" />
+		<p>所谓树大招风，少林寺正统僧人也就是练练72绝技易筋经，开SUV，政协挂个头衔什么的，一般不敢胡作非为。
+			但是地方政府和有些旅游业者当然有别的想法，于是整个少林寺景区乌烟瘴气，铜臭熏天！</p>
+		<p>强烈建议李连杰拍《少林寺续集》，以中南海保镖身份惩治这些骗子败类！</p>
+		<p>要论宰客招数，正所谓：拜舍利，数罗汉，问凶吉，求福签；管你何方来，只管入我彀！</p>
+		<p>2012年初景区稍微整改，居然就能拘留一大堆骗子！仔细想想也不过九牛一毛而已。</p>
+		<p>少林寺以及其他很多上榜名山、热门景区，还会在<a href="temple.html">烧香拜佛榜</a>和<a href="../commonlist/resort.html">国内景区宰客榜</a>中详加揭露。</p>
+		<p>各种丑恶宰客现象屡见不鲜，少林寺当之无愧荣登榜首！</p>
+		<p>【少林寺<a href="http://www.tianya.cn/publicforum/content/free/1/1406090.shtml" target="_blank">参考1</a>，
+			<a href="http://travel.shangdu.com/wan/201007/30-43944.shtml" target="_blank">参考2</a>，
+			<a href="http://www.bjsoyo.com/hen_sls/ts/206535.shtml" target="_blank">参考3</a>，
+			<a href="http://www.zzpiaowu.cn/news/jingdian/20120225582.html" target="_blank">参考4</a>，
+			<a href="http://bbs.hsw.cn/read-htm-tid-3428938.html" target="_blank">参考5</a>，
+			<a href="http://news.kunming.cn/travel/content/2012-02/03/content_2827709.htm" target="_blank">参考6</a>】
+		</p>
+		<b class="gotovote">直接去<a href="#gotovote">投票</a></b>
+	</div>
+	<div class="innerlist">
+		<br/>
+		<label class="innertitle"><b>并列榜首：法门寺</b></label>
+		（得票：<label class="innertitle" id="toptemplevote13"></label>张）
+		<br/>
+		<img align="left" src="../images/lists/list_temple_famensi.jpg" width="372" height="240" 
+			title="香火钱可以刷卡了！防偷防盗的高招啊！省却了多少善男信女身带大额现金的苦恼啊！佛陀菩萨也在涅槃无我的境界中笑了：还是POS机好！"  
+			alt="香火钱可以刷卡了！防偷防盗的高招啊！省却了多少善男信女身带大额现金的苦恼啊！佛陀菩萨也在涅槃无我的境界中笑了：还是POS机好！" />
+		<p>法门寺能够与少林寺并驾齐驱，并不令人意外！</p>
+		<p>法门寺的独到之处在于其外围景观是由公司运营的，光是门前的广场就砸了多少个亿修的，能不想法子赚回来么？！少林寺曾经险些被上市，法门寺可用不着！人家直奔纽约NASDAQ去了！</p>
+		<p>这么一来，好消息是用不着托儿了，一切都是在光天化日下进行，所以托儿的生存空间没了！</p>
+		<p>更好的消息是香火钱可以刷卡了，防偷防盗的高招啊！省却了多少善男信女身带大额现金的苦恼啊！佛陀菩萨也在涅槃无我的境界中笑了：还是POS机好！</p>
+		<p>公司的力量果然强大！法门寺一举赶上少林寺，并列榜首！</p>
+		<p>【法门寺<a href="http://www.tianya.cn/techforum/content/843/1/30867.shtml" target="_blank">参考1</a>，
+			<a href="http://travel.cnwest.com/content/2011-08/11/content_5033668.htm" target="_blank">参考2</a>，
+			<a href="http://www.hsykzj.com/Article/416.html" target="_blank">参考3</a>，
+			<a href="http://posts.becod.com/tripnews_1343.html" target="_blank">参考4</a>，
+			<a href="http://baoji.cncn.com/jingdian/famensi/guide_2760.htm" target="_blank">参考5</a>，
+			<a href="http://bbs.hsw.cn/read-htm-tid-2904514.html" target="_blank">参考6</a>,
+			<a href="http://henan.china.com.cn/travel/315/201109/59510434I0.html" target="_blank">参考7</a>,
+			<a href="http://www.china.com.cn/chinese/TR-c/612119.htm" target="_blank">参考8</a>】
+		</p>
+		<b class="gotovote">直接去<a href="#gotovote">投票</a></b>
+	</div>	
+	<div class="innerlist">
+		<br/>
+		<label class="innertitle"><b>榜眼：五台山</b></label>
+		（得票：<label class="innertitle" id="toptemplevote15"></label>张）
+		<br />
+		<img align="left" src="../images/lists/list_hill_wutaishan.jpg" width="372" height="240" 
+			title="五台山寺庙众多，宰客环境得天独厚，因此雄踞榜眼！"  alt="五台山寺庙众多，宰客环境得天独厚，因此雄踞榜眼！" />
+		<p>与其他名山一样，去五台山也要处处谨慎，时时小心！吃住行购物各方面都有可能被宰。做为传说中文殊菩萨的道场，五台山也是很多游客亲身感受到的宰客大道场。</p>
+		<p>山上庙宇众多，比较有名的就有五爷庙、殊像寺、显通寺、塔院寺、广宗寺、圆照寺、南禅寺、佛光寺、延庆寺、广济寺、菩萨顶、尊胜寺等。这还都是些正规的寺庙，野庙假寺就别提了。
+			林子一大，什么鸟都有。形形色色的骗子混杂其中，非得游客睁大眼睛才能辨别的了。有的游客眼睛睁得足够大，居然还能看到不一样的景观！据称五台山一处不显眼的场所里,
+			停了奔驰, 宝马, 奥迪等高级轿车,都是这些“大师”所有啊！</p>
+		<p>五台山寺庙众多，宰客环境得天独厚，因此雄踞榜眼！</p>
+		<p>【五台山<a href="http://www.sxgov.cn/sqmy%5Clsqk/612754.shtml" target="_blank">参考1</a>，
+			<a href="http://tieba.baidu.com/p/532662669" target="_blank">参考2</a>，
+			<a href="http://zhidao.baidu.com/question/312876186.html" target="_blank">参考3</a>，
+			<a href="http://www.5iucn.com/strategy.asp?key=361" target="_blank">参考4</a>，
+			<a href="http://bbs.travel.163.com/bbs/tuyou/128429473.html" target="_blank">参考5</a>，
+			<a href="http://www.uutuu.com/ask/detail/1881479/" target="_blank">参考6</a>，
+			<a href="http://www.backpackers.com.tw/forum/showthread.php?t=257932" target="_blank">参考7</a>】
+		</p>
+		<b class="gotovote">直接去<a href="#gotovote">投票</a></b>
+	</div>
+	<div class="innerlist">
+		<br/>
+		<label class="innertitle"><b>探花：九华山</b></label>
+		（得票：<label class="innertitle" id="toptemplevote12"></label>张）
+		<br />
+		<img align="left" src="../images/lists/list_temple_jiuhuashan.jpg" width="372" height="240" 
+			title="文殊菩萨在五台山广进财源的同时，地藏菩萨不甘人后，一样在九华山传授徒子徒孙们招财进宝的不二法门。大大小小的寺庙不少，坑蒙拐骗的法门更是繁多。"  
+			alt="文殊菩萨在五台山广进财源的同时，地藏菩萨不甘人后，一样在九华山传授徒子徒孙们招财进宝的不二法门。大大小小的寺庙不少，坑蒙拐骗的法门更是繁多。" />
+		<p>文殊菩萨在五台山广进财源的同时，地藏菩萨不甘人后，一样在九华山传授徒子徒孙们招财进宝的不二法门。大大小小的寺庙不少，坑蒙拐骗的法门更是繁多。</p>
+		<p>不过能够令九华山宰客名气卓尔不群的是，这里和尚脾气大，还会打人！（见<a href="http://www.tudou.com/programs/view/0S944B9Ulkc/" target="_blank">打人视频</a>）
+			没准儿游客上香给钱少了，所以菩萨心不甘了，指示徒孙教训一下这些心不诚的家伙们！</p>
+		<p>出家人与世无争，居然现在为了香火钱与人抡开了袖子，动起了拳头，成何体统！不仅斯文扫地，而且道德沦丧败坏到了极点！</p>
+		<p>【九华山<a href="http://tieba.baidu.com/p/1118761134" target="_blank">参考1</a>，
+			<a href="http://www.jiuhuashan.cc/article/8859.htm" target="_blank">参考2</a>，
+			<a href="http://www.jhs0566.com/lyzn/804.html" target="_blank">参考3</a>，
+			<a href="http://tt.mop.com/read_11527259_1_0.html" target="_blank">参考4</a>，
+			<a href="http://tour.rednet.cn/c/2012/06/12/2644308.htm" target="_blank">参考5</a>，
+			<a href="http://www.tianya.cn/techforum/content/843/21514.shtml" target="_blank">参考6</a>，
+			<a href="http://bbs.wuhunews.cn/archiver/tid-321353.html" target="_blank">参考7</a>】
+		</p>
+		<b class="gotovote">直接去<a href="#gotovote">投票</a></b>
+	</div>
+	<div class="twinlist">
+		<div class="leftlist">
+			<br/>
+			<label class="lefttitle"><b>第四名：崂山</b></label>
+			（得票：<label class="lefttitle" id="toptemplevote16"></label>张）
+			<br/>
+			<img align="left" src="../images/lists/list_hill_laoshan.jpg" width="240" height="180" 
+				title="继名山宰客榜后，崂山又光荣登上烧香拜佛榜。当然崂山的和尚是很少的，这里的主角是道长们。"  
+				alt="继名山宰客榜后，崂山又光荣登上烧香拜佛榜。当然崂山的和尚是很少的，这里的主角是道长们。" />
+			<p>继<a href="hill.html">名山宰客榜</a>后，崂山又光荣登上烧香拜佛榜。当然崂山的和尚是很少的，这里的主角是道长们。</p>
+			<p>穿墙的功夫不是人人都会，麻衣诓术就大众化多了。连乡下老大爷也有胆量冒充一把赶个时髦呢！</p>
+			<p>【崂山<a href="http://www.100tiao1.net/sjz/travel/tools/manual/2012-01-17/75807.shtml" target="_blank">参考1</a>，
+				<a href="http://t.qq.com/p/t/48517015859451" target="_blank">参考2</a>，
+				<a href="http://blog.dwnews.com/post-224695.html" target="_blank">参考3</a>，
+				<a href="http://club.travel.sohu.com/r-lyts-51863-0-9-900.html" target="_blank">参考4</a>】
+			</p>
+		</div>
+		<div class="rightlist">
+			<br/>
+			<label class="righttitle"><b>并列第五名：九寨沟</b></label>
+			（得票：<label class="righttitle" id="toptemplevote7"></label>张）
+			<br/>
+			<img align="left" src="../images/lists/list_temple_jiuzhaigou.jpg" width="240" height="180" 
+				title="既非菩萨道场，又非道教名山，也不是古刹真观，九寨沟和张家界能双双上榜，骗人功夫当然了得。"  
+				alt="既非菩萨道场，又非道教名山，也不是古刹真观，九寨沟和张家界能双双上榜，骗人功夫当然了得。" />
+			<p>既非菩萨道场，又非道教名山，也不是古刹真观，九寨沟和张家界能双双上榜，骗人功夫当然了得。</p>
+			<p>九寨沟除了和尚尼姑行骗外，活佛开光可是一道独特景观！据有些游客反映，途中遇到的藏庙，十庙九黑！</p>
+			<p>【九寨沟<a href="http://www.lvping.com/showjournal-d25-r749647-journals.html" target="_blank">参考1</a>，
+				<a href="http://www.izy.cn/travel_notes/11f/15400.html" target="_blank">参考2</a>，
+				<a href="http://www.lvping.com/showtopic-d25-r33326-jiuzhaigouhuanglong.html" target="_blank">参考3</a>，
+				<a href="http://www.scol.cn/thread-14401228-1-1.html" target="_blank">参考4</a>，
+				<a href="http://www.people.com.cn/GB/shehui/1063/2935018.html" target="_blank">参考5</a>，
+				<a href="http://www.gogocn.com/article/200582125240_1910.htm" target="_blank">参考6</a>】
+			</p>
+			<b class="gotovote">直接去<a href="#gotovote">投票</a></b>
+		</div>
+	</div>
+	<div class="twinlist">
+		<div class="leftlist">
+			<br/>
+			<label class="lefttitle"><b>并列第五名：张家界</b></label>
+			（得票：<label class="lefttitle" id="toptemplevote6"></label>张）
+			<br/>
+			<img align="left" src="../images/lists/list_temple_zhangjiajie.jpg" width="240" height="180" 
+				title="既非菩萨道场，又非道教名山，也不是古刹真观，九寨沟和张家界能双双上榜，骗人功夫当然了得。"  
+				alt="既非菩萨道场，又非道教名山，也不是古刹真观，九寨沟和张家界能双双上榜，骗人功夫当然了得。" />
+			<p>与九寨沟相比，只可惜没有活佛友情出演，不过张家界的庙宇道观一样与时俱进。天子山宝峰湖的庙宇向法门寺求经，紫霞观的道长向崂山前辈学习，拜佛烧香可以刷卡了！</p>
+			<p>【张家界<a href="http://www.zhangjiajie.com.cn/?action-model-name-ask2-itemid-140" target="_blank">参考1</a>，
+				<a href="http://tieba.baidu.com/p/12851584" target="_blank">参考2</a>，
+				<a href="http://hunan.guolvol.com/3/2010/0318/52680.html" target="_blank">参考3</a>，
+				<a href="http://www.peacehall.com/forum/201102/boxun2011/164206.shtml" target="_blank">参考4</a>，
+				<a href="http://ts.voc.com.cn/question/view/83721.html" target="_blank">参考5</a>，
+				<a href="http://www.redoo.com/tribes/topic/1727/" target="_blank">参考6</a>，
+				<a href="http://club.travel.sohu.com/r-lyts-29731-0-9-900.html" target="_blank">参考7</a>】
+			</p>
+		</div>
+		<div class="rightlist">
+			<br/>
+			<label class="righttitle"><b>第六名：峨眉山</b></label>
+			（得票：<label class="righttitle" id="toptemplevote8"></label>张）
+			<br/>
+			<img align="left" src="../images/lists/list_hill_emeishan.jpg" width="240" height="180" 
+				title="对于文殊菩萨和地藏菩萨分别在自己地盘指导徒子徒孙们宰客的辉煌成就，普贤菩萨如坐针毡，对徒子徒孙们闭门指导后，峨眉金顶也烟腾雾绕了，按照参考1所言，烧香即烧钱了！"  
+				alt="对于文殊菩萨和地藏菩萨分别在自己地盘指导徒子徒孙们宰客的辉煌成就，普贤菩萨如坐针毡，对徒子徒孙们闭门指导后，峨眉金顶也烟腾雾绕了，按照参考1所言，烧香即烧钱了！" />
+			<p>对于文殊菩萨和地藏菩萨分别在自己地盘指导徒子徒孙们宰客的辉煌成就，普贤菩萨如坐针毡，对徒子徒孙们详加指导后，峨眉金顶也烟腾雾绕了，据参考1所言，烧香即烧钱！</p>
+			<p>【峨眉山<a href="http://www.huoche.net/show_105786/" target="_blank">参考1</a>，
+				<a href="http://travel.qingdaonews.com/content/2011-11/22/content_9018805.htm" target="_blank">参考2</a>，
+				<a href="http://www.scol.cn/thread-1165904-1-1.html" target="_blank">参考3</a>，
+				<a href="http://www.tianya.cn/techforum/content/16/594272.shtml" target="_blank">参考4</a>】
+			</p>
+			<b class="gotovote">直接去<a href="#gotovote">投票</a></b>
+		</div>
+	</div>
+	<div class="twinlist">
+		<div class="leftlist">
+			<br/>
+			<label class="lefttitle"><b>第七名：衡山</b></label>
+			（得票：<label class="lefttitle" id="toptemplevote11"></label>张）
+			<br/>
+			<img align="left" src="../images/lists/list_temple_nanyueheng.jpg" width="240" height="180" 
+				title="南岳衡山，未能免俗！" alt="南岳衡山，未能免俗！" />
+			<p>南岳衡山，未能免俗！虽然不算有特色，这里的道长和长老们一样会在端庄肃穆的神像前祈祷香火不绝，财源广进！</p>
+			<p>【衡山<a href="http://www.nanyue.net.cn/bbs/viewthread.php?tid=29726" target="_blank">参考1</a>，
+				<a href="http://www.nanyue.net.cn/bbs/redirect.php?tid=15302&goto=lastpost" target="_blank">参考2</a>，
+				<a href="http://bbs.xhunet.com/thread-57273-1-1.html" target="_blank">参考3</a>，
+				<a href="http://tieba.baidu.com/p/1303102086" target="_blank">参考4</a>】
+			</p>
+		</div>
+		<div class="rightlist">
+			<br/>
+			<label class="righttitle"><b>第八名：恒山</b></label>
+			（得票：<label class="righttitle" id="toptemplevote17"></label>张）
+			<br/>
+			<img align="left" src="../images/lists/list_temple_beiyueheng.jpg" width="240" height="180" 
+				title="令狐大侠如果在，恐怕会用独孤九剑教训一下这些为非作歹的骗子吧？！"  alt="令狐大侠如果在，恐怕会用独孤九剑教训一下这些为非作歹的骗子吧？！" />
+			<p>令狐大侠如果在，恐怕会用独孤九剑教训一下这些为非作歹的骗子吧？！北岳恒山，不遑多让！</p>
+			<p>【恒山<a href="http://travel.people.com.cn/GB/41636/14485729.html" target="_blank">参考1</a>，
+				<a href="http://www.laitour.com/n32783c86.aspx" target="_blank">参考2</a>，
+				<a href="http://tieba.baidu.com/p/882391241" target="_blank">参考3</a>，
+				<a href="http://tieba.baidu.com/p/1540567618" target="_blank">参考4</a>】
+			</p>
+			<b class="gotovote">直接去<a href="#gotovote">投票</a></b>
+		</div>
+	</div>
+	<div class="twinlist">
+		<div class="leftlist">
+			<br/>
+			<label class="lefttitle"><b>并列第九名：雍和宫</b></label>
+			（得票：<label class="lefttitle" id="toptemplevote5"></label>张）
+			<br/>			
+			<img align="left" src="../images/lists/list_temple_yonghegong.jpg" width="240" height="180" 
+				title="可却在天子脚下！是可忍孰不可忍！" alt="可却在天子脚下！是可忍孰不可忍！" />
+			<p>平心而论，比起其他香火胜地，雍和宫和灵隐寺发生的骗钱行为并不多见。</p>
+			<p>雍和宫旁边也就有一个算命一条街。</p>
+			<p>然而天子脚下！是可忍孰不可忍？！</p>
+			<p>【雍和宫<a href="http://www.tianya.cn/techforum/content/828/1/284945.shtml" target="_blank">参考1</a>，
+				<a href="http://zhidao.baidu.com/question/189634957.html" target="_blank">参考2</a>，
+				<a href="http://szb.dlxww.com/dlrb/html/2011-08/22/content_525599.htm" target="_blank">参考3</a>】
+			</p>
+		</div>
+		<div class="rightlist">
+			<br/>
+			<label class="righttitle"><b>并列第九名：灵隐寺</b></label>
+			（得票：<label class="righttitle" id="toptemplevote1"></label>张）
+			<br/>
+			<img align="left" src="../images/lists/list_hill_taishan.jpg" width="240" height="180" 
+				title="灵隐寺就是香托比较多。可毗邻西湖胜景，总是令人感觉遗憾。"  alt="灵隐寺就是香托比较多。可毗邻西湖胜景，总是令人感觉遗憾。" />
+			<p>平心而论，比起其他香火胜地，雍和宫和灵隐寺发生的骗钱行为并不多见。</p>
+			<p>据有些游客反映，灵隐寺只是香托比较多而已。</p>
+			<p>可毗邻西湖美景，总是令人倍感遗憾。</p>
+			<p>【灵隐寺<a href="http://tieba.baidu.com/p/1275410209" target="_blank">参考1</a>，
+				<a href="http://xyq.yzz.cn/gossip/201205/469603.shtml" target="_blank">参考2</a>，
+				<a href="http://hznews.hangzhou.com.cn/shehui/content/2010-04/16/content_3231446.htm" target="_blank">参考3</a>】
+			</p>
+			<b class="gotovote">直接去<a href="#gotovote">投票</a></b>
+		</div>
+	</div>
+	<div class="twinlist">
+		<div class="leftlist">
+			<br/>
+			<label class="lefttitle"><b>并列第十名<a name="gotovote"></a>：黄山</b></label>
+			（得票：<label class="lefttitle" id="toptemplevote4"></label>张）
+			<br/>			
+			<img align="left" src="../images/lists/list_hill_huangshan.jpg" width="240" height="180" 
+				title="黄山和庐山上面寺庙道观不多，行骗事迹零星可闻。不过因为名气太大，所以位居榜尾。" alt="黄山和庐山上面寺庙道观不多，行骗事迹零星可闻。不过因为名气太大，所以位居榜尾。" />
+			<p>黄山和庐山上面寺庙道观不多，行骗事迹零星可闻。不过因为名气太大，所以位居榜尾。</p>
+			<p>【黄山<a href="http://www.hsjfsz.com/content.asp?id=404" target="_blank">参考1</a>，
+				<a href="http://www.tianya.cn/publicforum/content/travel/1/387947.shtml" target="_blank">参考2</a>，
+				<a href="http://ah.anhuinews.com/system/2004/04/05/000611141.shtml" target="_blank">参考3</a>】
+			</p>
+		</div>
+		<div class="rightlist">
+			<br/>
+			<label class="righttitle"><b>并列第十名：庐山</b></label>
+			（得票：<label class="righttitle" id="toptemplevote9"></label>张）
+			<br/>
+			<img align="left" src="../images/lists/list_hill_lushan.jpg" width="240" height="180" 
+				title="黄山和庐山上面寺庙道观不多，行骗事迹零星可闻。不过因为名气太大，所以位居榜尾。"  alt="黄山和庐山上面寺庙道观不多，行骗事迹零星可闻。不过因为名气太大，所以位居榜尾。" />
+			<p>黄山和庐山上面寺庙道观不多，行骗事迹零星可闻。不过因为名气太大，所以位居榜尾。</p>
+			<p>【庐山<a href="http://tieba.baidu.com/p/388255877" target="_blank">参考1</a>，
+				<a href="http://blog.sina.com.cn/s/blog_57af424f0100090x.html" target="_blank">参考2</a>】
+			</p>
+		</div>
+	</div>
+	<div>
+		<label class="lefttitle"><b>候选名山：泰山</b></label>（得票：<label class="lefttitle" id="toptemplevote10"></label>张）<br/>
+		<label class="lefttitle"><b>候选名山：普陀山</b></label>（得票：<label class="lefttitle" id="toptemplevote2"></label>张）<br/>
+		<label class="lefttitle"><b>候选名山：武当山</b></label>（得票：<label class="lefttitle" id="toptemplevote14"></label>张）<br/>
+		<label class="lefttitle"><b>候选名山：正一观</b></label>（得票：<label class="lefttitle" id="toptemplevote3"></label>张）<br/>
+		<p>据有的游客反映，泰山和武当山（的个别道观）以及正一观存在与出家人行为不符的贪钱行为，不过例子不多，说明并不普遍。也有游客反映普陀山有假僧人骗钱。</p>
+		<p><b>不止是这些佛道名山，千年古刹，国内很多热门景区都收费昂贵，宰客凶猛！可以前往<a href="../download/download.html">下载页面</a>下载最新版的《旅游风险手册》和《旅游安全手册》了解宰客行情。</b></p>
+		<p><b>意犹未尽的朋友们可以订阅我们的<a href="../mail/mailindex.html">邮件服务</a>，毫不费力了解更多榜单信息、宰客奇闻、安全常识等。
+					也可以前往<a href="../news/newsindex.html">新闻主页</a>浏览更多热门景区宰客相关的内容。</b></p>
+		<br/>		
+	</div>
+	<div id="bottom" style="float: left; width: 750px;">
+		<br/>
+		<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+		<br/>
+	</div>		
+	<div id="votearea">
+		<!-- 次序: 少林寺 灵隐寺 普陀山  正一观; 黄山 雍和宫 张家界 九寨沟; 峨嵋山 庐山 泰山 衡山; 九华山 法门寺 武当山 五台山; 崂山 恒山  -->
+		<table border="0" style="color: navy;" cellspacing="18" cellpadding="4">
+			<tr align="left">
+				<td>少林寺<input type="checkbox" name="templeCheck" value="少林寺" />得票：<label id="templevote0"></label>张</td>
+				<td>灵隐寺<input type="checkbox" name="templeCheck" value="灵隐寺" />得票：<label id="templevote1"></label>张</td>
+				<td>普陀山<input type="checkbox" name="templeCheck" value="普陀山" />得票：<label id="templevote2"></label>张</td>
+				<td>正一观<input type="checkbox" name="templeCheck" value="正一观" />得票：<label id="templevote3"></label>张</td>
+			</tr>
+			<tr align="left">
+				<td>黄山<input type="checkbox" name="templeCheck" value="黄山" />得票：<label id="templevote4"></label>张</td>
+				<td>雍和宫<input type="checkbox" name="templeCheck" value="雍和宫" />得票：<label id="templevote5"></label>张</td>
+				<td>张家界<input type="checkbox" name="templeCheck" value="张家界" />得票：<label id="templevote6"></label>张</td>
+				<td>九寨沟<input type="checkbox" name="templeCheck" value="九寨沟" />得票：<label id="templevote7"></label>张</td>
+			</tr>			    
+			<tr align="left">
+				<td>峨嵋山<input type="checkbox" name="templeCheck" value="峨嵋山" />得票：<label id="templevote8"></label>张</td>
+				<td>庐山<input type="checkbox" name="templeCheck" value="庐山" />得票：<label id="templevote9"></label>张</td>
+				<td>泰山<input type="checkbox" name="templeCheck" value="泰山" />得票：<label id="templevote10"></label>张</td>
+				<td>衡山<input type="checkbox" name="templeCheck" value="衡山" />得票：<label id="templevote11"></label>张</td>				
+			</tr>
+			<tr align="left">
+				<td>九华山<input type="checkbox" name="templeCheck" value="九华山" />得票：<label id="templevote12"></label>张</td>
+				<td>法门寺<input type="checkbox" name="templeCheck" value="法门寺" />得票：<label id="templevote13"></label>张</td>
+				<td>武当山<input type="checkbox" name="templeCheck" value="武当山" />得票：<label id="templevote14"></label>张</td>				    
+				<td>五台山<input type="checkbox" name="templeCheck" value="五台山" />得票：<label id="templevote15"></label>张</td>
+			</tr>
+			<tr align="left">
+				<td>崂山<input type="checkbox" name="templeCheck" value="崂山" />得票：<label id="templevote16"></label>张</td>
+				<td>恒山<input type="checkbox" name="templeCheck" value="恒山" />得票：<label id="templevote17"></label>张</td>
+			</tr>
+		</table>
+		<p>请选择一座或者多座名山（勾选右边的复选框），选完后点击这里-》<input id="vote" type="button" value="投票" /></p>		
+		<div id="showVote" style="height:400px;width:755px;display:none;"></div>		
+	</div>	
+		
+	<div id="express">
+		<b>民意小测验：</b>
+		<label>您认可这个排行榜吗？请选择下面的一项表个态吧</label>
+		<br/>
+		<input type="radio" name="support" value="temple1" />完全支持
+		<input type="radio" name="support" value="temple2" />支持
+		<input type="radio" name="support" value="temple3" />中立
+		<input type="radio" name="support" value="temple4" />不太支持
+		<input type="radio" name="support" value="temple5" />不支持
+		<br/>
+		<br />
+		&nbsp;已经有<label id="totalzaike"></label>个表态了
+		<div id="info1"></div>
+	</div>
+	<br/>
+	<div id="chart1"></div>
+	<br/>
+	<div id="innercomment">
+		<h3>请发表您的意见：</h3><br />
+		<input type='hidden' id='current_page' />
+		<input type='hidden' id='show_per_page' />
+		<table>
+			<tr><td>昵称(可选):</td><td><input type="text" id="nickname" name="nickname" size="12" maxlength="12"/></td></tr>
+			<tr><td>评论:（限200字）</td><td><textarea rows="10" cols="75" id="comment" name="comment" maxlength="200"></textarea></td></tr>
+			<tr><td><input id="btn" type="button" value="发表评论" /></td><td><span id="commentSpan"></span></td></tr>
+		</table>	
+		<br/> 
+	现有评论如下：
+		<br/>
+		<table>
+			<tr align="center"><td width="50px">用户名</td><td width="610px">评论</td><td>日期</td></tr>
+		</table>
+	</div>
+	<div id="content">评论正在加载中，请稍候</div>
+	<div id='page_navigation'></div>
+  </div>
+  <div id="right">
+    <iframe src="../right.html" width=90 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+</div>
+<div id="footer">
+  <iframe src="../footer.html" width=980 height=70 frameborder="0" scrolling="no"></iframe>
+</div>
+</body>
+</html>

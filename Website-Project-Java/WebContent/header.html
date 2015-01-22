@@ -1,0 +1,132 @@
+<script type="text/javascript" src="jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript">
+$(function() {
+	//set default query string
+	$("#query").val("请在这里输入查询关键字");
+	$("#query").select();
+	$("#query").click(checkdefault);
+	
+	//search 
+	$("#btn").click(function(){
+		var main = $(parent.document.getElementById('main'));  //div main
+		if("" == $("#query").val() || "请在这里输入查询关键字" == $("#query").val())
+			alert("输入关键字不能为空");
+		else{
+			$.post("searchAction!search", {"query":encodeURI($("#query").val())}, function(returnedData,status) {
+				if ("success" == status){
+					var results = eval(returnedData);
+					
+					if(results.length > 0){
+						main.html("<br/><p>您输入的查询字符串 <font color='red'><b>”" + $("#query").val() + "“</b></font> 产生了<b><i>" 
+								+ results.length/3	+ "</i></b>个搜索结果如下：</p>" 
+								+ "<p><b>特别声明：</b>结果很可能不尽如人意，捉襟见肘的原因可能是：</p><p>1. 目前仍旧在测试阶段，资料库的索引范围仅仅限于站内有限目录中的" 
+								+ "文件，在没有采用compass框架之前，不能对数据库中的对象进行搜索，这样缺少了部分有价值的数据源比如用户留言和用户投票排行榜信息。"
+								+ "<p>2. 前期仅对站内的文件进行索引，后期会添加web crawler功能，对站外资源比如一部分热门旅游网站或者驴友论坛的相关内容进行抓取，"
+								+ "从而获得广泛得多的内容来源。请谅解目前来源的极度单一和贫乏。</p>"
+								+ "<p>3. 当前只是应用了lucene库中最基本的功能（索引读写器，高亮工具和基本相关度排序）做为索引和搜索的工具箱，搜索关键词仍旧"
+								+ "是单关键词模式，不是复合搜索模式，因此难免会产生不如意的搜索结果。lucene只是网站应用中优先权等级靠后的一个应用而已，我会在后期"
+								+ "完成了其他关键功能实现后，在推广过程中利用闲暇时间做有限改进，不敬请您的期待，请把这个当作一个试验品而已，勿当真。</p>"
+								+ "<p>4. 词法分析器采用mmseg4j，也是仅仅使用了其基本功能而已，也许其他比如庖丁分析器有更好的应用效果，有机会再试。</p>"
+								+ "<p>5. 并没有把JS内容与HTML文件分离开，使用neko html parser的时候也只是对HTML标签进行了剥离，因此搜索结果一般情况会出现JS内容，"
+								+ "解决方法很简单，就是把JS内容写入到单独文件中，并在HTML文件做引入而已。但是测试阶段，会无法使用firebug跟踪调试，故保留现状。</p><br /><br />");						
+						for(var i = 0; i < results.length; i = i+3){
+							main.append("<div class='search'><p>" + (i/3+1) + ". 文件: <a href='" + results[i+2] + "'>" + results[i] + "</a><p/>"
+									+ "<p>摘要: " + results[i+1] + "</p></div><br />");
+						}
+					}else{//no search result
+						main.html("<br/><p>很抱歉，您输入的查询字符串 <font color='red'><b>”" + $("#query").val() + "“</b></font> 产生了<b><i>" 
+								+ 0 + "</i></b>个搜索结果</p>" + "<p>原因可能是：</p><p>1. 目前仍旧在测试阶段，资料库的索引范围仅仅限于站内有限目录中的" 
+								+ "文件，在没有采用compass框架之前，不能对数据库中的对象进行搜索，这样缺少了部分有价值的数据源比如用户留言和用户投票排行榜信息。</p>"
+								+ "<p>2. 前期仅对站内的文件进行索引，后期会添加web crawler功能，对站外资源比如一部分热门旅游网站或者驴友论坛的相关内容进行抓取，"
+								+ "从而获得广泛得多的内容来源。请谅解目前来源的极度单一和贫乏。</p>"
+								+ "<p>3. 当前只是应用了lucene库中最基本的功能（索引读写器，高亮工具和基本相关度排序）做为索引和搜索的工具箱，搜索关键词仍旧"
+								+ "是单关键词模式，不是复合搜索模式，因此难免会产生不如意的搜索结果。lucene只是网站应用中优先权等级靠后的一个应用而已，我会在后期"
+								+ "完成了其他关键功能实现后，在推广过程中利用闲暇时间做有限改进，不敬请您的期待，请把这个当作一个试验品而已，勿当真。</p>"
+								+ "<p>4. 词法分析器采用mmseg4j，也是仅仅使用了其基本功能而已，也许其他比如庖丁分析器有更好的应用效果，有机会再试。</p>"
+								+ "<p>5. 并没有把JS内容与HTML文件分离开，使用neko html parser的时候也只是对HTML标签进行了剥离，因此搜索结果一般情况会出现JS内容，"
+								+ "解决方法很简单，就是把JS内容写入到单独文件中，并在HTML文件做引入而已。但是测试阶段，会无法使用firebug跟踪调试，故保留现状。</p>");
+					}
+					$("#query").val("请在这里输入查询关键字");
+				}
+			});			
+		}		 	
+	});
+});
+
+//used for default query hint
+function checkdefault() {
+	var txt = $(this).val();  //the current text in the area
+	if(txt == "请在这里输入查询关键字")
+		$(this).val("");
+	$(this).focusout(retdefault);	
+}
+//used for default query hint
+function retdefault(){
+	var txt = $(this).val();
+	if(txt == ""){
+		$(this).val("请在这里输入查询关键字");
+		$(this).select();
+	}		
+	$(this).click(checkdefault);	
+}
+
+</script>
+<style>
+body {
+	margin: 0px;
+	padding: 0px;
+	font-size: 14px;
+	color: #000;
+}
+
+a {
+	text-decoration: none;
+	color: #000;
+}
+
+a:hover {
+	color: #900;
+	text-decoration: underline;
+}
+
+#logo {
+	width: 182px;
+	margin: 0px;
+	padding: 0px;
+	height: 90px;
+	float: left;	
+}
+
+#search {
+	margin: 0px;
+	margin-right: -23px;
+	padding: 0px;
+	float: left;
+	height: 28px;
+	width: 797px;	
+}
+
+#scroll {
+	margin: 0px;
+	margin-top: 2px;
+	margin-right: -23px;
+	padding: 0px;
+	height: 62px;
+	width: 797px;
+	float: left;
+	text-align: left;
+	font-size: 15px;
+	color: blue;	
+}
+</style>
+  
+  <div id="logo"><img src="images/logo.gif" title="至尊宝的怒吼，您听到了吗？别闲着，去看看宰客新闻，查一下排行榜行情，或者下载红宝书吧！"/></div>
+  <div id="search">
+	<input id="query" type="text" value="" />
+	<input type="submit" value="站内搜索" id="btn" />
+	<i>诚征：网站编辑、技术开发（J2EE框架），请发邮件至<b><a href="mailto:lyzk.org@gmail.com">lyzk.org@gmail.com</a></b>联系。</i>  	
+  </div>
+  <div id="scroll">
+  	欢迎您的光临，旅游宰客榜全力奉献五类服务内容： 1.及时可靠的新闻曝光丑恶的旅游宰客现象；2.针对性强的邮件订阅服务定期追踪宰客动态；3.各类宰客排行榜通过投票体现游客真实感受；
+  	4.下载《旅游安全手册》、《旅游风险手册》以及旅游保险箱做为您的出行避险指南；5.旅游风险百科全书提供专业的旅游风险和安全知识库。期待您的批评建议指导！
+  </div>

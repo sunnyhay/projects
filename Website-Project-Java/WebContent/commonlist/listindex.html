@@ -1,0 +1,441 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>旅游宰客榜介绍</title>
+
+<script type="text/javascript" src="../jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="../jslib/jquery.ui.core.js"></script>
+<script type="text/javascript" src="../jslib/jquery.ui.widget.js"></script>
+<script type="text/javascript" src="../jslib/jquery.ui.accordion.js"></script>
+<link type="text/css" rel="stylesheet" href="../style/jquery.ui.all.css" />
+<link type="text/css" rel="stylesheet" href="../style/bxstyle.css" />
+<link type="text/css" rel="stylesheet" href="../style/style2.css" />
+<link type="text/css" rel="stylesheet" href="../style/listindex.css" />
+<link rel="stylesheet" type="text/css" href="../style/search.css" />
+
+<script type="text/javascript">
+$(function() {
+	//active the accordion
+	$( "#accordion" ).accordion({
+		autoHeight: true,
+		navigation: true,
+		collapsible: false
+	});
+	
+	//register the class of click events on navigation labels within accordion
+	$(".la").click(function() {
+		$(".toggle").hide(1500);
+		$("#t" + $(this).attr("value")).show(1500);
+	});
+	
+	//register click on #section1
+	$("#section1").click(function() {
+		if($("#commonbrief").css("display") == 'none'){
+			if($("#indibrief").css("display") != 'none')
+				$("#indibrief").hide(1500);
+			$("#commonbrief").show(1500);
+			
+		}		
+	});
+	
+	//register click on #section2
+	$("#section2").click(function() {
+		if($("#indibrief").css("display") == 'none'){
+			if($("#commonbrief").css("display") != 'none')
+				$("#commonbrief").hide(1500);
+			$("#indibrief").show(1500);
+			
+		}		
+	});
+});
+</script>
+</head>
+
+<body>
+<div id="header">
+    <iframe src="../header.html" width=980 height=91 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="nav">
+	<iframe src="../nav.html" width=980 height=40 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="primary">
+  <div id="baike">
+    <iframe src="../baike.html" width=120 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+  <div id="main">
+    <div id="location">您的位置： <a href="../index.html">旅游宰客榜首页</a> 》》旅游宰客榜介绍</div>
+    <div id="container">
+		<div id="accordion">
+			<h2><a href="#section1" id="section1">通用榜</a></h2>
+			<div>
+				<ul>
+					<li><label id="l6" class="la" value='6'>国内城市宰客榜</label></li>
+					<li><label id="l7" class="la" value='7'>海外国家宰客榜</label></li>
+					<li><label id="l8" class="la" value='8'>国内景区宰客榜</label></li>
+					<li><label id="l9" class="la" value='9'>海外景区宰客榜</label></li>
+				</ul>
+			</div>
+			<h2><a href="#section2" id="section2">特色榜</a></h2>
+			<div>
+				<ul>
+					<li><label id="l1" class="la" value='1'>博物馆对比榜</label></li>
+					<li><label id="l2" class="la" value='2'>公园对比榜</label></li>
+					<li><label id="l3" class="la" value='3'>过路费对比榜</label></li>
+					<li><label id="l4" class="la" value='4'>名山宰客榜</label></li>
+					<li><label id="l5" class="la" value='5'>烧香拜佛榜</label></li>
+				</ul>				
+			</div>
+		</div>
+		<div id="brief">
+			<div id="commonbrief">
+				<div class="commonleft">
+				普通榜：
+					<ul>
+						<li><b><a href="city.html">国内城市宰客榜</a></b></li>
+						<li><b><a href="intercity.html">海外国家宰客榜</a></b></li>
+						<li><b><a href="resort.html">国内景区宰客榜</a></b></li>
+						<li><b><a href="interresort.html">海外景区宰客榜</a></b></li>
+					</ul>
+					<br />
+				请前往<b><i><a href="vote.html">投票页面</a></i></b>选择您心目中的“宰客胜地”，投出您宝贵的一票！
+				</div>
+				<div class="commonright">
+					<a href="vote.html">
+						<img src="../images/lists/list-theme.jpg" alt="通用榜介绍" width="362" height="160" title="通用榜介绍" />
+					</a>	
+				</div>
+			</div>
+			<div id="indibrief" style="display:none;">
+				<div class="commonleft">
+				特色榜：
+					<ul>
+						<li><b><a href="../individual/museum.html">博物馆对比榜</a></b></li>
+						<li><b><a href="../individual/park.html">公园对比榜</a></b></li>
+						<li><b><a href="../individual/roadfee.html">过路费对比榜</a></b></li>
+						<li><b><a href="../individual/hill.html">名山宰客榜</a></b></li>
+						<li><b><a href="../individual/temple.html">烧香拜佛榜</a></b></li>
+					</ul>
+				您的意见和建议是我们前进的动力，欢迎<a href="mailto:lyzk.org@gmail.com">联系我们</a>，谢谢！
+				</div>
+				<div class="commonright">
+					<img src="../images/lists/list-theme2.jpg" alt="单项榜介绍" width="319" height="160" title="单项榜介绍" />
+				</div>				
+			</div>
+		</div>
+	</div>
+	<div id="show">
+		<p style="color: red;">注意：点击左边栏目的“普通榜”、“单项榜”或者榜单标题（蓝色）可以动态切换右边和下面的相关介绍，点击中间榜单标题（黑色加粗）直接前往相关榜单页面。
+		您的意见和建议可以在<a href="voteadvice.html">评论页面</a>发表，谢谢。</p>
+		<br />
+		<br />
+		<h3 align="center">当前榜单的简要介绍</h3>
+		<br/>
+		<!-- JiaThis Button BEGIN -->
+		<div class="jiathis_style">
+			<span class="jiathis_txt">分享到：</span>
+			<a class="jiathis_button_qzone">QQ空间</a><a class="jiathis_button_tsina">新浪微薄</a>
+			<a class="jiathis_button_tqq">腾讯微薄</a><a class="jiathis_button_renren">人人网</a>
+			<a class="jiathis_button_kaixin001">开心网</a><a class="jiathis_button_tsohu">搜狐微博</a>
+			<a class="jiathis_button_feixin">飞信</a><a class="jiathis_button_douban">豆瓣</a>
+			<a class="jiathis_button_fb">Facebook</a><a class="jiathis_button_tieba">百度贴吧</a>
+			<a class="jiathis_button_tianya">天涯社区</a>	<a class="jiathis_button_twitter">Twitter</a>
+			<a class="jiathis_button_googleplus">Google+</a><a class="jiathis_button_t163">网易微博</a>
+			<a class="jiathis_button_xiaoyou">朋友网</a><a class="jiathis_button_mop">猫扑推客</a>
+			<a class="jiathis_button_tifeng">凤凰微博</a>	<a class="jiathis_button_gmail">Gmail邮箱</a>
+			
+			<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+			<a class="jiathis_counter_style"></a>
+		</div>
+		<script type="text/javascript" >
+			var jiathis_config={
+				boldNum:15,
+				siteNum:15,
+				sm:"taobao,hi,meilishuo,51,sohu,tpeople,189share,huaban,ifensi,hexun,ydnote,ymail,hotmail,tyaolan,toeeee",
+				summary:"",
+				hideMore:false
+			}
+		</script>
+		<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+		<!-- JiaThis Button END -->
+		<br />
+		<table border="0">
+			<tr align="center" valign="middle">
+			<td>
+				<!-- 新浪关注 -->
+				<iframe width="63" height="24" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0" scrolling="no" border="0" src="http://widget.weibo.com/relationship/followbutton.php?language=zh_cn&width=63&height=24&uid=1782515283&style=1&btn=red&dpc=1"></iframe>
+			</td>
+			<td>
+				<!-- 人人喜欢 -->
+				<script type="text/javascript" charset="utf-8">
+					(function(){
+						var p = [], w=92, h=24,
+						lk = {
+						url:'http://www.lyzk.org'||location.href, /*喜欢的URL(不含如分页等无关参数)*/
+						title:'旅游宰客榜'||document.title, /*喜欢标题(可选)*/
+						description:'', /*喜欢简介(可选)*/
+						image:'' /*喜欢相关图片的路径(可选)*/
+						};
+						for(var i in lk){
+							p.push(i + '=' + encodeURIComponent(lk[i]||''));
+						}
+						document.write('<iframe scrolling="no" frameborder="0" allowtransparency="true" src="http://www.connect.renren.com/like/v2?'+p.join('&')+'" style="width:'+w+'px;height:'+h+'px;"></iframe>');
+					})();
+				</script>
+			</td>
+			<td>
+				<!-- 人人关注 -->
+				<iframe scrolling="no" frameborder="0" allowtransparency="true" src="http://widget.renren.com/plugin/followbutton?page_id=601522402&color=0&model=0" style="width:78px;height:24px;" ></iframe>
+			</td>
+			<td>
+				<!-- 开心转贴 -->
+				<script src="http://rest.kaixin001.com/api/Repaste_js.php" type="text/javascript"></script>
+				<div id="kx001_btn_repaste" style="margin: 0px; padding: 0px"></div>
+				<script type="text/javascript">
+					KX001_REPASTE_LINK.init(2,"转帖");
+				</script>
+			</td>
+			<td>
+				<!-- 开心赞 -->
+				<iframe allowTransparency='true'  id='like_view' frameborder='0' scrolling='no' marginheight='0' marginwidth='0' hspace='0' vspace='0' style='height:24px;width:65px;' src='http://www.kaixin001.com/like/like.php?url=http%3A%2F%2Fwww.lyzk.org&show_faces=false'></iframe>
+			</td>
+			<td>
+				<!-- qq赞 -->
+				<a version="1.0" class="qzOpenerDiv" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_likeurl" target="_blank">赞</a>
+				<script  src="http://qzonestyle.gtimg.cn/qzone/app/qzlike/qzopensl.js#jsdate=20110603&style=3&showcount=1&width=87&height=24" charset="utf-8" defer="defer" ></script>
+			</td>
+			</tr>
+		</table>
+		<br/>
+		<br/>
+		<div class="toggle" id="t1">
+			<a href="../individual/museum.html">
+				<img src="../images/lists/museum.jpg" align="left" alt="四大博物馆中，可能大英博物馆是性价比最高的" 
+				width="400" height="193" title="四大博物馆中，可能大英博物馆是性价比最高的"/>
+			</a>
+			<p class="top3">四大博物馆对比片段</p>
+			<p>小结：1. 四大博物馆中，可能大英博物馆是性价比最高的：免门票，闻名遐迩的收藏品汗牛充栋，拿出来展览的只是九牛一毛而已！伦敦交通便利，讲英语；音频导览丰富；
+				网站美轮美奂，支持多语言；服务设施非常完善。鸡蛋里面挑骨头找出来的不足之处在于人工导游服务的语种只限于英语，伦敦物价昂贵。</p>
+			<p>2. 卢浮宫的藏品也许不如大英博物馆丰富，不过镇馆三宝堪称稀世之珍！陈列建筑雍容华贵，内部美轮美奂；门票价格低廉，优惠范围广，幅度大；馆方推荐的主题游览线路丰富多彩，适合不同审美、年龄人群的需要；
+				人工导游和音频导览都支持多语种；官方网站充满艺术气息；巴黎交通便利；服务设施非常完善。不足之处在于法语环境不如英语环境便利（对英语游客而言），巴黎物价昂贵。</p>
+			<p>故宫博物院是国内热门景区中少有的模范，要知道很多景区都收费昂贵，宰客凶猛！可以前往<a href="../download/download.html">下载页面</a>下载最新版的《旅游风险手册》和《旅游安全手册》了解宰客行情。</p>
+			<p class="top3">最著名两大陵墓对比片段</p>
+			<p>小结：1. 做为世界上最知名的两个陵墓，同在发展中国家，两者的游览体验并不一致：泰姬陵长于建筑特色，兵马俑博物馆高在文物收藏。泰姬陵是古代印度和穆斯林建筑风格的集大成者；兵马俑体现了最高水平的随葬品文化。</p>
+			<p>2. 泰姬陵对本国人的门票价格可以忽略不计，而兵马俑博物馆则票价昂贵，不过这与两者的游览体验有部分关联。兵马俑博物馆的古文物数量多，内容非常丰富，因此比起泰姬陵，贵得相对合理。然而与故宫博物院相比兵马俑博物馆
+				性价比要低一些。</p>
+			<p class="top3">自然历史博物馆对比片段</p>
+			<p>小结：1. 做为全美第二大自然历史博物馆和热门电影《博物馆奇妙夜》的拍摄场地，位于华盛顿DC的美国国家自然历史博物馆馆藏极其丰富，导游服务完备，游客参与感强，官方网站设计好，内容多。</p>
+			<p>2. 与前者相比，北京自然博物馆起步晚，馆藏相对贫乏，导游服务不足，官方网站稍显简单，科普水平有待提高；不过发展迅速，展览丰富，前途光明。</p>
+			<p><b>欲知全部内容，请参阅<a href="../individual/museum.html">博物馆对比榜</a>！</b></p>
+			<p>意犹未尽的朋友们可以订阅我们的<a href="../mail/mailindex.html">邮件服务</a>，毫不费力了解更多榜单信息、宰客奇闻、安全常识等。
+					也可以前往<a href="../news/newsindex.html">新闻主页</a>浏览更多与博物馆和美术馆相关的内容。</p>
+			<p>感谢所有能够耐心看到这里的朋友们，欢迎你们提出中肯宝贵的意见和建议。</p>	
+		</div>
+		<div class="toggle" id="t2">
+			<a href="../individual/park.html">
+				<img src="../images/lists/park.jpg" align="left" 
+					alt="美国城市中，盐湖城居民的收入比重最高，接近5%；中国城市中，九江居民的收入比重最高，达到60%！即每周一位九江居民需要工作3天共24个小时才能攒够钱支付庐山一天的门票费用、停车费和百公里油费。
+					而盐湖城一位居民只需要2个小时攒够同性质费用去黄石。" width="400" height="216" 
+					title="美国城市中，盐湖城居民的收入比重最高，接近5%；中国城市中，九江居民的收入比重最高，达到60%！即每周一位九江居民需要工作3天共24个小时才能攒够钱支付庐山一天的门票费用、停车费和百公里油费。
+					而盐湖城一位居民只需要2个小时攒够同性质费用去黄石。"/>
+			</a>
+			<p class="top3">地质公园对比片段</p>
+			<p>地质公园对比总结：1. 美国采用的人均国民收入的指标是低于人均国内生产总值的；美国城市油价是平均价格，中国城市油价是最低价。</p>
+			<p>2. 美国城市中，盐湖城居民的收入比重最高，接近5%；中国城市中，九江居民的收入比重最高，达到60%！即每周一位九江居民需要工作3天共24个小时才能攒够钱支付庐山一天的门票费用、停车费和百公里油费。
+					而盐湖城一位居民只需要2个小时攒够同性质费用去黄石。</p>
+			<p>3. 美元兑换人民币的汇率是 1美元 = 6.2845元人民币。之所以不把美元折算成人民币计算门票、停车费和收入比重，是因为中国实际上的人均国民收入比人均国内生产总值要低，
+				   对大中城市而言也就是几万的标准，与美国大中城市类似。本榜单最重要的衡量指标是收入比重，不换算的数字代表真实的费用负担。</p>
+			<p>4. 一定要记住，上述三个美国国家公园（以及几乎所有其他的美国国家公园）的门票通常是以车计算的（自驾车方式），而且有效期7天！</p>
+			<p>不止是地质公园，国内很多热门景区都收费昂贵，宰客凶猛！可以前往<a href="../download/download.html">下载页面</a>下载最新版的《旅游风险手册》和《旅游安全手册》了解宰客行情。</p>
+			<p class="top3">皇家园林对比片段</p>
+			<p>皇家园林对比总结：1. 我国的皇家园林（以这两处皇家园林为代表）是非常值得游览的，仍需要在门票环节、导游服务和园区设施方面继续提高服务质量。</p>
+			<p>2. 欧元兑换人民币的汇率是 1欧元 = 8.1885元人民币。之所以不把欧元折算成人民币计算门票、导游费和其他费用，是因为法国和德国的人均国民收入
+				   对大中城市而言也是几万欧元的标准，数量上与我国区别不大，所以不换算就可以知道门票与实际收入的比重。</p>
+			<p><b>欲知全部内容，请参阅<a href="../individual/park.html">公园对比榜</a>！</b></p>
+			<p>意犹未尽的朋友们可以订阅我们的<a href="../mail/mailindex.html">邮件服务</a>，毫不费力了解更多榜单信息、宰客奇闻、安全常识等。
+					也可以前往<a href="../news/newsindex.html">新闻主页</a>浏览更多与地质公园和皇家园林相关的内容。</p>
+		</div>
+		<div class="toggle" id="t3">
+			<a href="../individual/roadfee.html">
+				<img src="../images/lists/roadfee.jpg" align="left" alt="即使统计手段偏向于少算中国城际旅行的费用，多算居民平均收入，与美国类似城市的对比仍然算得上触目惊心！" 
+				width="400" height="300" title="即使统计手段偏向于少算中国城际旅行的费用，多算居民平均收入，与美国类似城市的对比仍然算得上触目惊心！"/>
+			</a>
+			<p>本榜单具有以下特征：</p>
+			<p>1. 尽可能做到有据可依，有凭可查。所有过路费对比榜的参考资料来源于通过搜索引擎得到的公开信息，包括搜索引擎数据、含国家标准的新闻、权威网站、网友旅游共享信息。</p>
+			<p>2. 指定比较路线，量化比较标准。比如，指定两个城市，以它们之间的过路费和汽油价格做为基准，算出路线所需费用。</p>
+			<p>3. 引入城市居民收入做为对比的宏观指标。在上一步计算出过路费和全程路线所需汽油费用的基础上，继续除以居民每周收入，得到的比重代表一趟城际旅行相对居民每周收入的负担程度。</p>
+			<p>根据【参考1】在全世界14万公里的收费公路中，10万公里在中国。只需要举两个例子就可以说明问题：京石高速公路在盈余近6亿元以后仍在继续收费，北京机场高速公路在过去14年里更是创下投资12亿收费上百亿的“奇迹”。
+			   两条公路原本都是政府还贷路，中途被转给了首发公司，收费期限也大大延长。</p>
+			<p>与此形成鲜明对照的是，美国拥有8.9万公里高速公路，只有大约8000公里是收费路段，而且收费金额很低，在美国中西部地区，绝大多数公路甚至连收费站都没有。</p>
+			<p class="top3">过路费对比片段</p>
+			<p>总结：1. 对比标准。对美国不公平一些，因为美国采用的人均国民收入的指标是低于人均国内生产总值的；出发城市的油价一般情况下要稍微高于途中油价的，更何况美国城市油价是平均价格，中国城市
+			   油价是最低价；美国城际交通费用剔除了入城费或者过桥费，实际来往要稍微多一些，不过与油费相比，九牛一毛而已；只是计算主要路线油费，由于中国的油价相对高得多，其他辅助线路的油费其实不能忽略不计。</p>
+			<p>2. 美元兑换人民币的汇率是 1美元 = 6.2845元人民币。之所以不把美元折算成人民币计算油价、过路费、总费用、过路费系数和比率，是因为中国实际上的人均国民收入比人均国内生产总值要低，
+			   对大中城市而言也就是几万的标准，与美国大中城市类似。本榜单最重要的衡量指标是（总费用/周收入）比率，不换算的数字代表真实的费用负担。</p>			 
+			<p>3. 即使统计手段偏向于少算中国城际旅行的费用，多算居民平均收入，与美国类似城市的对比仍然算得上触目惊心！</p>
+			<p><b>欲知全部内容，请参阅<a href="../individual/roadfee.html">过路费对比榜</a>！</b></p>
+			<p>意犹未尽的朋友们可以订阅我们的<a href="../mail/mailindex.html">邮件服务</a>，毫不费力了解更多榜单信息、宰客奇闻、安全常识等。
+				也可以前往<a href="../news/newsindex.html">新闻主页</a>浏览更多与收费公路相关的内容。</p>
+		</div>
+		<div class="toggle" id="t4">
+			<a href="../individual/hill.html">
+				<img src="../images/lists/hill.jpg" align="left" alt="最令游客意想不到的是，昂贵的180元大门票仅仅是个开始，各处小景点的收费接踵而至，想逛所有重要景观？不停掏钱吧！" 
+				width="400" height="217" title="最令游客意想不到的是，昂贵的180元大门票仅仅是个开始，各处小景点的收费接踵而至，想逛所有重要景观？不停掏钱吧！"/>
+			</a>
+			<p>本期名山宰客榜三甲：</p>
+			<p class="top3">榜首：庐山</p>
+			<p>庐山高居榜首的原因在于宰客的全面性。</p>
+			<p>吃，有“绿野山庄”、“永盛生态小吃”为代表的一大批黑餐馆；</p>
+			<p>住，价格浮动很大，所以欺客现象并不罕见；</p>
+			<p>行，仔细看看参考2，就知道黑车黑导游多么猖獗！无论在火车站还是山脚市镇，乘车都需要游客具备大智慧和好运气；</p>
+			<p>购物，街边假药材遍布，什么灵芝、石莲子、益肾子、不老草等药材统统骗人；</p>
+			<p>假和尚假道士不时招摇过市，据很多游客反映半山腰那些庙宇道观充斥骗人鬼把戏；</p>			
+			<p>最令游客意想不到的是，昂贵的180元大门票仅仅是个开始，各处小景点的收费接踵而至，想逛所有重要景观？不停掏钱吧！</p>
+			<p class="top3">榜眼：黄山</p>
+			<p>针对一个特定景点的防骗视频是很罕见的，然而黄山却有幸在一段长达10分钟（见参考1）的视频中被做为反面教材曝光了！从视频披露的内容来看，黄山位居榜眼顺理成章！</p>
+			<p>去谷歌搜一下“黄山 旅游 宰客”或者“黄山 旅游 骗”，关于黄山的文字版防骗手册（游记）特别多，说明广大游客的被宰教训特别深刻，因此咬牙切齿者甚众。</p>
+			<p>据众多游客反映，黄山宰客突出之处在于黑车追客揽客的劲头堪称热情似火，无论是面包车、三轮车、出租车、黑巴士，无论你是在街上、火车站、宾馆大堂、饭馆里，你总能感受到如狼似虎的纠缠，堪称黄山一绝啊！</p>
+			<p>黄山、庐山以及其他很多上榜名山，也都在<a href="resort.html">国内景区宰客榜</a>中三度亮相！</p>
+			<p class="top3">探花：华山</p>
+			<p>能够引来人民日报时评（见参考1），可见华山宰客风气之恶劣！</p>
+			<p>吃住挨宰、劣质纪念品、假出家人行骗、高价门票，等等。与其他名山类似，宰客黑网遍布。</p>
+			<p>最黑的就是乘车。一般都是从西安火车站出发前往华山，火车站广场上为华山游招徕生意的黑车黑导游（当然还有不少招徕去兵马俑法门寺华清池的）如过江之鲫，稍不留神游客就会被忽悠上黑车。</p>
+			<p>还有峨眉山，五台山，崂山等等，请访问<a href="../individual/hill.html">名山宰客榜</a>！</p>
+		</div>
+		<div class="toggle" id="t5">
+			<a href="../individual/temple.html">
+				<img src="../images/lists/temple.jpg" align="left" alt="更好的消息是香火钱可以刷卡了，防偷防盗的高招啊！省却了多少善男信女身带大额现金的苦恼啊！佛陀菩萨也在涅槃无我的境界中笑了：还是POS机好！" 
+				width="241" height="300" title="更好的消息是香火钱可以刷卡了，防偷防盗的高招啊！省却了多少善男信女身带大额现金的苦恼啊！佛陀菩萨也在涅槃无我的境界中笑了：还是POS机好！"/>
+			</a>
+			<p>本期烧香拜佛榜三甲：</p>
+			<p class="top3">榜首：少林寺 法门寺</p>
+			<p>所谓树大招风，少林寺正统僧人也就是练练72绝技易筋经，开SUV，政协挂个头衔什么的，一般不敢胡作非为。
+				但是地方政府和有些旅游业者当然有别的想法，于是整个少林寺景区乌烟瘴气，铜臭熏天！</p>
+			<p>强烈建议李连杰拍《少林寺续集》，以中南海保镖身份惩治这些骗子败类！</p>
+			<p>法门寺能够与少林寺并驾齐驱，并不令人意外！</p>
+			<p>法门寺的独到之处在于其外围景观是由公司运营的，光是门前的广场就砸了多少个亿修的，能不想法子赚回来么？！少林寺曾经险些被上市，法门寺可用不着！人家直奔纽约NASDAQ去了！</p>
+			<p>这么一来，好消息是用不着托儿了，一切都是在光天化日下进行，所以托儿的生存空间没了！</p>
+			<p>更好的消息是香火钱可以刷卡了，防偷防盗的高招啊！省却了多少善男信女身带大额现金的苦恼啊！佛陀菩萨也在涅槃无我的境界中笑了：还是POS机好！</p>
+			<p class="top3">榜眼：五台山</p>
+			<p>与其他名山一样，去五台山也要处处谨慎，时时小心！吃住行购物各方面都有可能被宰。做为传说中文殊菩萨的道场，五台山也是很多游客亲身感受到的宰客大道场。</p>
+			<p>山上庙宇众多，比较有名的就有五爷庙、殊像寺、显通寺、塔院寺、广宗寺、圆照寺、南禅寺、佛光寺、延庆寺、广济寺、菩萨顶、尊胜寺等。这还都是些正规的寺庙，野庙假寺就别提了。
+				林子一大，什么鸟都有。形形色色的骗子混杂其中，非得游客睁大眼睛才能辨别的了。有的游客眼睛睁得足够大，居然还能看到不一样的景观！据称五台山一处不显眼的场所里,
+				停了奔驰, 宝马, 奥迪等高级轿车,都是这些“大师”所有啊！</p>
+			<p class="top3">探花：九华山</p>
+			<p>文殊菩萨在五台山广进财源的同时，地藏菩萨不甘人后，一样在九华山传授徒子徒孙们招财进宝的不二法门。大大小小的寺庙不少，坑蒙拐骗的法门更是繁多。</p>
+			<p>不过能够令九华山宰客名气卓尔不群的是，这里和尚脾气大，还会打人！（见<a href="http://www.tudou.com/programs/view/0S944B9Ulkc/" target="_blank">打人视频</a>）
+				没准儿游客上香给钱少了，所以菩萨心不甘了，指示徒孙教训一下这些心不诚的家伙们！</p>
+			<p>还有崂山，衡山，雍和宫等等，请访问<a href="../individual/temple.html">烧香拜佛榜</a>！</p>	
+		</div>
+		<div class="toggle" id="t6">
+			<a href="city.html">
+				<img src="../images/lists/city.jpg" align="left" alt="做为震撼全国的海鲜门发源地，榜首位置，非三亚莫属！" width="400" height="276" title="做为震撼全国的海鲜门发源地，榜首位置，非三亚莫属！"/>
+			</a>
+			<p>本期国内城市宰客榜三甲：</p>
+			<p class="top3">榜首：三亚</p>
+			<p>做为震撼全国的海鲜门发源地，榜首位置，非三亚莫属！</p>
+			<p>2012龙年春节，海南三亚爆出游客吃海鲜被宰丑闻。管理方无视当地宰客风盛行之实，先后以“零投诉”“无法举证”冷漠应对，由此引发社会强烈反响，三亚被推到了舆论的风口浪尖。</p>
+			<p>一只螃蟹近千元、的士不打表、小商贩对游客区别对待，等等，等等。表面上三亚对欺客宰客行为出台了“一次性死亡”的严厉措施。</p>
+			<p class="top3">榜眼：张家界</p>
+			<p>名不见经传的张家界怎么能够雄踞榜眼位置呢？</p>
+			<p>只需要参考一下当地正规旅行社的防宰介绍，<a href="http://www.zjjcts.com/baike/read-31902-1.html" target="_blank">“张家界有哪些宰客现像？有哪些购物陷阱？”</a>，您就一目了然了！</p>
+			<p>根据该介绍，张家界“虽是世界著名的一流风景区，但由于开发时间较晚，景区管理还存在诸多纰漏，在车站，机场；在景区游道，山顶客栈餐馆，门票站大门口，购物店等许多旅游消费陷阱和许多宰客现像”。</p>
+			<p>老天啊！处处陷阱，步步惊心啊！不上榜简直没天理了！</p>
+			<p>此外，旅游论坛、搜索引擎、大型网站旅游频道到处都是对张家界旅游的抱怨、投诉和愤慨，作为小城市，张家界碌碌无名！可作为臭名昭著的旅游宰客胜地，确实是名声在外啊！</p>
+			<p class="top3">探花：香港</p>
+			<p>香港是“购物天堂”，随着国内越来越多的城市开通自由行，很多人在假期会去香港旅游购物。不过大陆游客在香港购物时遭欺诈的现象频频发生，也给游客们也提了个醒。尤其对于那些参团旅游的游客，
+				业内的黑心骗子们一般称呼有“托”在内的旅行团“柠檬团”，由旅行社聘用“柠檬”(“做媒”者)假扮团友，配合导游“一唱一和”诱使游客购物。这种手法在行内以“柠檬”作代号，
+				因柠檬和“梅”(“媒”的谐音)一样属酸味。</p>
+			<p>除此之外，强迫购物的事件也屡屡发生，东方之珠俨然成了“宰客之都”！</p>
+			<p>尽管香港警方和旅游监管部门全力以赴（动真格的，不像国内这些老爷们光喊不练）查处，但是野火烧不尽，春风吹又生，杜绝是压根没门儿。</p>
+			<p>还有丽江，青岛，西安等等，请访问<a href="city.html">国内城市宰客榜</a>！</p>
+		</div>
+		<div class="toggle" id="t7">
+			<a href="intercity.html">
+				<img src="../images/lists/inter-nation.jpg" align="left" alt="几乎所有抵达日本的中国游客，在旅游大巴上听到导游讲的第一句话就是：“日本虽然是一个法制国家，但是也有骗子。
+				所以，买东西一定要到免税店去购买，那里东西最便宜，最安全" 
+				width="400" height="294" title="几乎所有抵达日本的中国游客，在旅游大巴上听到导游讲的第一句话就是：“日本虽然是一个法制国家，但是也有骗子。所以，买东西一定要到免税店去购买，那里东西最便宜，最安全"/>
+			</a>
+			<p>与中国游客在自己国家遭遇到的种种宰客行径相比，其实海外旅行相对而言风险小得多，不过仍然难以完全避免。</p>
+			<p>限于旅游政策、经济因素和外语水平，中国游客一般选择参团海外旅行。如果是低价旅行团，旅行社和导游的宰客愿景会大大膨胀。
+				参团旅游的宰客条件也相对便利，因为护照被集体收走，行程加入很多购物或者不知名景点参观环节，以这样的方式来不仅弥补团费，而且赚黑心钱。</p>
+			<p>本期海外国家宰客榜三甲：</p>
+			<p class="top3">榜首：日本</p>
+			<p>然而，与东南亚国家相对低的旅游从业者素质比较，在日本这样规范的旅游市场居然还是发生了大面积的针对中国参团游客的诈骗购物活动，	而且长时间得不到有效制止，足以把日本送上了海外国家宰客榜的榜首！</p>
+			<p>几乎所有抵达日本的中国游客，在旅游大巴上听到导游讲的第一句话就是：“日本虽然是一个法制国家，但是也有骗子。所以，买东西一定要到免税店去购买，那里东西最便宜，最安全。</p>
+			<p>根据日本NHK电视台最新的专题节目，接待中国旅游团的基本上都是中国人（包括台湾人、香港人和大陆人），而且，这些导游大多无证。报道中，NHK记者在日本皇宫前询问了20位带中国旅游团的导游，
+				结果只有1个人有资格证书。部分免税店与导游、地接社勾结宰客，种种现象，让人触目惊心。此外，根据一些游客反映，绅士模样的日本司机真的有时候不绅士，兜远路赚钱不少见。</p>
+			<p class="top3">榜眼：泰国</p>
+			<p>从各种旅游论坛和博客的海外游防骗攻略来看，泰国绝对应该坐上榜首宝座！之所以在日本之下屈居榜眼，是因为泰国也是旅游市场很不规范的发展中国家，
+				所以中国游客在那里挨宰并不令人惊讶。看看下面很多游客在泰国被宰的方式，比起国内也是不遑多让！</p>
+			<p>出租：泰国的出租车宰客可是出了名的。曼谷出租车有两种，一种是小汽车，另一种是机动三轮车，叫“嘟嘟车”。小汽车有计价器，但司机大都不肯打表，提高价格与乘客讨价还价。
+				而“嘟嘟车”也很有猫腻，一般会直接将游客拉到珠宝店去待上20分钟才走，这样就可以拿到回扣。</p>
+			<p>购物：宰客的场所主要是珠宝店、皮包店、蛇园（这可是国内都很罕见的新鲜方式啊！）、燕窝店，大多冠以堂皇的泰国国家某某中心招牌。</p>
+			<p>泰国骗子最爱穿，推荐幸运佛。有网友总结：在泰国一定要注意，凡是有说着中文自动靠上来的，基本上都是骗子。换汇：其手法和国内的黄牛有异曲同工之妙。</p>
+			<p class="top3">探花：韩国</p>
+			<p>首尔市政府2012年9月24日刚刚发布的消息：考虑到将有大批中国游客在国庆黄金周期间访韩，为此，将于9月27日到10月7日间严厉打击针对外国游客的宰客行为！
+				一方面这是好事，首尔市政府相信不会像一些国内的旅游监管部门那么色厉内荏，光说不练，中国游客的利益会得到更好的保障！另外一方面，看看人家准备检查的几个方面：
+				商家是否明码标价，出租车宰客，没有明码标价的练歌厅等。这么来说，从购物（尤其是特色物品比如太极人参等）到出租车到娱乐场所，中国游客被宰的范围还是很普遍的！</p>
+			<p>当然，韩国能够高居探花位置的主要原因在于一项绝活：整容旅游！总体上中国游客整容的费用往往是韩国当地人的数倍乃至十倍以上！</p>
+			<p>还有马尔代夫，埃及，新加坡等等，请访问<a href="intercity.html">海外国家宰客榜</a>！</p>			
+		</div>
+		<div class="toggle" id="t8">
+			<a href="resort.html">
+				<img src="../images/lists/resort.jpg" align="left" alt="如果说天涯海角借自然风景为依托构筑宰客陷阱，那么少林寺就凭佛教文化和猎奇心理来灌游客迷汤" 
+				width="400" height="209" title="如果说天涯海角借自然风景为依托构筑宰客陷阱，那么少林寺就凭佛教文化和猎奇心理来灌游客迷汤"/>
+			</a>
+			<p>本期国内景区宰客榜三甲：</p>
+			<p class="top3">榜首：西双版纳</p>
+			<p>按照版纳当地人的说法，“这里山清水秀，阳光明媚，几乎没有工业，四季瓜果不断，各个少数民族的传统美食更是让人欲罢不能！而且真正的版纳人民自己生活的地方，民风很淳朴，
+				很多村村寨寨至今路不拾遗，夜不闭户！老百姓过着悠闲而平静的生活。”（据<a href="http://gonglue.551.cn/Item/14866.aspx" target="_blank">西双版纳旅游防骗攻略</a>）。</p>
+			<p>那么游客的感受呢？可能会被旅行社骗到缅甸那边拜假和尚上天价香；掏三倍门票被黑导游带到热带植物园；被出租司机讹高价路费；被信口雌黄的售货员骗得买假玉器；
+				被艳舞噱头招徕到黑店敲诈得吐血；被傣家村寨推销高价假药；...等等。旅游环境不是一般的黑啊！游客一个不小心就有可能落入陷阱，被宰没商量。</p>				
+			<p class="top3">榜眼：天涯海角 少林寺</p>
+			<p>天涯海角的宰客现象是整个海南旅游的缩影，模式成熟固定：以旖旎的自然风光吸引游客，进而通过吃住行购物等手段宰客谋求暴利！</p>
+			<p>文字已经不能够表达游客的愤懑和不满了，因此有了这首“<a href="http://v.youku.com/v_show/id_XMzQ5NjE3OTA4.html" target="_blank">请到天涯海角来（三亚宰客版）</a>”！</p>
+			<p>对于海鲜排档一顿饭动辄几千上万的价格是否合理，当地工商物价部门推三阻四，迟迟不肯面对游客的质疑，寒了游客的心，也阻断了无数人前往度假休闲的路！诚所谓自作自受！</p>
+			<p>海鲜可以不吃，那么其他饭菜呢？有人在微博上贴出了一张账单，一頓普通的早餐花費280元，其中一杯牛奶就要110元！</p>
+			<p>如果说天涯海角借自然风景为依托构筑宰客陷阱，那么少林寺就凭佛教文化和猎奇心理来灌游客迷汤。</p>
+			<p>少林寺及其周边的鬼魅香火是中华佛教信仰的善种播在唯利是图的市场经济土壤中结出的一朵恶之花。利用信徒的向善心理和游客对武侠文化和古老传说的景仰，
+				以各种堂而皇之的手段（上香、拜佛、开光、刻印、求签、布道）来牟取不当利益，
+				严重玷污千年佛道文化，这里不加赘述，详情请参考<a href="../individual/temple.html">烧香拜佛榜</a>。</p>
+			<p class="top3">探花：凤凰古城</p>
+			<p>能够压倒各处老字号旅游胜地，荣登探花位置，凤凰这个名不见经传的小地方当然有其宰客独到之处！</p>
+			<p>除了各地共有的一些宰客特征外，还有三点非常突出：街边黑车疯狂拉客；层出不穷的游客被殴事件；由本地旅游董事长声称的“游客是猪”的宣言。</p>
+			<p>游客本想去领略淳朴民风民俗和美丽自然风光，感受当地土家和苗民文化，可是很多时候却事与愿违，被当地恶劣的旅游环境搞得一筹莫展。</p>
+			<p>还有九寨沟，兵马俑，阳朔等等，请访问<a href="resort.html">国内景区宰客榜</a>！</p>
+		</div>
+		<div class="toggle" id="t9">
+			<a href="interresort.html">
+				<img src="../images/lists/inter-resort.jpg" align="left" alt="曼谷和普吉岛以中国游客被宰的普遍程度和新鲜花样高居榜首" 
+				width="400" height="194" title="曼谷和普吉岛以中国游客被宰的普遍程度和新鲜花样高居榜首"/>
+			</a>
+			<p>本期海外景区宰客榜三甲：</p>
+			<p class="top3">榜首：曼谷 普吉岛</p>
+			<p>在普吉岛“有幸”发现一种新的宰客方式：劣质的海底漫步照相！根据网友攻略反映，洗出来的海底漫步照片全是模糊的！</p>
+			<p>此外，在中国佛道名山、古寺屡次出现的假僧人行骗现象（请参阅<a href="../individual/temple.html">烧香拜佛榜</a>）也出现在普吉岛！旅游旺季吸引了很多这样的骗子。
+				他们打扮成僧人的模样要钱，有泰国的本地骗子，但是绝大部分来自柬埔寨。</p>
+			<p>于是，曼谷和普吉岛以中国游客被宰的普遍程度和新鲜花样高居榜首！</p>
+			<p class="top3">榜眼：东京 大阪</p>
+			<p>让我们看看NHK最新纪录片里面的细节，主要是关于东京一线游中存在的种种针对中国游客的宰客行为，一般发生在参观东京和大阪的旅游团。</p>
+			<p>譬如“5夜6天日本游”，中国国内旅行社根本不安排上午出发的航班，而是安排下午出发晚上抵达东京的航班，这样做的结果，是游客到了东京成田机场后直接被拉到机场酒店休息。
+				该机场并不在东京，而是在千叶县，高速公路上开车需要一个半小时。</p>
+			<p class="top3">探花：济州岛</p>
+			<p>部分旅游中介以到济州博彩旅游可免除食宿费为诱饵招揽国内游客，当地不断发生中国游客因欠赌金护照被扣的情况。我国驻光州总领馆因此特别提醒赴济州岛旅游的中国公民，一定要选择具有正规资质的旅行社了解信息，
+				安排行程。如选择自由行，不要轻信所谓“免费食宿”等不实信息，避免上当受骗。</p>
+			<p>同时，根据长期生活在济州岛的网友反映，岛上还有一些购物陷阱。有时导游领去的化妆品免税店其实就是华侨个人开的专门坑中国游客的化妆品店，专门推销那些廉价化妆品，尤其以肉毒杆菌为首忽悠同胞。
+				还有打着高丽参旗号的假营养品、玻璃制成的假紫水晶、民俗村的马骨粉，等等。再说一下景点: 龙头岩是免费的景点就是一块破石头. 神秘道路免费(假的神秘道路), 涉地钾免费. 城山日出峰, 汉拿树木园等景点团票每人10元都不到. 
+				那我们再看一下潜水艇每人300元人民币自费项目, 什么敲打乐队150-200自费项目,还有好多贵的景点都是自费项目，这些自费项目也是旅行社的赚钱项目，而且旅行社收的费用按换率算比实际价格还要高。</p>
+			<p>还有罗马，纽约等等，请访问<a href="interresort.html">海外景区宰客榜</a>！</p>
+		</div>
+	</div>
+  </div>  
+  <div id="right">
+    <iframe src="../right.html" width=90 height=1328 frameborder="0" scrolling="no"></iframe>  
+  </div>
+</div>
+<div id="footer">
+	<iframe src="../footer.html" width=980 height=70 frameborder="0" scrolling="no"></iframe>
+</div>
+</body>
+</html>

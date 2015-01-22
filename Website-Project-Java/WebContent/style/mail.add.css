@@ -1,0 +1,130 @@
+@CHARSET "UTF-8";
+/*
+ * for mail subscription
+ */
+#main #description{
+	width: 760px;
+	margin: 1px;
+	margin-bottom: 5px;
+	padding: 0px;
+	border-bottom: 1px dotted gray;
+}
+
+#main #continent label{
+	color: red;
+	cursor: pointer;
+}
+
+#main #province{
+	width: 750px;
+}
+
+#main #province label{
+	color: green;
+	padding-right: 3px;
+	cursor: pointer;
+}
+
+#main #area{
+	width: 750px;
+}
+
+#main #area label{
+	color: blue;
+	padding-right: 3px;
+}
+
+#main #area checkbox{
+	padding-left: 2px;
+}
+
+#main #choice{
+	width: 750px;	
+}
+
+#main #choice label{
+	padding-right: 4px;
+	font-weight: bold;
+}
+
+.button,.button:visited {
+	float: right;
+	background: #2daebf url(../images/overlay.png) repeat-x;
+	font-weight: bold;
+	display: inline-block;
+	padding: 5px 10px 6px;
+	color: #fff;
+	text-decoration: none;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	-moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+	-webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+	text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.25);
+	border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+	cursor: pointer;
+	margin-top: 95px;
+	margin-right: 15px;
+}
+
+.button:hover {
+	background-color: #007d9a;
+}
+
+#sortable {
+	list-style-type: none;
+	margin: 5px 0px 0px 16px;
+	padding: 0;
+}
+
+#sortable li {
+	margin: 3px 3px 3px 0;
+	padding: 1px;
+	float: left;
+	width: 35px;
+	height: 35px;
+	font-size: 20px;
+	text-align: center;
+	line-height: 35px;
+	cursor: pointer;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	-moz-box-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+	-webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+	text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.25);
+	background: #2daebf url(images/overlay.png) repeat-x scroll 50% 50%;
+	color: #fff;
+	font-weight: normal;
+}
+
+.captcha_wrap {
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	-moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+	-webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+	float: left;
+	height: 120px;
+	overflow: auto;
+	width: 150px;
+	overflow: hidden;
+	margin: 0px 0px 0px 310px;
+	background-color: #fff;
+}
+
+.captcha {
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	font-size: 14px;
+	color: #BBBBBB;
+	text-align: center;
+	background-color: #fff;
+}
+
+#innerscroll1{
+	 height:140px;
+	 width:90px;
+}
+
+#innerscroll1 .rightroll{
+	width: 90px;
+	height: 140px;
+}

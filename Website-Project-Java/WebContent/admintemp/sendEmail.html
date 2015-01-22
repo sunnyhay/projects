@@ -1,0 +1,81 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>邮件群发页面</title>
+
+<script type="text/javascript" src="../jslib/jquery-1.7.2.js"></script>
+
+<script type="text/javascript">
+$(function() {
+	var num = 0;            //the iterator over the stored list for mail subscriptions
+	var total;              //the amount of total valid mail subscriptions
+	$("#query").click(function() {
+		$(this).attr("disabled","disabled");
+		$.post("../mailSendAdminAction!query", {}, function(returnedData,status){
+			if("success" == status){
+				var result = eval(returnedData);
+				total = result[0];  
+				
+				//set the query part
+				$("#total").html(total);
+				$("#custom").html(result[1]);
+				$("#resortlist").html(result[2]);
+				$("#query").removeAttr("disabled");
+				$("#send").removeAttr("disabled");
+			}
+		});			
+	});
+	
+	$("#send").click(function(){
+		var password = prompt("enter the password to send emails");
+		$(this).attr("disabled","disabled");
+		$("#result").html("<p>发送已经开始</p>");
+		var times = setInterval(function(){
+			$.post("../mailSendAdminAction!send", {num:num, password:password},function(returnedData,status){
+				if("success" == status){
+					if("INVALIDPWD" == returnedData){
+						$("#result").append("<p>密码验证失败</p>");
+						clearInterval(times);
+					}
+					else{
+						var result = returnedData;
+						if(result.length > 25)
+							result = result.substr(0,24);
+						if(result.indexOf('@') == -1)
+							$("#result").append("<p>该邮件发送失败</p>");
+						else
+							$("#result").append("<p>向" + result + "发送成功</p>");
+						
+						num++;
+						//cease the sending
+						if(num > 3)
+							clearInterval(times);
+					}					
+				}
+			});
+		}, 1000*15);				
+	});
+});
+</script>
+</head>
+<body>
+	点击下面按钮查询本次邮件群发基本信息:
+	<br/>
+	<input type="submit" value="查询" id="query" />
+	<br/>
+	显示邮件群发基本信息<br/>
+	当前定制邮件的用户总数为：<label id="total"></label><br/>
+	当前订阅旅游目的地的用户总数为：<label id="custom"></label><br/>
+	本次群发已整理的旅游目的地有：<label id="resortlist"></label><br/>
+	<br/>
+	<br/>
+	点击下面按钮开始邮件群发：
+	<br/>
+	<input type="submit" value="群发" id="send" disabled="disabled"/>
+	<br/>
+	<div id="result">
+		群发开始...
+	</div>
+</body>
+</html>

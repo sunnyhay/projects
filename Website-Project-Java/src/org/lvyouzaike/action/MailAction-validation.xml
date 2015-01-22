@@ -1,0 +1,9 @@
+<!DOCTYPE validators PUBLIC "-//Apache Struts//XWork Validator 1.0.2//EN" "http://struts.apache.org/dtds/xwork-validator-1.0.2.dtd">
+
+<validators>
+	<field name="queryAdr">
+		<field-validator type="email">
+			<message>您得输入一个有效的电子邮件地址！</message>
+		</field-validator>
+	</field>	
+</validators>

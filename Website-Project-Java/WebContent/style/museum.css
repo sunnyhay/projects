@@ -1,0 +1,18 @@
+@CHARSET "UTF-8";
+
+#main #list #intro{
+	margin: 2px;
+	padding: 2px;
+	margin-bottom: 20px;
+	border-bottom: 1px solid gray;
+}
+
+#main #list .pic{
+	margin: 2px;
+	padding: 2px;
+}
+
+#main #list .pair{
+	margin: 0px;
+	padding: 0px;	
+}

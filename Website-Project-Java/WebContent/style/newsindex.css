@@ -1,0 +1,66 @@
+@CHARSET "UTF-8";
+
+#main #news #first{
+	width: 338px;
+	height: 300px;
+	float: left;
+	border: 1px gray;
+}
+
+#main #news #pic{
+	width: 420px;
+	height: 300px;
+	float: right;
+	border: 1px gray;
+}
+
+#main #news .one{
+	width: 377px;
+	height: 490px;
+	margin: 0px;
+	padding: 0px;
+	margin-top: 5px;
+	margin-left: 1px;
+	float: left;	
+	border: 1px dotted gray;
+	background-image: url(../images/starrain_main.jpg);
+	background-repeat: no-repeat;
+}
+
+#main #news .title {
+	padding-top: 0px;
+	padding-right: 0px;
+	padding-bottom: 0px;
+	padding-left: 0px;
+	margin-top: 6px;
+	margin-right: auto;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	letter-spacing: 2px;
+	text-indent: 12px;
+	color: #900;
+}
+
+#main #news .one ul {
+	padding-top: 5px;
+	padding-right: 2px;
+	padding-bottom: 0px;
+	padding-left: 16px;
+	height: 255px;
+	font-size: 16px;
+}
+
+#main #news .one ul li {
+	border-bottom-width: 1px;
+	border-bottom-style: dashed;
+	border-bottom-color: #000;
+	margin-top: 4px;
+	margin-right: 1px;
+	margin-bottom: 2px;
+	margin-left: 1px;
+}
+
+#main #news .one ul li em {
+	font-style: normal;
+	float: right;
+}

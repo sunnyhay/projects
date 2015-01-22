@@ -1,0 +1,300 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="keywords" content="haisun resume CV harry" />   
+<meta name="description" content="haisun's resume 2012" />
+<meta name="author" content="hai (harry) sun" />   
+<meta name="Copyright" content="hai (harry) sun" /> 
+
+<title>Harry's Resume</title>
+
+<script type="text/javascript" src="../jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="../jslib/jquery.ui.core.js"></script>
+<script type="text/javascript" src="../jslib/jquery.ui.widget.js"></script>
+<script type="text/javascript" src="../jslib/jquery.ui.tabs.js"></script>
+<link type="text/css" rel="stylesheet" href="../style/jquery.ui.all.css" />
+<link rel="stylesheet" type="text/css" href="../style/resume.css" />
+
+<script type="text/javascript">
+var name = "resume";
+$(function() {
+	//activate jquery ui tabs
+	$( "#list" ).tabs({
+		//event: "mouseover"
+	});
+	
+	//set default comment hint
+	$("#comment").val("please comment, thanks!");
+	$("#comment").select();
+	$("#comment").click(checkdefault);
+	$("#comment").focusin(checkdefault);
+			
+	/*
+	 * when the window is loaded, show the comments for resume page
+	 */
+	$.post("../resumeAction!getComments", {"name":name}, function(returnedData,status) {
+		if ("success" == status) {
+			var result = eval(returnedData);
+			
+			$("#content").html("");
+			for ( var index in result) {
+				var c = result[index];
+				var nn = c.nickname;
+				if("" == nn)
+					nn = "guest";
+				$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + c.comment +"</div><div class='date'>" + c.commentDate + "</div></div>");
+			}
+						
+			//how much items per page to show
+			var show_per_page = 10; 
+			//getting the amount of elements inside content div
+			var number_of_items = $('#content').children().size();
+			//calculate the number of pages we are going to have
+			var number_of_pages = Math.ceil(number_of_items/show_per_page);
+			
+			//set the value of our hidden input fields
+			$('#current_page').val(0);
+			$('#show_per_page').val(show_per_page);
+			
+			//now when we got all we need for the navigation let's make it '
+			
+			/* 
+			what are we going to have in the navigation?
+				- link to previous page
+				- links to specific pages
+				- link to next page
+			*/
+			var navigation_html = '<a class="first_link" href="javascript:go_to_page(0);">first page</a>' + '<a class="previous_link" href="javascript:previous();">previous page</a>';
+			var current_link = 0;
+			while(number_of_pages > current_link){
+				navigation_html += '<a class="page_link" href="javascript:go_to_page(' + current_link +')" longdesc="' + current_link +'">'+ (current_link + 1) +'</a>';
+				current_link++;
+			}
+			navigation_html += '<a class="next_link" href="javascript:next();">next page</a>' + '<a class="first_link" href="javascript:go_to_page(' + (number_of_pages-1) + ');">last page</a>';
+			
+			$('#page_navigation').html(navigation_html);
+			
+			//add active_page class to the first page link
+			$('#page_navigation .page_link:first').addClass('active_page');
+			
+			//hide all the elements inside content div
+			$('#content').children().css('display', 'none');
+			
+			//and show the first n (show_per_page) elements
+			$('#content').children().slice(0, show_per_page).css('display', 'block');
+		}
+	});
+	
+	//2. register click event on #btn to add comment on roadfee_comment
+	$("#btn").click(function() {
+		if($("#comment").val() == "" || $("#comment").val() == "please comment, thanks!"){//simple validation with empty or default condition
+			$("#commentSpan").html("<p><b>empty comment not allowed</b></p>");
+			return false;		
+		}else{//submit the json object {nickname,comment}
+			$("#commentSpan").html("<p>thanks for your comment</p>");
+			$.post("../resumeAction!addComment", {"name":name,"nickname":encodeURI($("#nickname").val()),"comment":encodeURI($("#comment").val())}, 
+				function(returnedData,status) {
+					if ("success" == status){
+						//$("#content").prepend($("#comment").val() + "<br/>");  //insert the new comment firstly;
+						var nn = $("#nickname").val();
+						if("" == nn)
+							nn = "guest";
+						$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + $("#comment").val() +"</div><div class='date'>" 
+						+ new Date().toLocaleString() + "</div></div>");
+						$("#commentSpan").html("");
+					}
+				});
+			$(this).attr("disabled","disabled");
+		}			
+	});	
+});
+
+//used for default comment hint
+function checkdefault() {
+	var txt = $(this).val();  //the current text in the area
+	if(txt == "please comment, thanks!")
+		$(this).val("");
+	$(this).focusout(retdefault);	
+}
+//used for default comment hint
+function retdefault(){
+	var txt = $(this).val();
+	if(txt == ""){
+		$(this).val("please comment, thanks!");
+		$(this).select();
+	}		
+	$(this).click(checkdefault);
+	$(this).focusin(checkdefault);
+}
+
+function previous(){	
+	new_page = parseInt($('#current_page').val()) - 1;
+	//if there is an item before the current active link run the function
+	if($('.active_page').prev('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function next(){
+	new_page = parseInt($('#current_page').val()) + 1;
+	//if there is an item after the current active link run the function
+	if($('.active_page').next('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function go_to_page(page_num){
+	//get the number of items shown per page
+	var show_per_page = parseInt($('#show_per_page').val());
+	
+	//get the element number where to start the slice from
+	start_from = page_num * show_per_page;
+	
+	//get the element number where to end the slice
+	end_on = start_from + show_per_page;
+	
+	//hide all children elements of content div, get specific items and show them
+	$('#content').children().css('display', 'none').slice(start_from, end_on).css('display', 'block');
+	
+	/*get the page link that has longdesc attribute of the current page and add active_page class to it
+	and remove that class from previously active page link*/
+	$('.page_link[longdesc=' + page_num +']').addClass('active_page').siblings('.active_page').removeClass('active_page');
+	
+	//update the current page input field
+	$('#current_page').val(page_num);
+};
+</script>
+<style type="text/css">
+#primary #list{
+	height: 500px;
+}
+</style>
+</head>
+<body>
+<div id="primary">
+	<div id="list">
+		<ul>
+			<li><a href="#tabs-1"><label class="tablabel">Background</label></a></li>
+			<li><a href="#tabs-2"><label class="tablabel">Common Skills</label></a></li>
+			<li><a href="#tabs-3"><label class="tablabel">Web Skills</label></a></li>
+			<li><a href="#tabs-4"><label class="tablabel">Prev Career</label></a></li>
+			<li><a href="#tabs-5"><label class="tablabel">Project 1-2</label></a></li>
+			<li><a href="#tabs-6"><label class="tablabel">Project 3-5</label></a></li>
+		</ul>
+		<div class="lp" id="tabs-1">
+			<p><label class="blue">Name:</label> Hai (Harry) Sun</p>
+			<p><label class="blue">Address:</label> 1630NE Valley Rd Apt R201, Pullman, WA, 99163</p>
+			<p><label class="blue">Phone:</label> 509-715-7660</p>
+			<p><label class="blue">Email:</label> <a href="mailto:sqingyang@gmail.com">sqingyang@gmail.com</a></p>
+			<p><label class="blue">Current status:</label> PhD student, WSU, Networking Research Lab in Computer Science, GPA 3.8.</p>
+			<p><label class="blue">Previous academic degree:</label> </p>
+			<ul>
+				<li>Master of Science, University of Maine, Computer Science, Orono ME, August 2010.</li>
+				<li>Master of Engineering, Xidian University, Computer Science, Xi'an China, May 2002.</li>
+				<li>Bachelor of Engineering, Beijing Institute of Technology, Computer Science, Beijing China, July 1997.</li>
+			</ul>
+			<p><label class="blue">Academic interests:</label> parallel computing, networking, cybersecurity, distributed system.</p>
+			<p><label class="blue">Current research topics:</label> Packet classification using tabulation hashing.</p>
+		</div>
+		<div class="lp" id="tabs-2">
+			<p><label class="blue">Programming Languages:</label> </p>
+			<ul>
+				<li>OOP: Java, C++ and VB;</li>
+				<li>Procedural: C;</li>
+				<li>Scripting: Javascript, shell scripting;</li>
+				<li>Functional: Erlang and Common Lisp;</li>
+				<li>Assembly: 8051 single chip.</li>
+			</ul>
+			<p><label class="blue">Networking:</label> TCP/IP, Socket programming, Linux Services.</p>
+			<p><label class="blue">Database:</label> MySQL, Postgre SQL, Oracle and PL/SQL, Derby.</p>
+			<p><label class="blue">Cybersecurity and Linux:</label> IDS, IPtables (firewall), and Linux kernel development.</p>
+			<p><label class="blue">Miscellanies:</label> JUnit testing, agile development, TDD, design pattern, UML modeling, XML/JSON, multi-thread programming, C/S and P2P.</p>
+		</div>
+		<div class="lp" id="tabs-3">
+			<p><label class="blue">Application (Web) Server:</label> Tomcat, Jetty, JBoss, Websphere.</p>
+			<p><label class="blue">M (model) V (view) C (controller) toolkits:</label> </p>
+			<ul>
+				<li>MVC related: Struts2/Servlet, Spring (DI and AOP) and Spring security;</li>
+				<li>ORM: Hibernate/JPA/QBC/QBE;</li>
+				<li>View-end: JSP/HTML/CSS/Dreamweaver, JQuery/Javascript/Ajax.</li>				
+			</ul>			
+			<p><label class="blue">Opensource frameworks:</label></p>
+			<ul>
+				<li>Search: Lucene/Compass/Neko Parser/Web crawler;</li>
+				<li>DOM: Dom4j/JDom;</li>
+				<li>Log: Log4j/Slf4j;</li>
+				<li>Others: Java Mail, Freemarker, Mediawiki.</li>
+			</ul>
+			<p>A showcase of web development can be found by clicking <a href="showcase.html"><b>here</b></a>.</p>
+		</div>
+		<div class="lp" id="tabs-4">
+			<p><label class="blue">Company:</label> East-century Network Co. Ltd, China, April 2003 to August 2007</p>
+			<ul><li>As the program architect and chief developer, led a 4-member group to develop a moderate-size
+program for 2.5G mobile services, primarily text and multimedia messages, for 300,000 cell phone
+users. The program is based on 3-tier platform. The program gained credits for high security (based on
+modular design and hierarchical access control), fast loss compensation against missing messages, and
+remarkable cost reduction of ¥ 200,000. The program intensively used proxy servers, MVC,
+Hibernate, EJB, and JUnit tools.</li></ul>
+			<p><label class="blue">Company:</label> Saming Technology Co. Ltd, China, May 2002 to March 2003</p>
+			<ul><li>As the development consultant, conducted evaluation upon security products, which offer host
+protection and traffic monitoring functionalities for the security and integrity of PC data and network
+communication. My work primarily concentrated on Linux security management and software testing
+using Linux servers, filtering mechanism in firewall, shell scripting and black-box testing.</li></ul>
+			<p><label class="blue">Company:</label> Xi an Electrical Engineering Research Inst, China, July 1997 to August 1999</p>
+			<ul><li>As the software engineer developed a 2000-LOC program in 8051 SCH assembly language to
+simulate the railway station. The simulator was highly appreciated by my client, a community college.
+The highlight of my work was focused on smart interruption mechanism and control strategies to deal
+with complex input signals. Also several particular system calls were used to make the system faster
+and more efficient. Other work during this period involved low-level program development based on
+Common Lisp, Linux Kernel Development (GNU C), ODBC application and webpage programming
+using ASP and HTML/CGI.</li></ul>
+		</div>	
+		<div class="lp" id="tabs-5">
+			<p><label class="blue">Project 1:</label> Mobile text and multimedia message platform</p>
+			<ul><li>The project was performed for East-century Network Co. Ltd, China. The purpose is to develop a message exchange platform to offer text and multimedia services for mobile phone clients and maintain it corresponding to new business requirements. Our clients can subscribe various kinds of message services through the platform.
+I played four roles, as a project manager to analyze client requirements and understand device providers’ technical protocols; as a program architect to design the platform; as a chief developer to develop one core modules; and as a system administrator to maintain and manage the platform.
+The structure is built with MVC framework. The first version is based on simple JSP /Servlet architecture. The second one is improved with Struts 2. There are three core modules: gateway, business logic and content repository. Gateway responds to client requests and delivers service messages; Business logic classifies the requests, fetches relevant content and sends it back to gateway for delivery; content repository maps the message objects with SQL relations. 
+I developed gateway module with several core functional components: delivery queues with different priorities for application-level QoS, hierarchical action chains, exceptional handler for errors and exceptions, and delivery data package in XML or JSON objects. The entire development method is based on agile, test-driven (JUnit) mode. The primary design and development principles include low coupling and high cohesion among components, separation of business logic and message passing, layer division among action chain, service and DAO, dependency injection by Spring, transactional management, and aspect oriented programming.
+</li></ul>
+			<p><label class="blue">Project 2:</label> Project management extending Project 1</p>
+			<ul><li>The project covers the non-technical content in Project 1. I am in charge of establishment of business processing prototypes in terms of marketing analysis; message service models (UML data model); bill and client management; implementation of the platform; incremental update and maintenance upon ever-changing client requirement and device provider’s technical modification.</li></ul>
+		</div>
+		<div class="lp" id="tabs-6">
+			<p><label class="blue">Project 3:</label> Simulative public transit system (academic work)</p>
+			<ul><li>The project simulates a simplified public transport system implemented in Java on top of RTI DDS (Data Distribution Service) API. The system is based on the Subscriber-Publisher (or Observer-Observable) pattern intensively using multiple thread programming and relevant synchronization mechanisms.</li></ul>
+			<p><label class="blue">Project 4:</label> Synchronous communication (academic work)</p>
+			<ul><li>In this project a synchronous message passing system using shared-memory concurrent programming, Java, is implemented. As Java’s intrinsic monitors are ill-suited to the synchronization requirements, the waiting processes should be waken up by means of manipulating multiple channels with a unique global lock to avoid the risk of deadlock. The highlights lie on key-lock mechanism, shared-memory and local memory, selective choice for events, and atomic transaction.</li></ul>
+			<p><label class="blue">Project 5:</label> Lifts simulation (academic work)</p>
+			<ul><li>The project uses agents for simulating a simple lift scenario. It exercises modeling with agents, concurrency, and message sending. The implementation is done in Erlang, which is characterized with lightweight concurrency, scalability independent of the underlying operating system and fault tolerance avoiding shared data by simple passing messages between processes.</li></ul>
+		</div>
+	</div>
+	<div id="innercomment">
+		<h3>Please comment:</h3><br />
+		<input type='hidden' id='current_page' /> 
+		<input type='hidden' id='show_per_page' />
+		<table>
+			<tr><td>nickname(optional):</td><td><input type="text" id="nickname" name="nickname" size="12" maxlength="12" placeholder="put your nickname"/></td></tr>
+			<tr><td>comment:</td><td><textarea rows="10" cols="75" id="comment" name="comment" maxlength="200"></textarea></td></tr>
+			<tr><td><input id="btn" type="button" value="submit" /></td><td><span id="commentSpan"></span></td></tr>
+		</table>			 
+		<br />
+	<h3>Current comments:</h3>
+		<br/>
+		<table>
+			<tr align="center"><td width="50px">nickname</td><td width="610px">comment</td><td>date</td></tr>
+		</table>			
+	</div>
+	<br />
+	<div id="content">loading comments, wait please...</div>
+	<div id='page_navigation'></div>
+	<br/>
+	<br/>
+	<br/>
+	<p>  </p>
+</div>  
+</body>
+</html>
+

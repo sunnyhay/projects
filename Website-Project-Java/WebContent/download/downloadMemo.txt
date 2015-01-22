@@ -1,0 +1,12 @@
+数据库中download_item表保存下载项目的信息如下：
+id             link                           name                 version
+1     downloadFile.action?num=1      旅游风险红宝书普通版word格式      08022012
+2     downloadFile.action?num=2      旅游风险红宝书普通版pdf格式       08022012
+3     downloadFile.action?num=3      旅游风险红宝书大话西游版word格式   08022012
+4     downloadFile.action?num=4      旅游风险红宝书大话西游版pdf格式    08022012
+5     downloadFile.action?num=5      旅游安全红宝书普通版word格式      08022012
+6     downloadFile.action?num=6      旅游安全红宝书普通版pdf格式       08022012
+7     downloadFile.action?num=7      旅游安全红宝书大话西游版word格式   08022012
+8     downloadFile.action?num=8      旅游安全红宝书大话西游版pdf格式    08022012
+9     downloadFile.action?num=9      旅游维权指南word格式             08022012
+10    downloadFile.action?num=10     旅游维权指南pdf格式              08022012                 

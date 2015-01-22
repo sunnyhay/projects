@@ -1,0 +1,250 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>取消邮件订阅</title>
+
+<script type="text/javascript" src="../jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="../jslib/jquery.bxslider2.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.easing.1.3.min.js"></script>
+<script type="text/javascript" src="../jslib/ui.core.js"></script>
+<script type="text/javascript" src="../jslib/ui.sortable.js"></script>
+<link rel="stylesheet" type="text/css" href="../style/unsub.css" />
+<link rel="stylesheet" type="text/css" href="../style/style2.css" />
+<link rel="stylesheet" type="text/css" href="../style/search.css" />
+
+<script type="text/javascript">
+(function($) {
+	$.fn.shuffle = function() {
+		return this.each(function() {
+			var items = $(this).children();
+			return (items.length) ? $(this).html($.shuffle(items, $(this)))	: this;
+		});
+	}
+
+	$.fn.validate = function() {
+		var res = false;
+		this.each(function() {
+			var arr = $(this).children();
+			res = ((arr[0].innerHTML == "1") && (arr[1].innerHTML == "2")
+					&& (arr[2].innerHTML == "3") && (arr[3].innerHTML == "4")
+					&& (arr[4].innerHTML == "5") && (arr[5].innerHTML == "6"));
+		});
+		return res;
+	}
+
+	$.shuffle = function(arr, obj) {
+		for ( var j, x, i = arr.length; i; j = parseInt(Math.random() * i), x = arr[--i], arr[i] = arr[j], arr[j] = x)
+			;
+		if (arr[0].innerHTML == "1")
+			obj.html($.shuffle(arr, obj))
+		else
+			return arr;
+	}
+})(jQuery);
+
+var arr = new Array();  //hold all the selected unsub format reasons
+$(function() {
+	//set default comment hint
+	$("#comment").val("请在这里发表您的评论，谢谢");
+	$("#comment").click(checkdefault);
+	$("#comment").focusin(checkdefault);
+	
+	//set default main unsubscription hint
+	$("#unsubAdr").val("您的邮件地址");
+	$("#unsubAdr").select();
+	$("#unsubAdr").click(checkunsub);
+	$("#unsubAdr").focusin(checkdefault);
+	
+	//allow #innerscroll1 (in thanscroll) to dynamically scroll
+	$('#innerscroll1').bxSlider({
+		auto: true,
+		autoHover: true,
+		margin: 70,
+	    controls: false,
+	    pause: 15000,
+	    speed: 5000,
+	    pager: false
+	});
+	
+	$("#sortable").sortable();
+	$("#sortable").disableSelection();
+	$('ul').shuffle();
+	
+	//register click event on #btn to add comment on hill_comment
+	$("#btn").click(function() {
+		var hasError = false;
+		var emailReg = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
+		
+		var emailAdrVal = $("#unsubAdr").val();
+		if(emailAdrVal == '' || emailAdrVal == '您的邮件地址'){
+			$(".error").hide();
+			$("#unsubAdr").after('<span class="error">您的邮件不能为空，请重新输入！</span>');
+			$("#unsubAdr").focus();
+			hasError = true;
+		}
+		else if(!emailReg.test(emailAdrVal)){
+			$(".error").hide();
+			$("#unsubAdr").after('<span class="error">这不是一个有效的邮件地址，请重新输入！</span>');
+			$("#unsubAdr").focus();
+			hasError = true;
+		}			
+		
+		if(hasError == true)
+			return false;
+			
+		$(".error").hide();
+		
+		if($("ul").validate()){
+			//disable four components on the page.
+			$("#unsubAdr").attr("disabled","disabled");
+			$("#nickname").attr("disabled","disabled");
+			$("#comment").attr("disabled","disabled");
+			$("#btn").attr("disabled","disabled");
+												
+			$("#show").show(1000);
+			$("#show").html("<p>查询中，请稍候...</p>");
+			$.post("../mailUnsubAction!unsub", {"unsubAdr":encodeURI($("#unsubAdr").val()), "formatreason":encodeURI(arr),
+											 "comment":encodeURI($("#comment").val()),"nickname":encodeURI($("#nickname").val())}, 
+				function(returnedData,status) {
+					if ("success" == status){
+						$("#unsubAdr").removeAttr("disabled");
+						$("#nickname").removeAttr("disabled");
+						$("#comment").removeAttr("disabled");
+						$("#btn").removeAttr("disabled");
+						
+						$("#unsubAdr").val("您的邮件地址");
+						$("#unsubAdr").select();
+						$("#nickname").val("");
+						$("#comment").val("请在这里发表您的评论，谢谢");
+						$(":checkbox").attr("checked",false);
+						
+						if("no" == returnedData)
+							$("#show").html("<p>您输入的邮件并没有订阅我们的业务，请重新输入，谢谢</p>");
+						else
+							$("#show").html("<p>您的邮件订阅已经成功取消，谢谢</p>");
+					}						
+				});
+			return true;
+		}else{
+			alert("您不是人类");
+			return false;
+		}			 				
+	});
+	$(":checkbox").click(function() {//choose checkboxes and add choices in array 'arr' for later submission
+		var rem = decodeURI($(this).val());
+		if($(this).attr("checked") == "checked"){
+			arr.push(rem);
+		}else{
+			arr = jQuery.grep(arr, function(value) {
+				return value != rem;
+				});
+		}						
+	});
+});
+
+//used for default comment hint
+function checkdefault() {
+	var txt = $(this).val();  //the current text in the area
+	if(txt == "请在这里发表您的评论，谢谢")
+		$(this).val("");
+	$(this).focusout(retdefault);	
+}
+//used for default comment hint
+function retdefault(){
+	var txt = $(this).val();
+	if(txt == ""){
+		$(this).val("请在这里发表您的评论，谢谢");
+		$(this).select();
+	}		
+	$(this).click(checkdefault);
+	$(this).focusin(checkdefault);
+}
+
+//used for default unsub mail address hint
+function checkunsub() {
+	var txt = $(this).val();  //the current text in the area
+	if(txt == "您的邮件地址")
+		$(this).val("");
+	$(this).focusout(retunsub);	
+}
+//used for default unsub mail address hint
+function retunsub(){
+	var txt = $(this).val();
+	if(txt == ""){
+		$(this).val("您的邮件地址");
+		$(this).select();
+	}		
+	$(this).click(checkunsub);
+	$(this).focusin(checkdefault);
+}
+</script>
+</head>
+
+<body>
+<div id="header">
+  <iframe src="../header.html" width=980 height=91 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="nav">
+  <iframe src="../nav.html" width=980 height=40 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="primary">
+  <div id="baike">
+    <iframe src="../baike.html" width=120 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+  <div id="main">
+    <div id="location">您的位置： <a href="../index.html">旅游宰客榜首页</a> 》》<a href="mailindex.html">邮件服务</a> 》》取消邮件订阅页</div>
+    <div id="description">
+    	<p class="unsubstep">取消邮件订阅的步骤：</p>
+    	<p class="unsubstep">第一步：必须在地址栏输入您的邮件地址；</p>
+    	<p class="unsubstep">第二步：（可选）选择退订理由（点击理由旁边的复选框），或者发表您的意见；</p>
+    	<p class="unsubstep">第三步：请按照提示玩一个小游戏——搬砖头。把6块蓝色砖头搬成这样：第一行从左到右 1 2 3 第二行从左到右 4 5 6。目的在于防止恶意机器人自动提交，对于由此给您可能带来的操作上的麻烦，还请见谅；</p>
+    	<p class="unsubstep">第四步：砖头搬到合适方位后，点击“取消订阅” 按钮，如果您订阅了我们的邮件服务，会显示成功取消的信息。如果您没有订阅我们的邮件服务，
+    	会提示您当前没有订阅我们的邮件服务（点<a href="query.html">这里</a>去查询您的订阅状况）。</p>
+	</div>
+	<div id="innercomment">
+		<br/>
+		<table border="0" style="color: black;" cellspacing="0" cellpadding="0">
+			<tr align="left"><td width="110px">请输入:</td><td><input type="text" id="unsubAdr" name="unsubAdr" size="16"/></td></tr>
+			<tr><td>昵称(可选):</td><td><input type="text" id="nickname" name="nickname" size="8" maxlength="12"/></td></tr>
+			<tr><td>格式理由1:</td><td><input type="checkbox" name="unsubCheck" value="格式理由1" /></td></tr>
+			<tr><td>格式理由2:</td><td><input type="checkbox" name="unsubCheck" value="格式理由2" /></td></tr>
+			<tr><td>格式理由3:</td><td><input type="checkbox" name="unsubCheck" value="格式理由3" /></td></tr>
+			<tr><td>格式理由4:</td><td><input type="checkbox" name="unsubCheck" value="格式理由4" /></td></tr>
+			<tr><td>评论:（限200字）</td><td><textarea rows="10" cols="70" id="comment" name="comment" maxlength="200"></textarea></td></tr>			
+		</table>
+	</div>	
+	<div id="submit">
+		<fieldset>
+			<legend>
+				<label>取消订阅之前请搬一下砖头吧！把6块蓝色砖头搬成这样：第一行从左到右 
+					<b>1 2 3</b> 第二行从左到右 
+					<b>4 5 6</b>
+				</label>
+			</legend>
+			<div class="captcha_wrap">
+				<div class="captcha">鼠标点住数字进行拖动</div>
+				<ul id="sortable">
+					<li class="captchaItem">1</li>
+					<li class="captchaItem">2</li>
+					<li class="captchaItem">3</li>
+					<li class="captchaItem">4</li>
+					<li class="captchaItem">5</li>
+					<li class="captchaItem">6</li>
+				</ul>
+			</div>
+		</fieldset>
+		<br />
+		<input type="submit" value="取消订阅" id="btn" />
+	</div>
+	<div id="show"></div>
+  </div>
+  <div id="right">
+    <iframe src="../right.html" width=90 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+</div>
+<div id="footer">
+  <iframe src="../footer.html" width=980 height=70 frameborder="0" scrolling="no"></iframe>
+</div>
+</body>
+</html>

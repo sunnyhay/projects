@@ -1,0 +1,726 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>博物馆对比榜</title>
+
+<script type="text/javascript" src="../jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="../jslib/jquery.bxslider2.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.easing.1.3.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.jqplot.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.barRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.categoryAxisRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.pointLabels.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../style/jquery.jqplot.css" />
+<link rel="stylesheet" type="text/css" href="../style/style2.css" />
+<link rel="stylesheet" type="text/css" href="../style/individual.novote.css" />
+<link rel="stylesheet" type="text/css" href="../style/museum.css" />
+<link rel="stylesheet" type="text/css" href="../style/search.css" />
+
+<script type="text/javascript">
+$(function() {
+	//set default comment hint
+	$("#comment").val("请在这里发表您的评论，谢谢");
+	$("#comment").select();
+	$("#comment").click(checkdefault);
+	$("#comment").focusin(checkdefault);
+	
+	//allow #innerscroll1 (in thanscroll) to dynamically scroll
+	$('#innerscroll1').bxSlider({
+		auto: true,
+		autoHover: true,
+		margin: 70,
+	    controls: false,
+	    pause: 15000,
+	    speed: 5000,
+	    pager: false
+	});
+		
+	//show the hint if the support express is voted!
+	if($(":input[type=radio]").attr("disabled") =="disabled"){
+		$("#info1").html("您已经表达过您的支持了");		
+	}	
+	
+	/*
+	 * when the window is loaded, show the express count for museum list
+	 */
+	$.post("../museumListAction!getExpressCount", {},function(returnedData,status){
+		if("success" == status){
+			$("#totalzaike").html(returnedData);
+		}
+	});
+	
+	/*
+	 * when the window is loaded, show the comments for museum list
+	 */
+	$.post("../museumListAction!getMuseumComments", {}, function(returnedData,status) {
+		if ("success" == status) {
+			var result = eval(returnedData);
+			
+			$("#content").html("");
+			for ( var index in result) {
+				var c = result[index];
+				//$("#content").prepend("<tr align='center'><td width='10%' bgcolor='#9ff'>" + c.nickname + "</td><td width='70%' bgcolor='#cff'>" + c.comment+ "</td><td bgcolor='#fcf'>" + c.commentDate + "</td>");
+				var nn = c.nickname;
+				if("" == nn)
+					nn = "空";
+				$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + c.comment +"</div><div class='date'>" + c.commentDate + "</div></div>");
+			}
+						
+			//how much items per page to show
+			var show_per_page = 10; 
+			//getting the amount of elements inside content div
+			var number_of_items = $('#content').children().size();
+			//calculate the number of pages we are going to have
+			var number_of_pages = Math.ceil(number_of_items/show_per_page);
+			
+			//set the value of our hidden input fields
+			$('#current_page').val(0);
+			$('#show_per_page').val(show_per_page);
+			
+			//now when we got all we need for the navigation let's make it '
+			
+			/* 
+			what are we going to have in the navigation?
+				- link to previous page
+				- links to specific pages
+				- link to next page
+			*/
+			//var navigation_html = '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var navigation_html = '<a class="first_link" href="javascript:go_to_page(0);">第一页</a>' + '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var current_link = 0;
+			while(number_of_pages > current_link){
+				navigation_html += '<a class="page_link" href="javascript:go_to_page(' + current_link +')" longdesc="' + current_link +'">'+ (current_link + 1) +'</a>';
+				current_link++;
+			}
+			//navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>';
+			navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>' + '<a class="first_link" href="javascript:go_to_page(' + (number_of_pages-1) + ');">最后一页</a>';
+			
+			$('#page_navigation').html(navigation_html);
+			
+			//add active_page class to the first page link
+			$('#page_navigation .page_link:first').addClass('active_page');
+			
+			//hide all the elements inside content div
+			$('#content').children().css('display', 'none');
+			
+			//and show the first n (show_per_page) elements
+			$('#content').children().slice(0, show_per_page).css('display', 'block');
+		}
+	});
+	
+	//2. register click event on #btn to add comment on museum_comment
+	$("#btn").click(function() {
+		if($("#comment").val() == "" || $("#comment").val() == "请在这里发表您的评论，谢谢"){//simple validation with empty or default condition
+			$("#commentSpan").html("<p><b>评论不能为空</b></p>");
+			return false;		
+		}else{//submit the json object {nickname,comment}
+			$("#commentSpan").html("<p>谢谢您的评论</p>");
+			$.post("../museumListAction!addMuseumComment", {"nickname":encodeURI($("#nickname").val()),"comment":encodeURI($("#comment").val())}, 
+				function(returnedData,status) {
+					if ("success" == status){
+						//$("#content").prepend($("#comment").val() + "<br/>");  //insert the new comment firstly;
+						var nn = $("#nickname").val();
+						if("" == nn)
+							nn = "空";
+						$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + $("#comment").val() +"</div><div class='date'>" 
+						+ new Date().toLocaleString() + "</div></div>");
+						$("#commentSpan").html("");
+					}
+				});
+			$(this).attr("disabled","disabled");
+		}			
+	});
+	
+	/*
+	 * bind the click event to each radio box to vote the express support on this museum list
+	 */
+	$(":input[type=radio]").click(function() {
+		//1. if any radio box is selected, disable all;
+		$(":input[type=radio]").attr("disabled","disabled"); 
+		//1.5 increment the total support count
+		$("#totalzaike").html(parseInt($("#totalzaike").html()) + 1);
+		//2.show chart1 div
+		$("#info1").html("");
+		$("#chart1").show();
+		$("#chart1").html("请稍候...");
+		//3.pass the user choice to action via ajax post() method
+		$.post("../museumListAction!express", {support:$(this).val()}, function(returnedData,status) {
+			if ("success" == status) {
+				$("#chart1").html("");
+				var result = eval(returnedData);
+				temp = result;
+				//4. define plot element to be shown
+				$.jqplot.config.enablePlugins = true;
+			    var ticks = ['完全支持', '支持', '中立', '不太支持', '不支持'];
+			    //5. draw the plot 
+			    plot1 = $.jqplot('chart1', [result], {
+			        // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
+			        animate: !$.jqplot.use_excanvas,
+			        seriesDefaults:{
+			            renderer:$.jqplot.BarRenderer,
+			            pointLabels: { show: true }
+			        },
+			        axes: {
+			            xaxis: {
+			                renderer: $.jqplot.CategoryAxisRenderer,
+			                ticks: ticks
+			            }
+			        },
+			        highlighter: { show: false }
+			    });			 	
+			}
+		});
+	});
+});
+
+//used for default comment hint
+function checkdefault() {
+	var txt = $(this).val();  //the current text in the area
+	if(txt == "请在这里发表您的评论，谢谢")
+		$(this).val("");
+	$(this).focusout(retdefault);	
+}
+//used for default comment hint
+function retdefault(){
+	var txt = $(this).val();
+	if(txt == ""){
+		$(this).val("请在这里发表您的评论，谢谢");
+		$(this).select();
+	}		
+	$(this).click(checkdefault);
+	$(this).focusin(checkdefault);
+}
+
+function previous(){
+	
+	new_page = parseInt($('#current_page').val()) - 1;
+	//if there is an item before the current active link run the function
+	if($('.active_page').prev('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function next(){
+	new_page = parseInt($('#current_page').val()) + 1;
+	//if there is an item after the current active link run the function
+	if($('.active_page').next('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function go_to_page(page_num){
+	//get the number of items shown per page
+	var show_per_page = parseInt($('#show_per_page').val());
+	
+	//get the element number where to start the slice from
+	start_from = page_num * show_per_page;
+	
+	//get the element number where to end the slice
+	end_on = start_from + show_per_page;
+	
+	//hide all children elements of content div, get specific items and show them
+	$('#content').children().css('display', 'none').slice(start_from, end_on).css('display', 'block');
+	
+	/*get the page link that has longdesc attribute of the current page and add active_page class to it
+	and remove that class from previously active page link*/
+	$('.page_link[longdesc=' + page_num +']').addClass('active_page').siblings('.active_page').removeClass('active_page');
+	
+	//update the current page input field
+	$('#current_page').val(page_num);
+};
+</script>
+</head>
+
+<body>
+<div id="header">
+  <iframe src="../header.html" width=980 height=91 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="nav">
+  <iframe src="../nav.html" width=980 height=40 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="primary">
+  <div id="baike">
+    <iframe src="../baike.html" width=120 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+  <div id="main">
+    <div id="location"><a name="articletop">您的位置</a>： <a href="../index.html">旅游宰客榜首页</a> 》》<a href="../commonlist/listindex.html">旅游宰客榜</a> 》》博物馆对比榜</div>
+    <div id="list">
+		<h2 align="center">博物馆对比榜</h2>
+		<div id="share">
+			<!-- JiaThis Button BEGIN -->
+			<div class="jiathis_style">
+				<span class="jiathis_txt">分享到：</span>
+				<a class="jiathis_button_qzone" /><a class="jiathis_button_tsina" />
+				<a class="jiathis_button_tqq" /><a class="jiathis_button_renren" />
+				<a class="jiathis_button_kaixin001" /><a class="jiathis_button_tsohu" />
+				<a class="jiathis_button_feixin" /><a class="jiathis_button_douban" />
+				<a class="jiathis_button_fb" /><a class="jiathis_button_tieba" />
+				<a class="jiathis_button_tianya" /><a class="jiathis_button_twitter" />
+				<a class="jiathis_button_googleplus" /><a class="jiathis_button_t163" />
+				<a class="jiathis_button_xiaoyou" /><a class="jiathis_button_mop" />
+				<a class="jiathis_button_tifeng" /><a class="jiathis_button_gmail" />
+				
+				<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+				<a class="jiathis_counter_style"></a>
+			</div>
+			<script type="text/javascript" >
+			var jiathis_config={
+				boldNum:15,
+				siteNum:15,
+				sm:"taobao,hi,meilishuo,51,sohu,tpeople,189share,huaban,ifensi,hexun,ydnote,ymail,hotmail,tyaolan,toeeee",
+				summary:"",
+				hideMore:false
+			}
+			</script>
+			<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+			<!-- JiaThis Button END -->
+		</div>
+		<div id="intro">
+			<table border="0" style="color: #060606;" cellspacing="0" cellpadding="0">
+				<tr align="center">
+					<td>前往其他榜单：</td>
+					<td><a href="../commonlist/city.html">国内城市榜&nbsp&nbsp</a></td>
+					<td><a href="../commonlist/resort.html">国内景区榜&nbsp&nbsp</a></td>
+					<td><a href="../commonlist/intercity.html">海外国家榜&nbsp&nbsp</a></td>
+					<td><a href="../commonlist/interresort.html">海外景区榜&nbsp&nbsp</a></td>
+					<td><a href="hill.html">名山宰客榜&nbsp&nbsp</a></td>
+					<td><a href="temple.html">烧香拜佛榜&nbsp&nbsp</a></td>
+					<td><a href="park.html">公园对比榜&nbsp&nbsp</a></td>
+					<td><a href="roadfee.html">过路费榜&nbsp&nbsp</a></td>
+				</tr>
+			</table>
+		<br/>
+			<p>博物馆对比榜是以一个普通游客的角度考虑一些关键因素：票价，开放时间，门票优惠范围，馆藏概况，导游服务（人工和音频导览），馆方推荐线路，日常游客人数，交通，周边服务和官方网站。</p>
+			<p style="color: blue;">事实上每个博物馆都有自己的特色，每位游客也有自己的欣赏标准。我们的博物馆对比榜只是抛砖引玉，也许部分资料不一定完全准确，比较方式不一定科学，不过这也许是有益的尝试。
+			   希望有兴趣的读者能够<a href="mailto:lyzk.org@gmail.com">联系我们</a>或者积极评论（在页面最下方），提出更加合理有效的比较方法和数据，及时提供给我们，好做更正和补充。</p>
+			<p>也希望在其他国家生活或者学习或者旅游过的中国游客提供其他对比实例，在此诚挚感谢。</p>			
+		</div>
+		<div class="pic" id="firstpic">
+			<img align="left" src="../images/lists/list_museum_lufugong.jpg" width="375" height="240" 
+					title="卢浮宫"  alt="卢浮宫" />
+			<img align="right" src="../images/lists/list_museum_daying.jpg" width="375" height="240" 
+					title="大英博物馆"  alt="大英博物馆" />
+		</div>
+		<div class="pair" id="firstpair">
+			<br/>
+			<br/>
+			<center>左图为卢浮宫外观，右图为大英博物馆外观</center>
+			<br/>
+			<br/>
+			<p>首先对比的是卢浮宫，大英博物馆，大都会艺术馆和故宫博物院。</p>
+			<br/>
+			<table border="1" style="color: navy;" cellspacing="0" cellpadding="0">
+				<tr align="center"><td width="28px"><i>博物馆</i></td><td><i>卢浮宫</i></td><td><i>大英博物馆</i></td></tr>
+				<tr align="center" style="color: black;"><td>简介</td>
+								<td>世界上最古老、最大、最著名的博物馆之一。位于法国巴黎市中心的塞纳河北岸（右岸），始建于1204年，历经800多年扩建、重修达到今天的规模。
+								卢浮宫占地面积（含草坪）约为45公顷，建筑物占地面积为4.8公顷。全长680米。它的整体建筑呈“U”形，分为新、老两部分，老的建于路易十四时期，
+								新的建于拿破仑时代。宫前的金字塔形玻璃入口，是华人建筑大师贝聿铭设计的。同时，卢浮宫也是法国历史上最悠久的王宫。</td>
+								<td>又名不列颠博物馆，位于英国伦敦新牛津大街北面的大罗素广场，成立于1753年，1759年1月15日起正式对公众开放，是世界上历史最悠久、规模最宏伟的综合性博物馆，
+								也是世界上规模最大、最著名的博物馆之一。博物馆收藏了世界各地的许多文物和图书珍品，藏品之丰富、种类之繁多，为全世界博物馆所罕见。目前博物馆拥有藏品600多万件。
+								由于空间的限制，目前还有大批藏品未能公开展出。</td></tr>
+				<tr align="center"><td>票价</td>
+								<td>常设展览：11欧元;套票：15欧元;含临时展览和德拉克罗瓦博物馆。拿破仑厅内临时展览票价：12欧元</td>
+								<td>免费</td></tr>
+				<tr align="center" style="color: black;"><td>门票优惠</td>
+								<td>每月第一个星期日及法国国庆日免费开放。每星期五18点后常设展览对26周岁以下的观众免费开放（国籍不限）。下列人员可免费参观常设展览及德拉克罗瓦博物馆：
+								未满18周岁的观众；18至25周岁（含25周岁），且居住在欧洲经济区任一国家内的观众；持有本馆教育通行卡教师；艺术史、雕塑、实用艺术专业老师及艺术家，需出示相关证明；
+								残疾人及其陪同人员。</td>
+								<td>用不着</td></tr>
+				<tr align="center"><td>开放时间</td>
+								<td>星期一、四、六、日：9时至18时，各展厅17点30分开始清场.星期三、五：9时至21时45分，各展厅21点30分开始清场.闭馆时间:每星期二和法国公休假日</td>
+								<td>全年开放，每天开放时间：早上10点－下午5：30.星期五延长开放时间。具体馆室开放时间和晚间开放时间可查询官方网站。</td></tr>
+				<tr align="center" style="color: black;"><td>陈列概况</td>
+								<td>展览面积5.5万平方米。六大展馆：东方艺术馆、古希腊及古罗马艺术馆、古埃及艺术馆、珍宝馆、绘画馆及雕塑馆。</td>
+								<td>共有100多个陈列室，面积六七万平方米。包括埃及文物馆、希腊罗马文物馆、西亚文物馆、欧洲中世纪文物馆和东方艺术文物馆。</td></tr>
+				<tr align="center"><td>藏品概况</td>
+								<td>藏品中有被誉为世界三宝的《维纳斯》雕像、《蒙娜丽莎》油画和《胜利女神》石雕，更有大量希腊、罗马、埃及及东方的古董，
+								还有法国、意大利的远古遗物。收藏有40多万件来自世界各国的艺术珍品。</td>
+								<td>共藏有展品400多万件。其中以埃及文物馆、希腊罗马文物馆和东方艺术文物馆藏品最引人注目，而中国的藏品则是占据了绝大部分，且其所收藏的古罗马遗迹、古希腊雕像和埃及木乃伊闻名于世。</td></tr>
+				<tr align="center"><td><i>博物馆</i></td><td><i>大都会艺术馆</i></td><td><i>故宫博物院</i></td></tr>
+				<tr align="center" style="color: black;"><td>简介</td>
+								<td>美国最大的艺术博物馆，也是世界著名博物馆。位于美国纽约5号大道上的82号大街，与著名的美国自然历史博物馆遥遥相对。占地13万平方米，它是与英国伦敦的大英博物馆、法国巴黎的卢浮宫、
+								俄罗斯圣彼得堡（SanktPeterburg）的列宁格勒美术馆（Hermitage）（也称冬宫音译艾尔米塔什博物馆）齐名的世界四大美术馆之一，共收藏有300万件展品。现在是世界上首屈一指的大型博物馆。</td>
+								<td>建立于1925年10月10日，是在明朝、清朝两代皇宫及其收藏的基础上建立起来的中国综合性博物馆，也是中国最大的古代文化艺术博物馆，其文物收藏主要来源于清代宫中旧藏。</td></tr>
+				<tr align="center"><td>票价</td>
+								<td>包含一天之内前往修道院博物馆和花园的通票；不是强制的票价，而是建议价：成人25美元，65岁以上老人17美元，学生12美元，会员免费，12岁以下儿童免费。</td>
+								<td>每年4月1日－10月31日为旺季，60元（不包括珍宝馆、钟表馆）;每年11月1日－来年3月31日为淡季，40元（不包括珍宝馆、钟表馆）;珍宝馆和钟表馆：都是10元</td></tr>
+				<tr align="center" style="color: black;"><td>门票优惠</td>
+								<td>购买了三种城市旅游联票的观众享受程度不一的折扣：CityPASS,The NewYork Pass,NewYork Explorer Pass</td>
+								<td>身高1.2米以下儿童免票。中小学生集体参观主要开放区域殿宇和陈列每周二免票（不含法定节假日）.
+								1.大、中、小学学生（不含成人教育、研究生）票，每张20元/人。2.60岁以上（包括60岁）老人半价。3.离休干部,残疾人凭证件免费。
+								4.有本市社会保障金领取证的人员半价.5.六一儿童节14周岁以下的儿童（含14周岁）免费。随同家长一人可半价。6.三八妇女节女观众半价。
+								7.八一建军节现役中国军人免费。</td></tr>
+				<tr align="center"><td>开放时间</td>
+								<td>周二到周四以及周日 早9点半到下午5点半；周五周六早9点半到晚上9点； 周一和公共假日关闭。提前15分钟清馆。</td>
+								<td>旺季开馆：8:30，止票：16:00,停止入馆：16:10，清场：17:00.淡季开馆：8:30，止票：15:30,停止入馆：15:40，清场：16:30</td></tr>
+				<tr align="center" style="color: black;"><td>陈列概况</td>
+								<td>占地13万平方米。该馆的展览大厅共有3层，分服装、希腊罗马艺术、原始艺术、武器盔甲、欧洲雕塑及装饰艺术、美国艺术、R.莱曼收藏品、古代近东艺术、中世纪艺术、远东艺术、伊斯兰艺术、
+								19世纪欧洲绘画和雕塑、版画、素描和照片、20世纪艺术、欧洲绘画、乐器和临时展览18个陈列室和展室。</td>
+								<td>在陈列展览方面，除了保存和复原三大殿、后三宫和西六宫等处的原状陈列之外，又不定期开辟了青铜、陶瓷、工艺、书画、珍宝、钟表等专馆106万平方米的古建筑群</td></tr>
+				<tr align="center"><td>藏品概况</td>
+								<td>目前藏有埃及、巴比伦、亚述、远东和近东、希腊和罗马、欧洲、非洲、美洲前哥伦布时期和新几内亚等各地艺术珍品 330余万件。</td>
+								<td>现有藏品总量180余万件（套），以明清宫廷文物类藏品、古建类藏品、图书类藏品为主。藏品总分25种大类别，69项小类别。其中一级藏品8000余件（套），二级藏品620000余件（套）。
+								包括有青铜器、玉及石质雕刻、古代印玺、法书名画和碑帖、古代陶瓷器、丝织刺绣品、漆器、珐琅器、金银器、竹木牙质雕刻、文房用具、明清家具等。
+								其中如春秋立鹤方壶，战国秦石鼓，宋张择端清明上河图、朱碧山龙槎银杯，明万历孝端皇后凤冠等作品，均在海内外久负盛名。</td></tr>
+			</table>
+			<br/>
+			<center>表1：卢浮宫、大英博物馆、大都会艺术馆和故宫博物院第一部分对比</center>
+			<br/>
+		</div>
+		<div class="pic" id="secondpic">
+			<img align="left" src="../images/lists/list_museum_daduhui.jpg" width="375" height="240" 
+					title="大都会艺术馆" alt="大都会艺术馆" />
+			<img align="right" src="../images/lists/list_museum_gugong.jpg" width="375" height="240" 
+					title="故宫" alt="故宫" />
+		</div>
+		<div class="pair" id="secondpair">
+			<br/>
+			<br/>
+			<center>左图为大都会艺术馆外观，右图为故宫博物院外观</center>
+			<br/>
+			<br/>
+			<table border="1" style="color: navy;" cellspacing="0" cellpadding="0">
+				<tr align="center"><td width="28px"><i>博物馆</i></td><td><i>卢浮宫</i></td><td><i>大英博物馆</i></td></tr>
+				<tr align="center" style="color: black;"><td>游览推荐</td>
+								<td>根据历史时期、艺术类型或特定艺术主题有若干条专题参观路线供观众选择。有时长90分钟的主要展品精华游</td>
+								<td>按照时间推荐有三种行程：1小时，3小时，陪伴儿童游</td></tr>
+				<tr align="center"><td>导游服务</td>
+								<td>有英语和法语，官网没找到汉语服务；主要展品精华游有导游讲解；未标明是否收费（很可能不收？）</td>
+								<td>全天均有免费导游与讲座（仅限英语）</td></tr>
+				<tr align="center" style="color: black;"><td>音频导览</td>
+								<td>7种语言（不包括汉语）的音频资料可以下载到自己的智能手机，或者租用馆方的语音设备。租金全价5欧元，18岁以下观众3欧元，18至25岁观众周五6点后租一个免费得一个；
+									残疾人、法国失业者和低收入者3欧元</td>
+								<td>通过视觉资料解说 200 多件珍宝藏品（10 种不同的语言版本），可网上预约。 或在当天从多媒体导游设备服务台索取。价格，成人5英镑，会员、学生、失业者、
+									13-18周岁青少年4.5英镑，未满12周岁儿童3.5英镑。</td></tr>
+				<tr align="center"><td>参观人次</td><td>888万</td><td>600万</td></tr>
+				<tr align="center" style="color: black;"><td>官方网站</td>
+								<td>4种语言（英语，法语，汉语和日语）；定位信息准确，设计典雅大方</td>
+								<td>9种语言，图文并茂，详尽备至，定位信息快捷方便</td></tr>
+				<tr align="center"><td>首选交通</td>
+								<td>地铁、公交车，巴黎游览专线，公交船，清晰标明从不同机场的转乘路线</td>
+								<td>地铁，公交车</td></tr>
+				<tr align="center" style="color: black;"><td>服务设施</td>
+								<td>残疾人和儿童服务设施；寄存服务；十种语言的博物馆方位图；医务室、货币兑换处、自动取款机、邮局、公共电话亭、野餐区、洗手间和失物招领处；书店及商店；餐厅及咖啡馆</td>
+								<td>馆内服务设施 网站的辅助设施部分提供了详尽的介绍（包括了导盲犬）；有餐馆、咖啡馆和家庭野餐区；有书店、家庭商店和收藏品商店。与卢浮宫服务设施大同小异。</td></tr>
+				<tr align="center"><td><i>博物馆</i></td><td><i>大都会艺术馆</i></td><td><i>故宫博物院</i></td></tr>
+				<tr align="center" style="color: black;"><td>游览推荐</td>
+								<td>馆方推荐有6种精华游（半天一层游，半天二层游，家庭含5岁以上孩子的埃及游，家庭含3-5岁孩子的古希腊生物探宝游，大师作品精华游和游客最爱作品精华游）</td>
+								<td> 推荐3种方案：2小时，半日和一日游。提供宫殿导览和展馆与陈列导览。故宫博物院实行自南向北单向参观路线：午门（南门）只作为参观入口，观众一律从午门进入故宫；
+									神武门（北门）只作为参观出口，观众参观结束后一律由神武门离开故宫。</td></tr>
+				<tr align="center"><td>导游服务</td>
+								<td> 對所有愛好者提供了範圍廣泛的教育節目，包括針對成人的數種語言導覽、展覽室討論、演講及影片觀賞，也提供多種針對家庭和學生的活動。 只要憑本博物館入場券，這些節目幾乎全部免費。</td>
+								<td>5人或5人以下：全程：250元，中、西路：150元，中路：100元；5人以上，每增加1人，加收10元；志愿者免费讲解：只在珍宝馆、钟表馆、书画馆等展馆内提供汉语、英语讲解。</td></tr>
+				<tr align="center" style="color: black;"><td>音频导览</td>
+								<td>75個小時以上有關本博物館之永久收藏品及精選特別展覽的深入語音講解。 此節目的大部分僅提供英文的版本館長精選的部分8种语言，价格为：普通7美元，
+								会员6美元，14人以下团体每位6美元，15人以上团体每位4美元，12岁以下儿童5美元</td>
+								<td>押金：每台100 元。租金：汉语版、粤语版每台10元。其他语种每台40元</td></tr>
+				<tr align="center"><td>参观人次</td><td> 584.8万</td><td>1400万</td></tr>
+				<tr align="center" style="color: black;"><td>官方网站</td>
+								<td>10种语言，中文是繁体，只有很有限一部分的介绍内容是中文。风格现代</td>
+								<td>3种语言：中文简体中文繁体和英语，设计厚重大气，古香古色。定位信息准确，历史资料尤其丰富</td></tr>
+				<tr align="center"><td>首选交通</td>
+								<td>公交车，地铁</td>
+								<td>公交车，地铁</td></tr>
+				<tr align="center" style="color: black;"><td>服务设施</td>
+								<td>特色在于餐馆按照价格标明三类：$, $$, $$$，从便宜到贵。购物商店的商品种类繁多。其他服务设施周全，与大英和卢浮宫不相上下</td>
+								<td>有服务设施图详细展示餐饮、商店等服务设施位置。与其他三大博物馆相比，缺少对残疾人和老年人以及儿童的特殊服务设施</td></tr>
+			</table>
+			<br />
+			<center>表2：卢浮宫、大英博物馆、大都会艺术馆和故宫博物院第二部分对比</center>
+			<br />
+			<p>小结：1. 四大博物馆中，可能大英博物馆是性价比最高的：免门票，闻名遐迩的收藏品汗牛充栋，拿出来展览的只是九牛一毛而已！伦敦交通便利，讲英语；音频导览丰富；
+				网站美轮美奂，支持多语言；服务设施非常完善。鸡蛋里面挑骨头找出来的不足之处在于人工导游服务的语种只限于英语，伦敦物价昂贵。</p>
+			<p>2. 卢浮宫的藏品也许不如大英博物馆丰富，不过镇馆三宝堪称稀世之珍！陈列建筑雍容华贵，内部美轮美奂；门票价格低廉，优惠范围广，幅度大；馆方推荐的主题游览线路丰富多彩，适合不同审美、年龄人群的需要；
+				人工导游和音频导览都支持多语种；官方网站充满艺术气息；巴黎交通便利；服务设施非常完善。不足之处在于法语环境不如英语环境便利（对英语游客而言），巴黎物价昂贵。</p>
+			<p>3. 大都会艺术馆馆藏也极其丰富，现代艺术品比起卢浮宫和大英博物馆不遑多让！馆方推荐的精华游面面俱到，尤其适合家庭和儿童；人工导游范围非常广，音频导览时间长，讲解深刻，价格低廉；纽约做为世界第一大都市
+				交通便利，旅游环境上佳；网站风格简约；服务设施非常完善。不足之处在于古代艺术品中的绝代珍品稍逊；门票价格稍贵，优惠范围比较窄；网站多语言支持稍欠火候；纽约物价昂贵。</p>
+			<p>4. 故宫的古代艺术品馆藏极其丰富！有独一无二的具有几百年历史的皇家宫殿群做为展览场所，世界无双！馆方推荐有三种精华游；人工导游针对不同数目人群；有不同语种的音频导览；北京
+				交通便利，旅游环境很好，物价相对其他国际化大都市非常低廉；网站古朴大方，内容非常丰富；服务设施完善。相对其他三大博物馆，不足之处比较多：没有现代艺术品；
+				门票价格昂贵，优惠幅度小，范围虽然看似比较宽，对游客约束比较多。而且有好几个馆中馆以及临时展览另行收费；
+				网站多语言支持不足；馆方缺乏对不同兴趣人群的游览推荐，推荐标准过于单一，只是根据时间而已，而且价格昂贵；音频导览价格虽然不贵，不过手续繁杂，须付押金；服务设施相对缺乏，尤其是针对老年人和儿童以及残疾人的服务。
+				<b>最大的遗憾在于主要文物由于内战原因由台北故宫代为收藏，否则馆藏和展览档次会跃上不止一个台阶！期待有那么一天故宫文物回家，博物院会因此成为世界上首屈一指的东方古代文物博物馆。</b></p>
+			<p><b>故宫博物院是国内热门景区中少有的模范，要知道很多景区都收费昂贵，宰客凶猛！可以前往<a href="../download/download.html">下载页面</a>下载最新版的《旅游风险手册》和《旅游安全手册》了解宰客行情。</b></p>	
+			<br/>
+			【卢浮宫<a href="http://www.louvre.fr/zh" target="_blank">参考1</a>，
+			<a href="http://baike.baidu.com/view/4688.htm" target="_blank">参考2</a>，
+			<a href="http://gzdaily.dayoo.com/html/2012-04/15/content_1672777.htm" target="_blank">参考3</a>】
+			【大英博物馆<a href="http://www.britishmuseum.org/visiting.aspx?lang=zh-CHS" target="_blank">参考1</a>，
+			<a href="http://baike.baidu.com/view/25912.htm" target="_blank">参考2</a>，
+			<a href="http://gzdaily.dayoo.com/html/2012-04/15/content_1672777.htm" target="_blank">参考3</a>】
+			【大都会艺术馆<a href="http://www.metmuseum.org/visit" target="_blank">参考1</a>，参考2:百度百科，
+			<a href="http://gzdaily.dayoo.com/html/2012-04/15/content_1672777.htm" target="_blank">参考3</a>】
+			【故宫博物院<a href="http://www.dpm.org.cn/shtml/542/@/96665.html" target="_blank">参考1</a>，参考2:百度百科，
+			<a href="http://collection.sina.com.cn/yjjj/20120922/093185860.shtml" target="_blank">参考3</a>】
+			<br/>
+			<br/>
+			<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+			<br/>
+			<br/>
+		</div>
+		<div class="pic" id="thirdpic">
+			<img align="left" src="../images/lists/list_museum_meiguomeishu.jpg" width="375" height="240" 
+					title="美国国家美术馆" alt="美国国家美术馆" />
+			<img align="right" src="../images/lists/list_museum_zhongguomeishu.jpg" width="375" height="240" 
+					title="中国美术馆" alt="中国美术馆" />
+		</div>
+		<div class="pair" id="thirdpair">
+			<br/>
+			<br/>
+			<center>左图为美国国家美术馆东馆外观，右图为中国美术馆外观</center>
+			<br/>
+			<br/>
+			<p>第二组对比的是美国国家美术馆和中国美术馆。</p>
+			<br/>
+			<table border="1" style="color: navy;" cellspacing="0" cellpadding="0">
+				<tr align="center"><td width="28px">博物馆</td><td>美国国家美术馆</td><td>中国美术馆</td></tr>
+				<tr align="center" style="color: black;"><td>简介</td>
+								<td>世界上建筑最精美、藏品最丰富的美术馆之一，这座艺术品宝库收藏着欧洲中世纪到现代、美国殖民时代到现代的艺术品大约有4万多件。</td>
+								<td>中国美术馆是以收藏、研究、展示中国近现代艺术家作品为重点的国家造型艺术博物馆。主楼建筑面积18000多平方米 ，一至五层楼共有17个展览厅，展览总面积8300平方米，
+								展线总长2110米。1995年主楼后新建现代化藏品库，面积4100平方米。</td></tr>
+				<tr align="center"><td>票价</td><td>免费</td><td>免费不免票</td></tr>
+				<tr align="center" style="color: black;"><td>藏品概况</td>
+								<td>美国国家美术馆收藏的艺术品大约有4万多件。其中有达·芬奇的《吉内夫拉·德本奇像》、拉斐尔《圣母图》、凡·爱克的《圣母领报图》，还有包括安吉利科修士、
+									彼埃德罗·德拉·弗朗西斯卡、贝利尼、伦勃朗、马奈、莫奈等欧洲古典艺术大师的作品。美国著名画家斯图尔特的《华盛顿像》、萨维奇《华盛顿的一家》等名画亦在画廊中熠熠生辉。
+									美国著名画家科普利、伊肯斯、霍默等人的作品同样引人瞩目。在第二层展览区，各类展厅分为威尼斯及意大利北方文艺复兴时期绘画、佛罗伦萨及意大利中部文艺复兴时期绘画、
+									17-18世纪意大利绘画、西班牙绘画、佛兰芒和德国绘画、17-18世纪法国绘画、19世纪法国绘画、美国绘画、英国绘画等相对集中的主题，向参观者展示艺术大师的珍品。</td>
+								<td>中国美术馆收藏各类美术作品10万余件，以新中国成立前后时期的作品为主，兼有明末、清代、民国初期艺术家的杰作。藏品主要为近现代美术精品，中国当代著名美术家的代表作品和重大美术展览获奖作品，
+								以及丰富多彩的民间美术作品。藏品中有任伯年、吴昌硕、黄宾虹、齐白石、徐悲鸿、蒋兆和、司徒乔、李可染、吴作人、叶浅予、罗工柳、吴冠中等艺术家的作品。此外还有外国美术作品千余件。
+								1999年，德国收藏家路德维希夫妇捐赠外国美术作品117件，包括4幅毕加索的油画。收藏品类有绘画、雕塑、陶艺民间美术等数十个品类。其中包括年画、剪纸、玩具、皮影、彩塑、演具、木偶、风筝、民间绘画、
+								刺绣等民间美术品。</td></tr>
+				<tr align="center"><td>导游服务</td>
+								<td>十几种语言，免费</td><td>无</td></tr>
+				<tr align="center" style="color: black;"><td>音频导览</td>
+								<td>多种语言含汉语馆长经藏、儿童和特殊展览。免费</td>
+								<td>凭身份证件可在前台租用常设陈列展览的中英文语音导览机。租用费：10元/次 押金：200元</td></tr>				
+			</table>
+			<br />
+			<center>表3：美国国家美术馆对中国美术馆</center>
+			<br />
+			<p>小结：1. 明显不是一个重量级别的对比。美国国家美术馆历史悠久，馆藏丰富，建筑富有特色，珍藏有许多西方艺术珍品；中国美术馆成立时间短，藏有一些知名国内近现代艺术品，缺乏世界知名的杰作。</p>
+			<p>2. 美国国家美术馆的导游服务和音频导览非常周到，对比起来中国美术馆由于馆藏有限，估计观众人数不多，因此未能提供导游服务，只有有限内容的音频导览，还要收费。</p>
+			<br />
+			【美国国家美术馆<a href="http://www.nga.gov/" target="_blank">参考1</a>，参考2:百度百科】
+			【中国美术馆<a href="http://www.namoc.org/" target="_blank">参考1</a>，参考2:百度百科】
+			<br/>
+			<br/>
+		</div>
+		<div class="pic" id="fourthpic">
+			<img align="left" src="../images/lists/list_museum_taijiling.jpg" width="375" height="240" 
+					title="泰姬陵" alt="泰姬陵" />
+			<img align="right" src="../images/lists/list_museum_bingmayong.jpg" width="375" height="240" 
+					title="兵马俑" alt="兵马俑" />
+		</div>
+		<div class="pair" id="fourthpair">
+			<br/>
+			<br/>
+			<center>左图为泰姬陵正面全景，右图为兵马俑博物馆2号坑全景</center>
+			<br/>
+			<br/>
+			<p>第三组对比的是泰姬陵和兵马俑博物馆。</p>
+			<br/>
+			<table border="1" style="color: navy;" cellspacing="0" cellpadding="0">
+				<tr align="center"><td width="28px">博物馆</td><td>泰姬陵</td><td>兵马俑博物馆</td></tr>
+				<tr align="center" style="color: black;"><td>简介</td>
+								<td>网站8种语言，无中文。泰姬陵，全称为“泰吉·玛哈尔陵”，又译泰姬玛哈，是印度知名度最高的古迹之一，在今印度距新德里200多公里外的北方邦的阿格拉 (Agra)城内，亚穆纳河右侧。
+								是莫卧儿王朝第5代皇帝沙贾汗为了纪念他已故皇后阿姬曼·芭奴，即泰吉·玛哈尔而建立的陵墓，被誉为“完美建筑”。它由殿堂、钟楼、尖塔、水池等构成，全部用纯白色大理石建筑，用玻璃、玛瑙镶嵌，
+								绚丽夺目、美丽无比。有极高的艺术价值。是伊斯兰教建筑中的代表作。</td>
+								<td>秦始皇兵马俑博物馆 国家AAAAA(5A)级景点，秦始皇兵马俑博物馆坐落在距西安37千米的临潼区东，南倚骊山，北临渭水，气势宏伟，是全国重点的文物保护单位。秦兵马俑坑发现于1974年，
+								位于秦始皇帝陵以东1.5公里处。 经考古工作者连续多年大规模钻探及研究考证，这里是中国第一个封建皇帝秦始皇帝之陵园中一处大型从葬坑。1975年国家决定在俑坑原址上建立博物馆。</td></tr>
+				<tr align="center"><td>票价</td>
+									<td>1印度卢比=0.1181 人民币;外国游客750卢比 （88.58元），南亚地区合作组织、多部门技术和经济合作组织国家游客510卢比（60.23元），
+									印度国内游客20卢比（2.36元）。15岁以下游客（无论本国人外国人）</td>
+									<td>旺季：3月1日至11月底，全票150元人民币/人次，优惠票75元人民币/人次。淡季：12月1日至次年2月底，全票120元人民币/人次，优惠票40元人民币/人次。
+									对下列部分人员实行优惠参观门票，优惠券为35元/人：一、现役军人（含武警）；二、残疾人；三、年满65岁以上（含65岁）的老年人；四、16岁以下免费参观；
+									五、年满70岁以上（含70岁）的老年人，免费参观；</td></tr>
+				<tr align="center" style="color: black;"><td>藏品概况</td>
+								<td>泰姬陵最引人瞩目的是用纯白大理石砌建而成的主体建筑，皇陵上下左右工整对称，中央圆顶高六十二米，令人叹为观止。四周有四座高约四十一米的尖塔，塔与塔之间耸立了镶满三十五种不同类型的半宝石的墓碑。
+								陵园占地十七公顷，为一略呈长形的圈子，四周围以红沙石墙，进口大门也用红岩砌建，大约两层高，门顶的背面各有十一个典型的白色圆锥形小塔。大门一直通往沙杰罕王和王妃的下葬室，室的中央则摆放了他们的石棺，
+								壮严肃穆。莫卧儿式花园是一个典型的波斯式花园(Persian garden)，位于主体前方，中央有一水道喷泉，而且有两行并排的树木把花园划分成4个同样大小的长方型，因为“4”字在伊斯兰教中有著神圣与平和的意思。</td>
+								<td>兵马俑坑在秦始皇陵东侧约1公里半，先后发一、二、三号三个坑。一号坑是当地农民打井时发现的，后经钻探先后发现二、三号坑。一号坑最大，东西长230米，宽62米总面积达14260平方米。在这个坑内埋有约6000个真人大小的陶俑，
+								目前已清理出的有1000多个。高级军吏俑，俗称将军俑;车士，即战车上除御手（驾车者）这外的士兵;跪射俑与立射俑在秦俑中是一个较为特殊的兵种，出土于二号坑东部;武士俑即普通士兵;军吏俑从身份上讲低于将军俑，有中级、下级之分。
+								骑兵俑出土于二号坑，有116件，多用于战时奇袭。御手俑为驾驶战车者，在三座俑坑中均有出土;两座铜车马均四马单辕,由大小3400个零部件组装而成。其中二号车车长3.17米，高1.06米，铜马高65-67厘米，身长1.2米，总重量1234公斤。
+								主体为青铜铸造，车马金银饰品1720件，金银器总重7公斤。制作工艺精细,造型逼真，是我国出土文物中时代最早，驾具最全，级别最高，制作最精的青铜器珍品，也是世界考古发现的最大青铜器。</td></tr>
+				<tr align="center"><td>导游服务</td>
+								<td> 政府指定了9家导游公司（英日德法四种语言），价格未知；</td><td>汉英日导游讲解服务，1小时，导游费30元</td></tr>
+				<tr align="center" style="color: black;"><td>音频导览</td>
+								<td>8种语言，英语等外语：105卢比（12.40元），印度语言：63卢比（7.44元）</td><td>无</td></tr>				
+			</table>
+			<br />
+			<center>表4：泰姬陵对兵马俑博物馆</center>
+			<br />
+			<p>小结：1. 做为世界上最知名的两个陵墓，同在发展中国家，两者的游览体验并不一致：泰姬陵长于建筑特色，兵马俑博物馆高在文物收藏。泰姬陵是古代印度和穆斯林建筑风格的集大成者；兵马俑体现了最高水平的随葬品文化。</p>
+			<p>2. 泰姬陵对本国人的门票价格可以忽略不计，而兵马俑博物馆则票价昂贵，不过这与两者的游览体验有部分关联。兵马俑博物馆的古文物数量多，内容非常丰富，因此比起泰姬陵，贵得相对合理。然而与故宫博物院相比兵马俑博物馆
+				性价比要低一些。</p>
+			<p>3. 兵马俑博物馆的官方网站堪称杰作！导游服务完备，价格透明。可惜没有音频导览，触屏机只是部分补充；泰姬陵的官方网站缺少内容，定位信息困难。导游服务缺乏透明度。音频导览不错。</p>
+			<p>当然，兵马俑博物馆高居<a href="../commonlist/resort.html">国内景区宰客榜</a>第四名，去那里玩请小心！</p>
+			<br />
+			【泰姬陵<a href="http://tajmahal.gov.in/home.html" target="_blank">参考1</a>，参考2:百度百科】
+			【兵马俑博物馆<a href="http://www.bmy.com.cn/" target="_blank">参考1</a>，参考2:百度百科，参考3：互动百科】
+			<br/>
+			<br/>
+			<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+			<br/>
+			<br/>
+		</div>
+		<div class="pic" id="fifthpic">
+			<img align="left" src="../images/lists/list_museum_meiguohangtian.jpg" width="375" height="240" 
+					title="美国国家航空航天博物馆" alt="美国国家航空航天博物馆" />
+			<img align="right" src="../images/lists/list_museum_zhongguohangtian.jpg" width="375" height="240" 
+					title="中华航天博物馆" alt="中华航天博物馆" />
+		</div>
+		<div class="pair" id="fifthpair">
+			<br/>
+			<br/>
+			<center>左图为美国国家航空航天博物馆老式飞机，右图为中华航天博物馆长征火箭模型</center>
+			<br/>
+			<br/>
+			<p>第四组对比的是美国国家航空航天博物馆和中华航天博物馆。</p>
+			<br/>
+			<table border="1" style="color: navy;" cellspacing="0" cellpadding="0">
+				<tr align="center"><td width="28px">博物馆</td><td>美国国家航空航天博物馆</td><td>中华航天博物馆</td></tr>
+				<tr align="center" style="color: black;"><td>简介</td>
+								<td>展示世界航空和航天技术，是全球最大的航空和航天博物馆。美国国家航空航天博物馆于1976年7月开馆，是全世界首屈一指的有关飞行的专题博物馆。座落在美国首都华盛顿特区的东南方，
+								每月接待观众达10万之多，第一年的参观人数超过1000万人次，创美国各博物馆最高纪录。它是目前世界上最大的飞行博物馆，是由玻璃、大理石和钢材构成的现代化建筑。
+								展示了人类征服太空、探索宇宙的伟大豪壮的历程。总长近200米、宽敞高大、气势恢弘的展厅里，陈列着飞行发展史上不同阶段的各类飞机和各种型号的导弹、火箭、宇宙飞船，以及著名飞行员和宇航员用过的器物。</td>
+								<td>坐落在北京中轴线天安门以南十多公里处的中国运载火箭技术研究院内，馆内现有展出面积1万多平方米。展馆四周绿化美化良好，交通方便，紧邻南苑机场、世界公园及北京麋鹿苑，
+								是展示中国航天发展历史及成就的专题性博物馆。中华航天博物馆共有三层展厅。一层和二层展厅为对外展厅，主要分为运载火箭、载人航天、人造卫星、月球探测、火箭发射演示、航天器、中国航天形象、
+								航天集团综合简介、古代航天探测、国际合作与交流、未来航天展望等十多个展示区域。这些展区以中国航天的发展历程为主线，通过翔实珍贵的历史资料和丰富的实物与模型，
+								以现代的展示手段生动的展示了中国航天事业的过去、现在、和未来</td></tr>
+				<tr align="center"><td>票价</td>
+									<td>免费</td>
+									<td>30元，学生15元，集体预约参观免费</td></tr>
+				<tr align="center" style="color: black;"><td>藏品概况</td>
+								<td>24个展厅共有18000平方米的展览面积主要收藏反映美国航空航天史的飞机、发动机、火箭、登月车及著名航空员与宇航员用过的器物。展出各种飞机300多架、太空飞行器100多种、火箭和导弹50种、发动机400多台、螺旋桨350副及大量模型。
+　　								著名展品有1783年孟特戈尔菲兄弟乘坐飞越巴黎上空的气球复制品，1896年成功起飞的第一架无人驾驶研究机，1903年由莱特兄弟用金属线木料手工特制的第一架飞机，第二次世界大战中德国制造的第一枚V-2火箭，1957年苏联第一枚人造卫星备用星，
+								1963年创飞行高度纪录以火箭发动机为动力的X-15型飞机，美国第一艘载人宇宙飞船友谊-7，1969 年美国发射的阿波罗-11飞船登月舱和3名宇航员乘坐的哥伦比亚指令舱以及自月球带回的岩石标本，1976年维京-1宇宙飞船拍摄的火星特写镜头。
+　　								该馆建有一个400个座位的宽银幕立体电影厅，其银幕有5层楼高，宽33米 ，放映宇航科学影片。还有一个直径21米的环形空间馆，表演各种天象及宇航景象。</td>
+								<td>“古代航天探索”部分以制做精巧的“浑仪”、“纪限仪”、“象限仪”等天文观测仪器模型及在古代战争中曾大显神威的“神火箭屏”、“一窝蜂”、“火龙出水”等古代“火箭”展品显示了我国古代天文探索的成就，
+								表明了中国是火箭的故乡这一主题。主体大厅内展示着我国自行研制的“长征”系列运载火箭的实物及模型，它们曾多次将国内外卫星送入太空。卫星区中排列着“冈云一号”、“东方红一号”、“东方红二号”等10颗吕类卫星。
+								大厅西部依次排放着运载火箭发动机系列，这是运载火箭的心脏。除此之外，在这里还可以领略到自天外归来的返回式卫星回收舱实物的勃勃英姿，欣赏到著名的“长征二号”捆绑式火箭发射澳星飞行全过程模拟演示的壮观
+								场面。展厅内古代的文明与现代的辉煌交相辉映，展览结尾，布展者独具匠心地模拟出一幅奇妙的月球仙境，在彩灯辉映下意趣盎然，使观众浮想联翩。沿扶梯而上，二层展厅展示了航天高科技成果的推广应用，
+								三层展厅介绍了各分类系统的专业技术。馆内还育设备齐全的学术报告厅，经常开展学术交流活动</td></tr>
+				<tr align="center"><td>导游服务</td><td>每日2次免费人工讲解，团体和学生可预约</td><td>没有官方网站，未知</td></tr>
+			</table>
+			<br />
+			<center>表5：美国国家航空航天博物馆对中华航天博物馆</center>
+			<br />
+			<p>小结：1. 这也完全不是一个重量级别的对比。美国国家航空航天博物馆堪称世界第一；中华航天博物馆连个正式网站都没有，严重缺乏相关游览信息，更像是（实际上就是）一个内部航天成就展。</p>
+			<p>2. 从门票价格到导游服务，美国国家航空航天博物馆都代表了最高水准；中华航天博物馆没有航空部分的展示，对散客收费，地理位置不好，估计鲜有游客。</p>
+			<p>3. 美国国家航空航天博物馆馆藏丰富，寓教于乐，游客参与感强。针对学生和团体有非常详尽的内容介绍；中华航天博物馆陈设模型多，真品少，展览面积有限，离提供高质量服务有很长一段距离。</p>
+			<br/>
+			【美国国家航空航天博物馆<a href="http://airandspace.si.edu/" target="_blank">参考1</a>，参考2:百度百科】
+			【中华航天博物馆<a href="http://www.spacechina.com/n25/n148/n280/c111755/content.html" target="_blank">参考1</a>，参考2:百度百科】
+			<br/>
+			<br/>
+		</div>
+		<div class="pic" id="sixthpic">
+			<img align="left" src="../images/lists/list_museum_meiguoziran.jpg" width="375" height="240" 
+					title="美国国家自然历史博物馆" alt="美国国家自然历史博物馆" />
+			<img align="right" src="../images/lists/list_museum_beijingziran.jpg" width="375" height="240" 
+					title="北京自然博物馆" alt="北京自然博物馆" />
+		</div>
+		<div class="pair" id="sixthpair">
+			<br/>
+			<br/>
+			<center>左图为美国国家自然历史博物馆室内动物标本，右图为北京自然博物馆室内恐龙骨架</center>
+			<br/>
+			<br/>
+			<p>第五组对比的美国国家自然历史博物馆和北京自然博物馆。</p>
+			<br/>
+			<table border="1" style="color: navy;" cellspacing="0" cellpadding="0">
+				<tr align="center"><td width="28px">博物馆</td><td>美国国家自然历史博物馆</td><td>北京自然博物馆</td></tr>
+				<tr align="center" style="color: black;"><td>简介</td>
+								<td>世界上最大的博物馆体系---史密森尼博物馆所属的十六所博物馆之一。位于美国首都华盛顿市第十街和宪法大道西北，开馆于1910年，藏品全面反映人类和自然环境的面貌和演化，
+								是展示自然发展史的专门性博物馆。拥有极为丰富的收藏品，展品多达一亿二千万件，是研究人类及其自然环境的资料宝库。其展出项目十分全面，从恐龙化石、模型、各种矿物到美国的印地安文物和海洋生物等等，
+								包罗万象。展品包括无数保存完好的珍贵的古今哺乳动物、鸟类、两栖动物、爬行动物、昆虫和海洋生物的标本，大量珍稀矿物、火星陨石、宝石等，还有一些展厅展示了人类最早的历史和世界各种文化的发展。
+								这些展品，不仅供观赏、教育，更为科学研究作出杰出贡献。例如博物馆拥有的世界最大的蚊子数据库，收集了多达一百五十万种蚊虫资料，对美国在1999年发现西尼罗河病毒而言，功不可没。
+								至今，这里仍是科学家寻找珍贵资料的必经之地。</td>
+								<td>北京自然博物馆是新中国依靠自己的力量筹建的第一座大型自然历史博物馆，主要从事古生物、动物、植物和人类学等领域的标本收藏、科学研究和科学普及工作。占地面积12,000平方米，
+								建筑面积24,000平方米，展厅面积8,000平方米。基本陈列：动物的奥秘、植物世界、恐龙公园、古哺乳动物、古爬行动物、动物之美、动物-人类的朋友等</td></tr>
+				<tr align="center"><td>票价</td>
+									<td>免费</td>
+									<td>免费，至少一天提前预约</td></tr>
+				<tr align="center" style="color: black;"><td>藏品概况</td>
+								<td>整个博物馆共分三层，从南门拾级走进这座带有网格状圆顶的古典式建筑，就直接进入了第一层的中央圆形大厅。大厅中央的野象标本，它原重8吨，高约4米，1955年在非洲被捕猎，
+								是迄今为止世人所见的最大的野象。这一层共有近20类陈列，分布在动物和植物化石厅、海洋展厅、世界鸟类等展厅。在这一层的馆藏中，有一块距今35亿年的古老化石，35亿年前，地球上的生命才刚刚出现。
+								在海洋生物展厅，游客可以看到长达27.6米的世界上最大的白长須鲸模型。第二层共有近10类陈列。国家自然历史博物館以矿物珍宝馆藏闻名于世，以世界上最大的钻石---重达127克拉的大蓝宝石，
+								切下并加工而成的45.5克拉的"希望之星"---为中心展品，宝石珍藏馆坐落在第二层东侧。游人到此，可以尽情观看许多來自世界各地多种多样的矿物标本、精美绝伦的首饰配件、夺目璀璨的巨型宝石，
+								领略大自然的造化之功，体会巧夺天工的切割工艺，同时分享宝石后的神奇传说。</td>
+								<td>许多标本在国内、国际上都堪称孤品，包括世界闻名的古黄河象头骨化石、长26米的巨型井研马门溪龙化石、中国唯一的恐龙木乃伊化石、北极熊、犀牛,珍贵的拉蒂迈鱼标本、亚洲象标本、鳄鱼标本等各类礼品标本。
+								其中比较珍贵的还有新西兰坎特伯雷国家博物馆赠送我国的恐鸟骨骼标本，这种地球上巨大的鸟已经于1885年在我们这个星球上灭绝，而这件标本也是保存在我国的唯一的恐鸟标本。
+								为了更好地向公众展示这些珍贵标本，北京自然博物馆的基本陈列以生物进化为主线，展示了生物多样性以及与环境的关系，构筑起一个地球上生命发生发展的全景图。
+								根据青少年心理特点新开辟的互动式探索自然奥秘的科普教育活动场所，吸引了无数热爱自然的青少年朋友。“动物之美”、“恐龙世界”等，又让孩子们在欢乐轻松的氛围中，探索自然，热爱科学。 
+								还不定期的推出各种各样的临时主题展览，例如“猛犸象”、“达芬奇科技”、“人体的奥秘”以及连续12年推出的“动物生肖”展览等都产生了比较大的影响。</td></tr>
+				<tr align="center"><td>导游服务</td><td>多语言定期和预约讲解，免费</td><td>有讲解员，但是网站上没有显示讲解时间和内容</td></tr>
+			</table>
+			<br />
+			<center>表6：美国国家自然历史博物馆对北京自然博物馆</center>
+			<br />
+			<p>小结：1. 做为全美第二大自然历史博物馆和热门电影《博物馆奇妙夜》的拍摄场地，位于华盛顿DC的美国国家自然历史博物馆馆藏极其丰富，导游服务完备，游客参与感强，官方网站设计好，内容多。</p>
+			<p>2. 与前者相比，北京自然博物馆起步晚，馆藏相对贫乏，导游服务不足，官方网站稍显简单，科普水平有待提高；不过发展迅速，展览丰富，前途光明。</p>
+			<p><b>意犹未尽的朋友们可以订阅我们的<a href="../mail/mailindex.html">邮件服务</a>，毫不费力了解更多榜单信息、宰客奇闻、安全常识等。
+					也可以前往<a href="../news/newsindex.html">新闻主页</a>浏览更多与博物馆和美术馆相关的内容。</b></p>
+				<p><b>感谢所有能够耐心看到这里的朋友们，欢迎你们提出中肯宝贵的意见和建议。</b></p>
+			<br/>
+			【美国国家自然历史博物馆<a href="http://www.mnh.si.edu/" target="_blank">参考1</a>，
+				<a href="http://2012.hnzqw.com/viewthread.php?tid=32439" target="_blank">参考2</a>】
+			【北京自然博物馆<a href="http://www.bmnh.org.cn/index.html" target="_blank">参考1</a>，参考2:百度百科】
+			<br/>
+		</div>		
+	</div>
+	<div id="bottom" style="float: left; width: 750px;">
+		<br/>
+		<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+		<br/>
+	</div>
+	<div id="express">
+		<b>民意小测验：</b>
+		<label>您认可这个排行榜吗？请选择下面的一项表个态吧</label> 
+		<br /> 
+		<input type="radio" name="support" value="museum1" />完全支持
+		<input type="radio" name="support" value="museum2" />支持
+		<input type="radio" name="support" value="museum3" />中立
+		<input type="radio" name="support" value="museum4" />不太支持
+		<input type="radio" name="support" value="museum5" />不支持 
+		<br />
+		<br />
+		&nbsp;已经有<label id="totalzaike"></label>个表态了
+		<div id="info1"></div>
+	</div>
+	<div id="chart1"></div>
+	<br /> 
+	<div id="innercomment">
+		<h3>请发表您的意见：</h3><br />
+		<input type='hidden' id='current_page' /> 
+		<input type='hidden' id='show_per_page' />
+		<table>
+			<tr><td>昵称(可选):</td><td><input type="text" id="nickname" name="nickname" size="12" maxlength="12"/></td></tr>
+			<tr><td>评论:（限200字）</td><td><textarea rows="10" cols="75" id="comment" name="comment" maxlength="200"></textarea></td></tr>
+			<tr><td><input id="btn" type="button" value="发表评论" /></td><td><span id="commentSpan"></span></td></tr>
+		</table>			 
+		<br />
+	现有评论如下：
+		<br/>
+		<table>
+			<tr align="center"><td width="50px">用户名</td><td width="610px">评论</td><td>日期</td></tr>
+		</table>			
+	</div>
+	<br />
+	<div id="content">评论正在加载中，请稍候</div>
+	<div id='page_navigation'></div>
+  </div>
+  <div id="right">
+    <iframe src="../right.html" width=90 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+</div>
+<div id="footer">
+  <iframe src="../footer.html" width=980 height=70 frameborder="0" scrolling="no"></iframe>
+</div>
+</body>
+</html>

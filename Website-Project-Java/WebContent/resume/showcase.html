@@ -1,0 +1,399 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="keywords" content="haisun resume CV harry" />   
+<meta name="description" content="haisun's resume 2012" />
+<meta name="author" content="hai (harry) sun" />   
+<meta name="Copyright" content="hai (harry) sun" /> 
+
+<title>Showcase for www.lyzk.org</title>
+
+<script type="text/javascript" src="../jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="../jslib/jquery.ui.core.js"></script>
+<script type="text/javascript" src="../jslib/jquery.ui.widget.js"></script>
+<script type="text/javascript" src="../jslib/jquery.ui.tabs.js"></script>
+<script type="text/javascript" src="../jslib/jquery.jqplot.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.barRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.categoryAxisRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.pointLabels.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../style/jquery.jqplot.css" />
+<link type="text/css" rel="stylesheet" href="../style/jquery.ui.all.css" />
+<link rel="stylesheet" type="text/css" href="../style/resume.css" />
+
+<script type="text/javascript">
+var name = "showcase";
+$(function() {
+	//show the hint if the express is polled!
+	if($(":input[type=radio]").attr("disabled") =="disabled"){
+		$("#info1").html("You've already polled!");		
+	}
+	
+	/*
+	 * getAttitudeCount
+	 */
+	$.post("../resumeAction!getAttitudeCount", {"name":name},function(returnedData,status){
+		if("success" == status){
+			$("#total").html(returnedData);
+		}
+	});
+	
+	//activate jquery ui tabs
+	$( "#list" ).tabs({
+		//event: "mouseover"
+	});
+	
+	//set default comment hint
+	$("#comment").val("please comment, thanks!");
+	$("#comment").select();
+	$("#comment").click(checkdefault);
+	$("#comment").focusin(checkdefault);
+			
+	/*
+	 * when the window is loaded, show the comments for resume page
+	 */
+	$.post("../resumeAction!getComments", {"name":name}, function(returnedData,status) {
+		if ("success" == status) {
+			var result = eval(returnedData);
+			
+			$("#content").html("");
+			for ( var index in result) {
+				var c = result[index];
+				var nn = c.nickname;
+				if("" == nn)
+					nn = "guest";
+				$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + c.comment +"</div><div class='date'>" + c.commentDate + "</div></div>");
+			}
+						
+			//how much items per page to show
+			var show_per_page = 10; 
+			//getting the amount of elements inside content div
+			var number_of_items = $('#content').children().size();
+			//calculate the number of pages we are going to have
+			var number_of_pages = Math.ceil(number_of_items/show_per_page);
+			
+			//set the value of our hidden input fields
+			$('#current_page').val(0);
+			$('#show_per_page').val(show_per_page);
+			
+			//now when we got all we need for the navigation let's make it '
+			
+			/* 
+			what are we going to have in the navigation?
+				- link to previous page
+				- links to specific pages
+				- link to next page
+			*/
+			var navigation_html = '<a class="first_link" href="javascript:go_to_page(0);">first page</a>' + '<a class="previous_link" href="javascript:previous();">previous page</a>';
+			var current_link = 0;
+			while(number_of_pages > current_link){
+				navigation_html += '<a class="page_link" href="javascript:go_to_page(' + current_link +')" longdesc="' + current_link +'">'+ (current_link + 1) +'</a>';
+				current_link++;
+			}
+			navigation_html += '<a class="next_link" href="javascript:next();">next page</a>' + '<a class="first_link" href="javascript:go_to_page(' + (number_of_pages-1) + ');">last page</a>';
+			
+			$('#page_navigation').html(navigation_html);
+			
+			//add active_page class to the first page link
+			$('#page_navigation .page_link:first').addClass('active_page');
+			
+			//hide all the elements inside content div
+			$('#content').children().css('display', 'none');
+			
+			//and show the first n (show_per_page) elements
+			$('#content').children().slice(0, show_per_page).css('display', 'block');
+		}
+	});
+	
+	//2. register click event on #btn to add comment on roadfee_comment
+	$("#btn").click(function() {
+		if($("#comment").val() == "" || $("#comment").val() == "please comment, thanks!"){//simple validation with empty or default condition
+			$("#commentSpan").html("<p><b>empty comment not allowed</b></p>");
+			return false;		
+		}else{//submit the json object {nickname,comment}
+			$("#commentSpan").html("<p>thanks for your comment</p>");
+			$.post("../resumeAction!addComment", {"name":name,"nickname":encodeURI($("#nickname").val()),"comment":encodeURI($("#comment").val())}, 
+				function(returnedData,status) {
+					if ("success" == status){
+						//$("#content").prepend($("#comment").val() + "<br/>");  //insert the new comment firstly;
+						var nn = $("#nickname").val();
+						if("" == nn)
+							nn = "guest";
+						$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + $("#comment").val() +"</div><div class='date'>" 
+						+ new Date().toLocaleString() + "</div></div>");
+						$("#commentSpan").html("");
+					}
+				});
+			$(this).attr("disabled","disabled");
+		}			
+	});
+	
+	/*
+	 * bind the click event to each radio box to poll the attitude on the showcase
+	 */
+	$(":input[type=radio]").click(function() {
+		//1. if any radio box is selected, disable all;
+		$(":input[type=radio]").attr("disabled","disabled"); 
+		//1.5 increment the total support count
+		$("#total").html(parseInt($("#total").html()) + 1);
+		//2.show chart1 div
+		$("#info1").html("");
+		$("#chart1").show();
+		$("#chart1").html("please wait...");
+		//3.pass the user choice to action via ajax post() method
+		$.post("../resumeAction!expressAttitude", {attitude:$(this).val(),"name":name}, function(returnedData,status) {
+			if ("success" == status) {
+				$("#chart1").html("");
+				var result = eval(returnedData);
+				temp = result;
+				//4. define plot element to be shown
+				$.jqplot.config.enablePlugins = true;
+				var ticks = ['I love it', 'like it much', 'like', 'neutral', 'do not like'];
+			    //5. draw the plot 
+			    plot1 = $.jqplot('chart1', [result], {
+			        // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
+			        animate: !$.jqplot.use_excanvas,
+			        seriesDefaults:{
+			            renderer:$.jqplot.BarRenderer,
+			            pointLabels: { show: true }
+			        },
+			        axes: {
+			            xaxis: {
+			                renderer: $.jqplot.CategoryAxisRenderer,
+			                ticks: ticks
+			            }
+			        },
+			        highlighter: { show: false }
+			    });			 	
+			}
+		});
+	});
+
+});
+
+//used for default comment hint
+function checkdefault() {
+	var txt = $(this).val();  //the current text in the area
+	if(txt == "please comment, thanks!")
+		$(this).val("");
+	$(this).focusout(retdefault);	
+}
+//used for default comment hint
+function retdefault(){
+	var txt = $(this).val();
+	if(txt == ""){
+		$(this).val("please comment, thanks!");
+		$(this).select();
+	}		
+	$(this).click(checkdefault);
+	$(this).focusin(checkdefault);
+}
+
+function previous(){	
+	new_page = parseInt($('#current_page').val()) - 1;
+	//if there is an item before the current active link run the function
+	if($('.active_page').prev('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function next(){
+	new_page = parseInt($('#current_page').val()) + 1;
+	//if there is an item after the current active link run the function
+	if($('.active_page').next('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function go_to_page(page_num){
+	//get the number of items shown per page
+	var show_per_page = parseInt($('#show_per_page').val());
+	
+	//get the element number where to start the slice from
+	start_from = page_num * show_per_page;
+	
+	//get the element number where to end the slice
+	end_on = start_from + show_per_page;
+	
+	//hide all children elements of content div, get specific items and show them
+	$('#content').children().css('display', 'none').slice(start_from, end_on).css('display', 'block');
+	
+	/*get the page link that has longdesc attribute of the current page and add active_page class to it
+	and remove that class from previously active page link*/
+	$('.page_link[longdesc=' + page_num +']').addClass('active_page').siblings('.active_page').removeClass('active_page');
+	
+	//update the current page input field
+	$('#current_page').val(page_num);
+};
+</script>
+<style type="text/css">
+#primary #list{
+	height: 1400px;
+}
+</style>
+</head>
+<body>
+<div id="primary">
+	<div id="list">
+		<ul>
+			<li><a href="#tabs-1"><label class="tablabel">Motivation</label></a></li>
+			<li><a href="#tabs-2"><label class="tablabel">Skill Stack</label></a></li>
+			<li><a href="#tabs-3"><label class="tablabel">Example: sendmail</label></a></li>
+			<li><a href="#tabs-4"><label class="tablabel">Example: vote</label></a></li>
+		</ul>
+		<div class="lp" id="tabs-1">
+			<div id="top">
+				<p align="center"><img src="../images/resume/top.jpg" border="0" width="600" height="280"/></p>
+			</div>
+			<div id="left">
+				<p align="center"><img src="../images/resume/left.jpg" border="0" width="280" height="400"/></p>
+			</div>
+			<div id="main">
+				<p align="center"><img src="../images/resume/main.jpg" border="0" width="450" height="400"/></p>
+			</div>
+			<div id="right">
+				<p align="center"><img src="../images/resume/right.jpg" border="0" width="200" height="400"/></p>
+			</div>
+			<div id="function">
+				<p align="center"><img src="../images/resume/functionality.jpg" border="0" width="500" height="350"/></p>
+			</div>
+			<div id="legend">
+				<p><label class="blue">Scenario 1</label> tells the poor condition of Chinese tourists when they travel 
+				in their own homeland.</p>
+				<p><label class="blue">Scenario 2</label> reveals tourists' helplessness.</p>
+				<p><label class="blue">Scenario 4</label> describe my own feeling and motivation to develop the website.</p>
+				<p><label class="blue">Scenario 3</label> summarizes the requirement.</p>
+				<p><label class="blue">Figure 1</label> illustrates the core functionalities from above analysis.</p>
+				<p>Click <a href="../index.html"><b>here</b></a> to visit the main page of the website (Notice: Chinese language only),
+				 or my <a href="resume.html"><b>resume</b></a>.</p>
+			</div>
+		</div>
+		<div class="lp" id="tabs-2">
+			<p align="center"><img src="../images/resume/techstack.jpg" border="0" /></p>
+			<br/>
+			<p><label class="blue">Platform:</label> Ubuntu desktop version 12.10.</p>
+			<p><label class="blue">IDE:</label> Eclipse 3.7.2 for linux.</p>
+			<p><label class="blue">Web server:</label> Apache Tomcat 7.0.</p>
+			<p><label class="blue">Database:</label> MySQL community edition 5.5 with connectorJ 5.1.</p>
+			<p><label class="blue">MVC framework:</label> Struts 2.3 (action, interceptor, etc) and Spring (dependency injection,
+			 aspect oriented programming, security and etc).</p>
+			<p><label class="blue">ORM:</label> Hibernate 3.6, JPA 2.0 (annotation), QBC (query by criteria) and QBE (query by example).</p>
+			<p><label class="blue">Server side page:</label> JSP.</p>
+			<p><label class="blue">Mail delivery:</label> Java Mail 1.4.5.</p>
+			<p><label class="blue">Template generation:</label> Freemarker 2.3.18.</p>
+			<p><label class="blue">Search engine:</label> lucene 3.6 with segment analyzer mmseg4j 1.8.5 and HTML parser nekohtml 1.9.16.</p>
+			<p><label class="blue">Client script:</label> Javascript and JQuery 1.7.2.</p>
+			<p><label class="blue">Data exchange:</label> XML and Json (mostly by google Gson).</p>
+			<p><label class="blue">Asynchronous interaction:</label> Ajax.</p>
+			<p><label class="blue">Client page:</label> HMTL and CSS.</p>
+			<p><label class="blue">Wiki framework:</label> Mediawiki 1.19.2 and PHP-Java bridge 6.2.1.</p>
+		</div>
+		<div class="lp" id="tabs-3">
+			<p align="center"><img src="../images/resume/sendmail.jpg" border="0" /></p>
+			<p><label class="blue">Overview:</label> The sendmail operation is a typical background-manipulated, ajax-based procedure. The website
+			 administrator has to send customized emails to those subscribers who register the service provided by www.lyzk.org.</p>
+			<p><label class="blue">MVC framework:</label> Struts responsible for MVC processing; Spring for dependency injection (xml configuration) 
+			and event handler by aop (annotation configuration). There are four kinds of primary objects injected by Spring: Action (struts);
+			 Service; DAO (Data Access Object); and Model. Two struts key elements, action and resultset, are intensively used. Service and DAO
+			  are intermediate layers to offer ways to get access to models (Objects as well as indirectly relations in DB). Models are actually
+			  objects mapping to tables in DB of MySQL. Hibernate provides a way to access the models by means of SQL query or advanced
+			  schemes such as QBC and QBE. JPA annotation is used in models.</p>			
+			<p><label class="blue">10 Steps in the whole procedure:</label> </p>
+			<ul>
+				<li>Step1. In View layer an XmlHttpRequest comes from some background management page with a command to deliver emails to those 
+				subscribers. The request is sent through JQuery $.post() with designated a specific method in <i>SendMail</i> action;</li>
+				<li>Step2. In Action layer there are two fundamental steps. Firstly all valid mail subscriptions in DB should be fetched out. Thus
+				 a getValidAll() method is invoked for this purpose;</li>
+				<li>Step3. In Service layer an implementation, <i>SendMailServiceAdminImpl</i>, of the corresponding service (<i>SendMailService</i> 
+				interface) responds to the action method in the previous step and passes the query request to the next layer;</li>
+				<li>Step4. In DAO layer the implementation, <i>SendMailDAOImpl</i>, of <i>SendMailService</i> gets the request and calls get() method.
+				 Actually the query is done by a Hibernate's method. The real queried object is <i>MailUser</i> which is mapped to table 
+				 <i>mailuser</i> in MySQL DB;</li>
+				<li>Step5. Qualified records are returned to DAO layer and converted into <i>MailUser</i> objects. Those objects are returned to 
+				action layer through service layer, packed into a list;</li>
+				<li>Step6. Now in action layer the full list of mail subscribers is available. For each subscriber, a customized (upon the subscriber
+				's specific requirement) email should be sent;</li>
+				<li>Step6. The first part of the email (html-form) is generated with a fixed freemarker template which is the same for all subscribers. Then
+				 Upon the subscriber's requirement such as his favorite tourism cities or resorts, the second part of the email is generated with
+				  a customized template featured by his preference. Finally the two parts are combined;</li>
+				<li>Step7. Upon the subscriber's email account, his customized html-form email is sent to him through Java Mail API;</li>
+				<li>Step8. By repeating step6 and step7 each subscriber in the list is handled until the sending queue is empty;</li>
+				<li>Step9. If the subscriber list is entirely handled, a JSON object with success flag is sent back to the requesting page. If there
+				are some failures for wrong deliveries, a retry mechanism is applied until each remaining subscriber is handled;</li>
+				<li>Step10. The callback function within $.post() method retrieved the success message within the returned JSON object and displays
+				 the message on the page. Done!</li>
+			</ul>			
+		</div>
+		<div class="lp" id="tabs-4">
+			<p align="center"><img src="../images/resume/vote.jpg" border="0" /></p>
+			<p><label class="blue">Overview:</label> The vote operation provides a chance for users to vote for or against some opinions in a poll.
+			 Once the vote is done, a new page is forwarded from the voting page.</p>
+			<p><label class="blue">MVC framework:</label> Struts responsible for MVC processing; Spring for dependency injection (xml configuration) 
+			and event handler by aop (annotation configuration). There are four kinds of primary objects injected by Spring: Action (struts);
+			 Service; DAO (Data Access Object); and Model. Two struts key elements, action and resultset, are intensively used. Service and DAO
+			  are intermediate layers to offer ways to get access to models (Objects as well as indirectly relations in DB). Models are actually
+			  objects mapping to tables in DB of MySQL. Hibernate provides a way to access the models by means of SQL query or advanced
+			  schemes such as QBC and QBE. JPA annotation is used in models.</p>			
+			<p><label class="blue"> Steps in the whole procedure:</label> </p>
+			<ul>
+				<li>Step1. In View layer vote() method in <i>VoteAction</i> is specified in a form-based HttpRequest after the voter submits his poll;</li>
+				<li>Step2. In Action layer the request is received and passed to next layer;</li>
+				<li>Step3. In Service layer the addVote() method in <i>VoteServiceImpl</i>, the implementation of service interface <i>VoteService</i>, continues to 
+				pass the request to next layer;</li>
+				<li>Step4. In DAO layer in Add() method of <i>VoteDAOImpl</i>, the implementation of DAO interface <i>VoteDAO</i>, calls save() method which is
+				 a Hibernate function to save the <i>Vote</i> object. A real row is added (or updated if the vote is from an old voter) in table <i>vote</i> in 
+				 MySQL DB through ORM. Usually the <i>Vote</i> object contains a list of resorts or cities to be polled and therefore some <i>Resort</i> objects
+				  as well as table resort are consequently affected with updated vote information since there is an One-To-Many relation between <i>Vote</i> object
+				  and <i>Resort</i> object;</li>
+				<li>Step5. The result of voting is returned through DAO and service layer to Action layer. In terms of <i>struts.xml</i> configuration file
+				 the SUCCESS or FAIL result responds to different forwarding JSP pages. Done.</li>
+			</ul>			
+		</div>	
+	</div>
+	<div id="express">
+		<b>little poll:</b>
+		<label>Do you like the showcase?</label> 
+		<br /> 
+		<input type="radio" name="attitude" value="attitude1" />I love it
+		<input type="radio" name="attitude" value="attitude2" />like it much
+		<input type="radio" name="attitude" value="attitude3" />like
+		<input type="radio" name="attitude" value="attitude4" />neutral
+		<input type="radio" name="attitude" value="attitude5" />do not like
+		<br />
+		<br />
+		<p>Show the poll chart by making your choice right now!</p>
+		&nbsp;current polls: <label id="total"></label> times
+		<div id="info1"></div>
+	</div>
+	<div id="chart1"></div>
+	<br />
+	<div id="innercomment">
+		<h3>Please comment:</h3><br />
+		<input type='hidden' id='current_page' /> 
+		<input type='hidden' id='show_per_page' />
+		<table>
+			<tr><td>nickname(optional):</td><td><input type="text" id="nickname" name="nickname" size="12" maxlength="12" placeholder="put your nickname"/></td></tr>
+			<tr><td>comment:</td><td><textarea rows="10" cols="75" id="comment" name="comment" maxlength="200"></textarea></td></tr>
+			<tr><td><input id="btn" type="button" value="submit" /></td><td><span id="commentSpan"></span></td></tr>
+		</table>			 
+		<br />
+	<h3>Current comments:</h3>
+		<br/>
+		<table>
+			<tr align="center"><td width="50px">nickname</td><td width="610px">comment</td><td>date</td></tr>
+		</table>			
+	</div>
+	<br />
+	<div id="content">loading comments, wait please...</div>
+	<div id='page_navigation'></div>
+	<br/>
+	<br/>
+	<br/>
+	<p>  </p>
+</div>  
+</body>
+</html>
+
+

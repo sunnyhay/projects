@@ -1,0 +1,12 @@
+@CHARSET "UTF-8";
+/*
+ * 用于所有页面中的搜索结果显示
+ */
+#main{
+	width: 763px;
+}
+
+#main .search{
+	margin-top: 2px;
+	border: 1px dotted gray;
+}

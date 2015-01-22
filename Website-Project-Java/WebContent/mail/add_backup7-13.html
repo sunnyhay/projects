@@ -1,0 +1,236 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>邮件定制</title>
+
+<script type="text/javascript" src="../jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="../jslib/resorts.js"></script>
+<script type="text/javascript" src="../jslib/ui.core.js"></script>
+<script type="text/javascript" src="../jslib/ui.sortable.js"></script>
+<script type="text/javascript" src="../jslib/jquery.bxslider2.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.easing.1.3.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../style/style2.css" />
+<link rel="stylesheet" type="text/css" href="../style/mail.add.css" />
+
+<script type="text/javascript">
+(function($) {
+	$.fn.shuffle = function() {
+		return this.each(function() {
+			var items = $(this).children();
+			return (items.length) ? $(this).html($.shuffle(items, $(this)))	: this;
+		});
+	}
+
+	$.fn.validate = function() {
+		var res = false;
+		this.each(function() {
+			var arr = $(this).children();
+			res = ((arr[0].innerHTML == "1") && (arr[1].innerHTML == "2")
+					&& (arr[2].innerHTML == "3") && (arr[3].innerHTML == "4")
+					&& (arr[4].innerHTML == "5") && (arr[5].innerHTML == "6"));
+		});
+		return res;
+	}
+
+	$.shuffle = function(arr, obj) {
+		for ( var j, x, i = arr.length; i; j = parseInt(Math.random() * i), x = arr[--i], arr[i] = arr[j], arr[j] = x)
+			;
+		if (arr[0].innerHTML == "1")
+			obj.html($.shuffle(arr, obj))
+		else
+			return arr;
+	}
+})(jQuery);
+
+var arr = new Array();  //hold all the selected resorts or cities;
+$(function() {
+	//allow #innerscroll1 (in thanscroll) to dynamically scroll
+	$('#innerscroll1').bxSlider({
+		auto: true,
+		autoHover: true,
+		margin: 70,
+	    controls: false,
+	    pause: 15000,
+	    speed: 5000,
+	    pager: false
+	});
+	
+	$("#sortable").sortable();
+	$("#sortable").disableSelection();
+	$('ul').shuffle();
+	
+	//the function deals with the customized resort subscription
+	$("#continent label").click(function() {//this level fetch the province list
+		$("#btn-submit").blur();  //blur the submit button so that the validation on email is processed
+		var c = $(this).attr("for");
+		var pr = eval(country[c]);  //pr is the array to hold all the provinces (or countries) under country (or continent) c
+		var province = $("#province");  //the div #province
+			
+		province.html("然后选择某个省份或者地区：");  //clear div province
+		$("#area").html("");  //clear div area
+		for(var i = 0; i < pr.length; i++){
+			//$("#province").append(pr[i]["name"] + " : " + pr[i]["value"] + "<br/>");
+			province.append("<label for='" + pr[i]["name"] + "'>" + pr[i]["value"] + "</label>");
+		}
+		//after the dynamic adding to div #province, the new labels can be activeted with click events.
+		$("#province label").click(function() {//this level fetch resort list
+			$("#btn-submit").blur();  //blur the submit button so that the validation on email is processed
+			$("#submit").show(1000);  //show the submit button after this click
+			var pc = $(this).attr("for");
+			var re = eval(resorts[pc]);
+			var area = $("#area");  //the div #area
+			//alert(re);
+			area.html("接下来选择以下城市或者景区：<br/>");  //clear div area
+			
+			var cityAmount = re[0]["cityNum"];
+			//alert(parseInt(cityAmount));
+			var amount = parseInt(cityAmount);
+			//alert(++amount);
+							
+			area.append("<label>城市：</label>");  //begin to append cities
+			for(var k = 1; k <= amount; k++){
+				area.append("<label for='" + re[k]["name"] + "'>" + re[k]["value"] + "</label>");
+				if(jQuery.inArray(re[k]["value"],arr) > -1)
+					area.append("<input type='checkbox' name='subCheck' value='" + encodeURI(re[k]["value"]) + "' checked='checked'/>");
+				else
+					area.append("<input type='checkbox' name='subCheck' value='" + encodeURI(re[k]["value"]) + "' />");
+			}
+			area.append("<br/><label>景区：</label>");  //begin to append resorts
+			for(var j = ++amount; j < re.length; j++){
+				area.append("<label for='" + re[j]["name"] + "'>" + re[j]["value"] + "</label>");
+				if(jQuery.inArray(re[j]["value"],arr) > -1)
+					area.append("<input type='checkbox' name='subCheck' value='" + encodeURI(re[j]["value"]) + "' checked='checked'/>");
+				else
+					area.append("<input type='checkbox' name='subCheck' value='" + encodeURI(re[j]["value"]) + "' />");
+			}
+			$("#area :checkbox").click(function() {//choose checkboxes and add choices in array 'arr' for later submission
+				$("#choice").show(1500);
+				var rem = decodeURI($(this).val());
+				if($(this).attr("checked") == "checked"){
+					arr.push(rem);
+					$("#choice").append("<label for='" + rem + "'>" + rem + " " + "</label>");
+				}else{
+					arr = jQuery.grep(arr, function(value) {
+						return value != rem;
+						});
+					$("#choice label").remove(":contains('" + rem + "')");  //if unchecked remove the original content
+				}						
+			});
+		});
+	});
+	
+	//the function deals with validation on email before submission
+	$("#btn-submit").click(function() {
+		$('#hidden').val(encodeURI(arr));
+		$(".error").hide();
+		var hasError = false;
+		var emailReg = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
+		
+		var emailAdrVal = $("#subAdr").val();
+		if(emailAdrVal == ''){
+			$("#subAdr").after('<span class="error">您的邮件不能为空，请重新输入！</span>');
+			$("#subAdr").focus();
+			hasError = true;
+		}
+		else if(!emailReg.test(emailAdrVal)){
+			$("#subAdr").after('<span class="error">这不是一个有效的邮件地址，请重新输入！</span>');
+			$("#subAdr").focus();
+			hasError = true;
+		}			
+		
+		if(hasError == true)
+			return false;
+		if($("ul").validate()){
+			//alert("您通过了考验");
+			return true;
+		}else{
+			alert("砖头没摆好，请重摆：第一行从左到右 1 2 3 第二行从左到右 4 5 6");
+			return false;
+		}
+	});
+	//when the email input loses focus, validate it firstly before submission
+	$("#btn-submit").blur(function() {
+		$(".error").hide();
+		var emailReg = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
+		var emailAdrVal = $("#subAdr").val();
+		if(emailAdrVal == ''){
+			$("#subAdr").after('<span class="error">您的邮件不能为空，请重新输入！</span>');
+			$("#subAdr").focus();
+		}
+		else if(!emailReg.test(emailAdrVal)){
+			$("#subAdr").after('<span class="error">这不是一个有效的邮件地址，请重新输入！</span>');
+			$("#subAdr").focus();
+		}	
+	}); 
+});
+</script>
+</head>
+
+<body>
+<div id="header">
+  <iframe src="../header.html" width=980 height=91 frameborder="0"></iframe>
+</div>
+<div id="nav">
+  <iframe src="../nav.html" width=980 height=40 frameborder="0"></iframe>
+</div>
+<div id="primary">
+  <div id="baike">
+    <iframe src="../baike.html" width=120 height=1328 frameborder="0"></iframe>
+  </div>
+  <div id="main">
+    <div id="location">您的位置： <a href="#">旅游宰客榜首页</a> 》》邮件服务 》》邮件定制页</div>
+    <form name="mail" action="mailAddAction!add" method="post">
+		<div id="description">这里介绍如何定制邮件
+		</div>
+		邮件地址：<input type="text" name="subAdr" id="subAdr" value="" size="20" />
+		<br />
+		<br />
+		<div id="continent">
+			首先选择某个国家或者大洲：
+			<label for="china">中国</label>
+			<label for="asia">亚洲</label>
+			<label for="america">美洲</label>
+		</div>
+		<br />
+		<div id="province"></div>
+		<br />
+		<div id="area"></div>
+		<br />
+		<div id="choice" style="display: none;">您选择了：
+		</div>
+		<br />
+		<div id="submit" style="display: none;">
+			<input id="hidden" name="subhidden" type="hidden" value="" />
+			<fieldset>
+				<legend>
+					<label>提交邮件定制之前请玩一下搬砖头吧！把6块蓝色砖头搬成这样：第一行从左到右 
+						<b>1 2 3</b> 第二行从左到右 
+						<b>4 5 6</b>
+					</label>
+				</legend>
+				<div class="captcha_wrap">
+					<div class="captcha">鼠标点住数字进行拖动</div>
+					<ul id="sortable">
+						<li class="captchaItem">1</li>
+						<li class="captchaItem">2</li>
+						<li class="captchaItem">3</li>
+						<li class="captchaItem">4</li>
+						<li class="captchaItem">5</li>
+						<li class="captchaItem">6</li>
+					</ul>
+				</div>
+			</fieldset>
+			<input type="submit" value="定制" id="btn-submit" />
+		</div>
+	</form>
+  </div>
+  <div id="right">
+    <iframe src="../right.html" width=90 height=1328 frameborder="0"></iframe>
+  </div>
+</div>
+<div id="footer">
+  <iframe src="../footer.html" width=980 height=70 frameborder="0"></iframe>
+</div>
+</body>
+</html>

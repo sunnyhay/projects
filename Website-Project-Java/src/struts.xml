@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<constant name="struts.devMode" value="true" />
+	<constant name="struts.i18n.encoding" value="GBK" /> <!-- internationalization -->
+
+	<!-- here global configuration is defined. -->
+	<package name="lyzk-default" extends="struts-default">
+		<global-results>
+			<result name="error">/error.jsp</result>
+		</global-results>
+		<global-exception-mappings>
+			<exception-mapping result="error" exception="java.lang.Exception"></exception-mapping>
+			<exception-mapping result="error" exception="java.sql.SQLException"></exception-mapping>
+			<exception-mapping result="error" exception="java.io.IOException"></exception-mapping>
+		</global-exception-mappings>
+	</package>
+
+	<!-- package: mail 邮件处理 -->
+	<package name="mail" extends="json-default,struts-default,lyzk-default" namespace="/">
+		<!-- <action name="*" class="mailAction" method="{1}">
+			<result>/mail/Mail{1}_success.jsp</result>
+			<result name="error">/mail/Mail{1}_error.jsp</result>
+			<result name="input">/mail/Mail{1}_input.jsp</result>
+			<result name="input">/mail/mail_{1}.jsp</result>
+		</action> -->
+		<action name="mailAddAction" class="mailAddAction" method="add">
+			<result>/mail/add_success.jsp</result>
+		</action>
+		<action name="mailQueryAction" class="mailQueryAction"></action>
+		<action name="mailUnsubAction" class="mailUnsubAction"></action>
+	</package>
+	
+	<!-- package: common-list 通用榜单 -->
+	<package name="commonlist" extends="json-default,struts-default,lyzk-default" namespace="/">
+		<action name="voteAction" class="voteAction" method="vote">
+			<result>/commonlist/vote_success.jsp</result>			
+		</action>
+		<action name="cityListAction" class="cityListAction"></action>
+		<action name="intercityListAction" class="intercityListAction"></action>
+		<action name="resortListAction" class="resortListAction"></action>
+		<action name="interresortListAction" class="interresortListAction"></action>
+		<action name="voteAdviceAction" class="voteAdviceAction"></action>
+	</package>
+	
+	<!-- package: individual-list 单项榜单 -->
+	<package name="individuallist" extends="json-default,struts-default,lyzk-default" namespace="/">
+		<action name="parkListAction" class="parkListAction"></action>
+		<action name="museumListAction" class="museumListAction"></action>
+		<action name="roadfeeListAction" class="roadfeeListAction"></action>
+		<action name="hillListAction" class="hillListAction"></action>
+		<action name="templeListAction" class="templeListAction"></action>
+		<action name="pollzaikeAction" class="pollzaikeAction"></action>
+		<action name="pollmoneyAction" class="pollmoneyAction"></action>
+	</package>
+	
+	<!-- package: news 新闻服务 -->
+	<package name="news" extends="json-default,struts-default,lyzk-default" namespace="/">
+		<action name="newsAction" class="newsAction"></action>
+	</package>
+	
+	<!-- package: download 下载服务 -->
+	<package name="download" extends="json-default,struts-default,lyzk-default" namespace="/">
+		<action name="downloadCommentAction" class="downloadCommentAction"></action>
+		<action name="downloadFile" class="downloadAction">
+			<result type="stream">
+				<param name="contentDisposition">attachment;filename=${filename}</param>
+				<param name="inputName">downloadFile</param>
+			</result>
+		</action>
+		<action name="downloadCountAction" class="downloadCountAction"></action>
+	</package>
+	
+	<!-- package: search 搜索服务 -->
+	<package name="search" extends="json-default,struts-default,lyzk-default" namespace="/">
+		<action name="searchAction" class="searchAction"></action>
+	</package>
+	
+	<!-- package: admin management 用户管理 -->
+	<package name="admin" extends="json-default,struts-default,lyzk-default" namespace="/">
+		<action name="addAreaAction" class="addAreaAction"></action>
+		<action name="addResortAction" class="addResortAction"></action>
+		<action name="mailSendAdminAction" class="mailSendAdminAction"></action>
+		<action name="createIndexAdminAction" class="createIndexAdminAction"></action>
+	</package>
+		
+	<!-- package: admin management  <package name="admin" extends="struts-default" 
+		namespace="/"> <action name="*" class="org.lvyouzaike.action.AdminAction" 
+		method="{1}"> <result>/admin/Admin{1}_success.jsp</result> <result name="error">/admin/Admin{1}_error.jsp</result> 
+		</action> </package> -->
+
+</struts>

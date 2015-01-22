@@ -1,0 +1,25 @@
+@CHARSET "UTF-8";
+
+#main #list .comp{
+	margin-left: 2px;
+	padding-left: 1px;
+	width: 745px;
+}
+
+#main #list #intro{
+	margin: 2px;
+	padding: 2px;
+	margin-bottom: 20px;
+	border-bottom: 1px solid gray;
+}
+
+#main #list .pairtitle{
+	padding-bottom: 10px;
+	font-size: 18px;
+	color: maroon;
+}
+
+#main #list #reference p{
+	margin: 0px;
+	font-size: 16px;
+}

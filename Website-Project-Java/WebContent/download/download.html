@@ -1,0 +1,423 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>下载页面</title>
+<script type="text/javascript" src="../jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="../jslib/jquery.bxslider2.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.easing.1.3.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../style/style2.css" />
+<link rel="stylesheet" type="text/css" href="../style/individual.novote.css" />
+<link rel="stylesheet" type="text/css" href="../style/search.css" />
+
+<script type="text/javascript">
+var total = 0;  //the total amount of counts by all download items
+$(function() {
+	//when the window is loaded, fetch all the download items' counts
+	$.post("../downloadCountAction!getCounts", {}, function(returnedData, status) {
+		if("success" == status){
+			var result = eval(returnedData);
+			for (var index in result){
+				var c = result[index];
+				total += c;
+				$("#down" + index).html(c);
+			}		
+			$("#downTotal").html(total);
+		}
+	});
+	
+	//set default comment hint
+	$("#comment").val("请在这里发表您的评论，谢谢");
+	$("#comment").select();
+	$("#comment").click(checkdefault);
+	$("#comment").focusin(checkdefault);
+	
+	//allow #innerscroll1 (in thanscroll) to dynamically scroll
+	$('#innerscroll1').bxSlider({
+		auto: true,
+		autoHover: true,
+		margin: 70,
+	    controls: false,
+	    pause: 15000,
+	    speed: 5000,
+	    pager: false
+	});
+	
+	/*
+	 * when the window is loaded, show the comment for download page
+	 */
+	$.post("../downloadCommentAction!getDownloadComments", {}, function(returnedData,status) {
+		if ("success" == status) {
+			var result = eval(returnedData);
+			
+			$("#content").html("");
+			for ( var index in result) {
+				var c = result[index];
+				//$("#content").prepend("<tr align='center'><td width='10%' bgcolor='#9ff'>" + c.nickname + "</td><td width='70%' bgcolor='#cff'>" + c.comment+ "</td><td bgcolor='#fcf'>" + c.commentDate + "</td>");
+				var nn = c.nickname;
+				if("" == nn)
+					nn = "空";
+				$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + c.comment +"</div><div class='date'>" + c.commentDate + "</div></div>");
+			}
+						
+			//how much items per page to show
+			var show_per_page = 10; 
+			//getting the amount of elements inside content div
+			var number_of_items = $('#content').children().size();
+			//calculate the number of pages we are going to have
+			var number_of_pages = Math.ceil(number_of_items/show_per_page);
+			
+			//set the value of our hidden input fields
+			$('#current_page').val(0);
+			$('#show_per_page').val(show_per_page);
+			
+			//now when we got all we need for the navigation let's make it '
+			
+			/* 
+			what are we going to have in the navigation?
+				- link to previous page
+				- links to specific pages
+				- link to next page
+			*/
+			//var navigation_html = '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var navigation_html = '<a class="first_link" href="javascript:go_to_page(0);">第一页</a>' + '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var current_link = 0;
+			while(number_of_pages > current_link){
+				navigation_html += '<a class="page_link" href="javascript:go_to_page(' + current_link +')" longdesc="' + current_link +'">'+ (current_link + 1) +'</a>';
+				current_link++;
+			}
+			//navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>';
+			navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>' + '<a class="first_link" href="javascript:go_to_page(' + (number_of_pages-1) + ');">最后一页</a>';
+			
+			$('#page_navigation').html(navigation_html);
+			
+			//add active_page class to the first page link
+			$('#page_navigation .page_link:first').addClass('active_page');
+			
+			//hide all the elements inside content div
+			$('#content').children().css('display', 'none');
+			
+			//and show the first n (show_per_page) elements
+			$('#content').children().slice(0, show_per_page).css('display', 'block');
+		}
+	});
+	
+	//2. register click event on #btn to add comment on this download page
+	$("#btn").click(function() {
+		if($("#comment").val() == "" || $("#comment").val() == "请在这里发表您的评论，谢谢"){//simple validation with empty or default condition
+			$("#commentSpan").html("<p><b>评论不能为空</b></p>");
+			return false;		
+		}else{//submit the json object {nickname,comment}
+			$("#commentSpan").html("<p>谢谢您的评论</p>");
+			$.post("../downloadCommentAction!addDownloadComment", {"nickname":encodeURI($("#nickname").val()),"comment":encodeURI($("#comment").val())}, 
+				function(returnedData,status) {
+					if ("success" == status){
+						//$("#content").prepend($("#comment").val() + "<br/>");  //insert the new comment firstly;
+						var nn = $("#nickname").val();
+						if("" == nn)
+							nn = "空";
+						$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + $("#comment").val() +"</div><div class='date'>" 
+						+ new Date().toLocaleString() + "</div></div>");
+						$("#commentSpan").html("");
+					}
+				});
+			$(this).attr("disabled","disabled");
+		}			
+	});
+	
+	//register click event on #a1 to increment download count on download item #1 旅游风险红宝书普通版word格式
+	$("#a1").click(function() {
+		var count = parseInt($("#down1").html());
+		$("#down1").html(++count);
+		$("#downTotal").html(++total);
+		$("#hint").html("下载已经开始，请稍候...");
+		$("#hint").show(2500);
+		$("#hint").hide(2500);
+	});
+	
+	//register click event on #a2 to increment download count on download item #2 旅游风险红宝书普通版pdf格式
+	$("#a2").click(function() {
+		var count = parseInt($("#down2").html());
+		$("#down2").html(++count);
+		$("#downTotal").html(++total);
+		$("#hint").html("下载已经开始，请稍候...");
+		$("#hint").show(2500);
+		$("#hint").hide(2500);
+	});
+	
+	//register click event on #a3 to increment download count on download item #3 旅游风险红宝书大话西游版word格式
+	$("#a3").click(function() {
+		var count = parseInt($("#down3").html());
+		$("#down3").html(++count);
+		$("#downTotal").html(++total);
+		$("#hint").html("下载已经开始，请稍候...");
+		$("#hint").show(2500);
+		$("#hint").hide(2500);
+	});
+	
+	//register click event on #a4 to increment download count on download item #4 旅游风险红宝书大话西游版pdf格式
+	$("#a4").click(function() {
+		var count = parseInt($("#down4").html());
+		$("#down4").html(++count);
+		$("#downTotal").html(++total);
+		$("#hint").html("下载已经开始，请稍候...");
+		$("#hint").show(2500);
+		$("#hint").hide(2500);
+	});
+	
+	//register click event on #a5 to increment download count on download item #5 旅游安全红宝书普通版word格式
+	$("#a5").click(function() {
+		var count = parseInt($("#down5").html());
+		$("#down5").html(++count);
+		$("#downTotal").html(++total);
+		$("#hint").html("下载已经开始，请稍候...");
+		$("#hint").show(2500);
+		$("#hint").hide(2500);
+	});
+	
+	//register click event on #a6 to increment download count on download item #6 旅游安全红宝书普通版pdf格式
+	$("#a6").click(function() {
+		var count = parseInt($("#down6").html());
+		$("#down6").html(++count);
+		$("#downTotal").html(++total);
+		$("#hint").html("下载已经开始，请稍候...");
+		$("#hint").show(2500);
+		$("#hint").hide(2500);
+	});
+	
+	//register click event on #a7 to increment download count on download item #7 旅游安全红宝书大话西游版word格式
+	$("#a7").click(function() {
+		var count = parseInt($("#down7").html());
+		$("#down7").html(++count);
+		$("#downTotal").html(++total);
+		$("#hint").html("下载已经开始，请稍候...");
+		$("#hint").show(2500);
+		$("#hint").hide(2500);
+	});
+	
+	//register click event on #a8 to increment download count on download item #8 旅游安全红宝书大话西游版pdf格式
+	$("#a8").click(function() {
+		var count = parseInt($("#down8").html());
+		$("#down8").html(++count);
+		$("#downTotal").html(++total);
+		$("#hint").html("下载已经开始，请稍候...");
+		$("#hint").show(2500);
+		$("#hint").hide(2500);
+	});
+	
+	//register click event on #a9 to increment download count on download item #9 旅游维权指南word格式
+	$("#a9").click(function() {
+		var count = parseInt($("#down9").html());
+		$("#down9").html(++count);
+		$("#downTotal").html(++total);
+		$("#hint").html("下载已经开始，请稍候...");
+		$("#hint").show(2500);
+		$("#hint").hide(2500);
+	});
+	
+	//register click event on #a10 to increment download count on download item #10 旅游维权指南pdf格式
+	$("#a10").click(function() {
+		var count = parseInt($("#down10").html());
+		$("#down10").html(++count);
+		$("#downTotal").html(++total);
+		$("#hint").html("下载已经开始，请稍候...");
+		$("#hint").show(2500);
+		$("#hint").hide(2500);
+	});
+});
+
+//used for default comment hint
+function checkdefault() {
+	var txt = $(this).val();  //the current text in the area
+	if(txt == "请在这里发表您的评论，谢谢")
+		$(this).val("");
+	$(this).focusout(retdefault);	
+}
+//used for default comment hint
+function retdefault(){
+	var txt = $(this).val();
+	if(txt == ""){
+		$(this).val("请在这里发表您的评论，谢谢");
+		$(this).select();
+	}		
+	$(this).click(checkdefault);
+	$(this).focusin(checkdefault);
+}
+
+function previous(){
+	
+	new_page = parseInt($('#current_page').val()) - 1;
+	//if there is an item before the current active link run the function
+	if($('.active_page').prev('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function next(){
+	new_page = parseInt($('#current_page').val()) + 1;
+	//if there is an item after the current active link run the function
+	if($('.active_page').next('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function go_to_page(page_num){
+	//get the number of items shown per page
+	var show_per_page = parseInt($('#show_per_page').val());
+	
+	//get the element number where to start the slice from
+	start_from = page_num * show_per_page;
+	
+	//get the element number where to end the slice
+	end_on = start_from + show_per_page;
+	
+	//hide all children elements of content div, get specific items and show them
+	$('#content').children().css('display', 'none').slice(start_from, end_on).css('display', 'block');
+	
+	/*get the page link that has longdesc attribute of the current page and add active_page class to it
+	and remove that class from previously active page link*/
+	$('.page_link[longdesc=' + page_num +']').addClass('active_page').siblings('.active_page').removeClass('active_page');
+	
+	//update the current page input field
+	$('#current_page').val(page_num);
+};
+</script>
+
+<style type="text/css">
+#hint{
+	display: none;
+	width: 350px;
+	margin:5px;
+}
+</style>
+</head>
+
+<body>
+<div id="header">
+  <iframe src="../header.html" width=980 height=91 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="nav">
+  <iframe src="../nav.html" width=980 height=40 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="primary">
+  <div id="baike">
+    <iframe src="../baike.html" width=120 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+  <div id="main">
+    <div id="location">您的位置： <a href="../index.html">旅游宰客榜首页</a> 》》下载页</div>
+    <div id="list">
+    	<h2 align="center">文档下载</h2>
+		<div id="share">
+			<!-- JiaThis Button BEGIN -->
+			<div class="jiathis_style">
+				<span class="jiathis_txt">分享到：</span>
+				<a class="jiathis_button_qzone" /><a class="jiathis_button_tsina" />
+				<a class="jiathis_button_tqq" /><a class="jiathis_button_renren" />
+				<a class="jiathis_button_kaixin001" /><a class="jiathis_button_tsohu" />
+				<a class="jiathis_button_feixin" /><a class="jiathis_button_douban" />
+				<a class="jiathis_button_fb" /><a class="jiathis_button_tieba" />
+				<a class="jiathis_button_tianya" /><a class="jiathis_button_twitter" />
+				<a class="jiathis_button_googleplus" /><a class="jiathis_button_t163" />
+				<a class="jiathis_button_xiaoyou" /><a class="jiathis_button_mop" />
+				<a class="jiathis_button_tifeng" /><a class="jiathis_button_gmail" />
+				
+				<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+				<a class="jiathis_counter_style"></a>
+			</div>
+			<script type="text/javascript" >
+			var jiathis_config={
+				boldNum:15,
+				siteNum:15,
+				sm:"taobao,hi,meilishuo,51,sohu,tpeople,189share,huaban,ifensi,hexun,ydnote,ymail,hotmail,tyaolan,toeeee",
+				summary:"",
+				hideMore:false
+			}
+			</script>
+			<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+			<!-- JiaThis Button END -->
+		</div>
+		<br/>
+		<p style="text-indent: 32px; font-size: 16px;">《旅游风险红宝书》（普通版和大话西游版）的片段内容在右边的滑动窗口“<i style="color:red;">风险提示</i>”和“<i style="color:red;">大话宰客</i>”中可见；
+		《旅游安全红宝书》（普通版）的片段内容在右边的滑动窗口“<i style="color:red;">安全提示</i>”中可见；《旅游维权指南》的片段内容在右边的滑动窗口“<i style="color:red;">旅游维权</i>”中可见。</p>
+		<p style="text-indent: 32px; font-size: 16px;">您的意见和建议是我们前进的动力，欢迎在下载列表底下发表您的评论，或者发邮件<a href="mailto:lyzk.org@gmail.com">联系我们</a>，谢谢！</p>
+		<br/>
+		<table width="755px" border='1'>
+			<tr align="center"><td width="15%">名称</td><td width="8%">版本</td><td width="60%">描述</td><td width="8%">下载次数</td><td>下载链接</td></tr>
+			<tr align="center"><td width="15%">旅游风险红宝书普通版word格式</td><td width="8%">08022012</td>
+				<td width="60%">旅游风险红宝书普通版</td><td width="8%"><span id="down1"/></td>
+				<td><a id="a1" href="../downloadFile.action?num=1">点击下载</a></td>
+			</tr>
+			<tr align="center"><td width="15%">旅游风险红宝书普通版pdf格式</td><td width="8%">08022012</td>
+				<td width="60%">旅游风险红宝书普通版</td><td width="8%"><span id="down2"/></td>
+				<td><a id="a2" href="../downloadFile.action?num=2">点击下载</a></td>
+			</tr>
+			<tr align="center"><td width="15%">旅游风险红宝书大话西游版word格式</td><td width="8%">08022012</td>
+				<td width="60%">旅游风险红宝书大话西游版</td><td width="8%"><span id="down3"/></td>
+				<td><a id="a3" href="../downloadFile.action?num=3">点击下载</a></td>
+			</tr>
+			<tr align="center"><td width="15%">旅游风险红宝书大话西游版pdf格式</td><td width="8%">08022012</td>
+				<td width="60%">旅游风险红宝书大话西游版</td><td width="8%"><span id="down4"/></td>
+				<td><a id="a4" href="../downloadFile.action?num=4">点击下载</a></td>
+			</tr>
+			<tr align="center"><td width="15%">旅游安全红宝书普通版word格式</td><td width="8%">08022012</td>
+				<td width="60%">旅游安全红宝书普通版</td><td width="8%"><span id="down5"/></td>
+				<td><a id="a5" href="../downloadFile.action?num=5">点击下载</a></td>
+			</tr>
+			<tr align="center"><td width="15%">旅游安全红宝书普通版pdf格式</td><td width="8%">08022012</td>
+				<td width="60%">旅游安全红宝书普通版</td><td width="8%"><span id="down6"/></td>
+				<td><a id="a6" href="../downloadFile.action?num=6">点击下载</a></td>
+			</tr>
+			<tr align="center"><td width="15%">旅游安全红宝书大话西游版word格式</td><td width="8%">08022012</td>
+				<td width="60%">旅游安全红宝书大话西游版</td><td width="8%"><span id="down7"/></td>
+				<td><a id="a7" href="../downloadFile.action?num=7">点击下载</a></td>
+			</tr>
+			<tr align="center"><td width="15%">旅游安全红宝书大话西游版pdf格式</td><td width="8%">08022012</td>
+				<td width="60%">旅游安全红宝书大话西游版</td><td width="8%"><span id="down8"/></td>
+				<td><a id="a8" href="../downloadFile.action?num=8">点击下载</a>
+				</td>
+			</tr>
+			<tr align="center"><td width="15%">旅游维权指南word格式</td><td width="8%">09172012</td>
+				<td width="60%">旅游维权指南</td><td width="8%"><span id="down9"/></td>
+				<td><a id="a9" href="../downloadFile.action?num=9">点击下载</a></td>
+			</tr>
+			<tr align="center"><td width="15%">旅游维权指南pdf格式</td><td width="8%">09172012</td>
+				<td width="60%">旅游维权指南</td><td width="8%"><span id="down10"/></td>
+				<td><a id="a10" href="../downloadFile.action?num=10">点击下载</a>	</td>
+			</tr>
+		</table>
+		<br/>
+		<p>&nbsp;总下载次数 <span id="downTotal"></span>次</p>
+		<div id='hint'></div>		
+	<br/>	
+	</div>
+   <div id="innercomment">
+   		<h3>请发表您的意见：</h3><br />
+		<input type='hidden' id='current_page' /> 
+		<input type='hidden' id='show_per_page' />
+		<table>
+			<tr><td>昵称(可选):</td><td><input type="text" id="nickname" name="nickname" size="12" maxlength="12"/></td></tr>
+			<tr><td>评论:（限200字）</td><td><textarea rows="10" cols="75" id="comment" name="comment" maxlength="200"></textarea></td></tr>
+			<tr><td><input id="btn" type="button" value="发表评论" /></td><td><span id="commentSpan"></span></td></tr>
+		</table>			 
+		<br />
+	现有评论如下：
+		<br/>
+		<table>
+			<tr align="center"><td width="50px">用户名</td><td width="610px">评论</td><td>日期</td></tr>
+		</table>			
+	</div>
+	<br />
+	<div id="content">评论正在加载中，请稍候</div>
+	<div id='page_navigation'></div>
+  </div>
+  <div id="right">
+    <iframe src="../right.html" width=90 height=1328 frameborder="0" scrolling="no"></iframe>    
+  </div>
+</div>
+<div id="footer">
+  <iframe src="../footer.html" width=980 height=70 frameborder="0" scrolling="no"></iframe>
+</div>
+</body>
+</html>

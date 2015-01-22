@@ -1,0 +1,317 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>榜单投票页</title>
+
+<script type="text/javascript" src="../jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="../jslib/resorts.js"></script>
+<script type="text/javascript" src="../jslib/ui.core.js"></script>
+<script type="text/javascript" src="../jslib/ui.sortable.js"></script>
+<script type="text/javascript" src="../jslib/jquery.bxslider2.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.easing.1.3.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../style/style2.css" />
+<link rel="stylesheet" type="text/css" href="../style/mail.add.css" />
+<link rel="stylesheet" type="text/css" href="../style/search.css" />
+
+<script type="text/javascript">
+(function($) {
+	$.fn.shuffle = function() {
+		return this.each(function() {
+			var items = $(this).children();
+			return (items.length) ? $(this).html($.shuffle(items, $(this)))	: this;
+		});
+	}
+
+	$.fn.validate = function() {
+		var res = false;
+		this.each(function() {
+			var arr = $(this).children();
+			res = ((arr[0].innerHTML == "1") && (arr[1].innerHTML == "2")
+					&& (arr[2].innerHTML == "3") && (arr[3].innerHTML == "4")
+					&& (arr[4].innerHTML == "5") && (arr[5].innerHTML == "6"));
+		});
+		return res;
+	}
+
+	$.shuffle = function(arr, obj) {
+		for ( var j, x, i = arr.length; i; j = parseInt(Math.random() * i), x = arr[--i], arr[i] = arr[j], arr[j] = x)
+			;
+		if (arr[0].innerHTML == "1")
+			obj.html($.shuffle(arr, obj))
+		else
+			return arr;
+	}
+})(jQuery);
+
+var arr = new Array();  //hold all the selected choices to be voted;
+$(function() {
+	//allow #innerscroll1 (in thanscroll) to dynamically scroll
+	$('#innerscroll1').bxSlider({
+		auto: true,
+		autoHover: true,
+		margin: 70,
+	    controls: false,
+	    pause: 15000,
+	    speed: 5000,
+	    pager: false
+	});
+	
+	$("#sortable").sortable();
+	$("#sortable").disableSelection();
+	$('ul').shuffle();
+	
+	//the function deals with the vote for any resort or city either domestic or international
+	$("#continent label").click(function() {//this level fetch the province list
+		$("#btn-submit").blur();  //blur the submit button so that the validation on email is processed
+		var c = $(this).attr("for");
+		var partition;  //the variable used to produce format
+		
+		if("china" == c){//deal with only china
+			var pr = eval(country[c]);  //pr is the array to hold all the provinces (or countries) under country (or continent) c
+			var province = $("#province");  //the div #province
+				
+			province.html("然后选择某个省份或者地区：");  //clear div province
+			partition = 0;
+			$("#area").html("");  //clear div area
+			for(var i = 0; i < pr.length; i++, partition++){
+				//$("#province").append(pr[i]["name"] + " : " + pr[i]["value"] + "<br/>");
+				if(partition > 9 && partition % 10 == 0)
+					province.append("<br/>");
+				province.append("<label for='" + pr[i]["name"] + "'>" + pr[i]["value"] + "</label>");
+			}
+			//after the dynamic adding to div #province, the new labels can be activeted with click events.
+			$("#province label").click(function() {//this level fetch resort list
+				$("#btn-submit").blur();  //blur the submit button so that the validation on email is processed
+				$("#submit").show(1000);  //show the submit button after this click
+				var pc = $(this).attr("for");
+				var re = eval(resorts[pc]);
+				var area = $("#area");  //the div #area
+				//alert(re);
+				area.html("接下来选择以下城市或者景区：<br/>");  //clear div area
+				
+				var cityAmount = re[0]["cityNum"];
+				//alert(parseInt(cityAmount));
+				var amount = parseInt(cityAmount);
+				//alert(++amount);
+								
+				area.append("<label><b>城市：</b></label>");  //begin to append cities
+				for(var k = 1; k <= amount; k++){
+					area.append("<label>" + re[k]["value"] + "</label>");
+					if(jQuery.inArray(re[k]["value"],arr) > -1)
+						area.append("<input type='checkbox' name='subCheck' value='" + encodeURI(re[k]["value"]) + "' checked='checked'/>");
+					else
+						area.append("<input type='checkbox' name='subCheck' value='" + encodeURI(re[k]["value"]) + "' />");
+				}
+				area.append("<br/><label><b>景区：</b></label>");  //begin to append resorts
+				partition = 0;
+				for(var j = ++amount; j < re.length; j++, partition++){
+					if(partition > 7 && partition % 8 == 0)
+						area.append("<br/>");
+					area.append("<label>" + re[j]["value"] + "</label>");
+					if(jQuery.inArray(re[j]["value"],arr) > -1)
+						area.append("<input type='checkbox' name='subCheck' value='" + encodeURI(re[j]["value"]) + "' checked='checked'/>");
+					else
+						area.append("<input type='checkbox' name='subCheck' value='" + encodeURI(re[j]["value"]) + "' />");
+				}
+				$("#area :checkbox").click(function() {//choose checkboxes and add choices in array 'arr' for later submission
+					$("#choice").show(1500);
+					var rem = decodeURI($(this).val());
+					if($(this).attr("checked") == "checked"){
+						arr.push(rem);
+						$("#choice").append("<label for='" + rem + "'>" + rem + " " + "</label>");
+					}else{
+						arr = jQuery.grep(arr, function(value) {
+							return value != rem;
+							});
+						$("#choice label").remove(":contains('" + rem + "')");  //if unchecked remove the original content
+					}						
+				});
+			});
+		}else{//deal with the world
+			var pr = eval(foreign[c]);  //pr is the array to hold all the foreign countries, cities and resorts under continent c
+			var area = $("#area");  
+			
+			$("#province").html("");  //clear div province
+			area.html("");  //clear div province
+			$("#btn-submit").blur();  //blur the submit button so that the validation on email is processed
+			$("#submit").show(1000);  //show the submit button after this click
+			
+			//alert(pr);
+			var nationAmount = parseInt(pr[0]["nationNum"]);  //num of nations in this continent
+			area.append("<label><b>国家：</b></label>");  //begin to append nations
+			partition = 0;
+			for(var k = 1; k <= nationAmount; k++, partition++){
+				if(partition > 9 && partition % 10 == 0)
+					area.append("<br/>");
+				area.append("<label>" + pr[k]["value"] + "</label>");
+				if(jQuery.inArray(pr[k]["value"],arr) > -1)
+					area.append("<input type='checkbox' name='subCheck' value='" + encodeURI(pr[k]["value"]) + "' checked='checked'/>");
+				else
+					area.append("<input type='checkbox' name='subCheck' value='" + encodeURI(pr[k]["value"]) + "' />");
+			}
+			
+			var cityAmount = parseInt(pr[nationAmount+1]["cityNum"]);  //num of cities in this continent
+			area.append("<br/><label><b>城市：</b></label>");  //begin to append cities
+			partition = 0;
+			for(var j = (nationAmount+2); j < (nationAmount+cityAmount+2); j++, partition++){
+				if(partition > 9 && partition % 10 == 0)
+					area.append("<br/>");
+				area.append("<label>" + pr[j]["value"] + "</label>");
+				if(jQuery.inArray(pr[j]["value"],arr) > -1)
+					area.append("<input type='checkbox' name='subCheck' value='" + encodeURI(pr[j]["value"]) + "' checked='checked'/>");
+				else
+					area.append("<input type='checkbox' name='subCheck' value='" + encodeURI(pr[j]["value"]) + "' />");
+			}
+			
+			area.append("<br/><label><b>景区：</b></label>");  //begin to append resorts
+			partition = 0;
+			for(var t = (nationAmount+cityAmount+2); t < pr.length; t++, partition++){
+				if(partition > 9 && partition % 10 == 0)
+					area.append("<br/>");
+				area.append("<label>" + pr[t]["value"] + "</label>");
+				if(jQuery.inArray(pr[t]["value"],arr) > -1)
+					area.append("<input type='checkbox' name='subCheck' value='" + encodeURI(pr[t]["value"]) + "' checked='checked'/>");
+				else
+					area.append("<input type='checkbox' name='subCheck' value='" + encodeURI(pr[t]["value"]) + "' />");
+			}
+			
+			$("#area :checkbox").click(function() {//choose checkboxes and add choices in array 'arr' for later submission
+				$("#choice").show(1500);
+				var rem = decodeURI($(this).val());
+				if($(this).attr("checked") == "checked"){
+					arr.push(rem);
+					$("#choice").append("<label for='" + rem + "'>" + rem + " " + "</label>");
+				}else{
+					arr = jQuery.grep(arr, function(value) {
+						return value != rem;
+						});
+					$("#choice label").remove(":contains('" + rem + "')");  //if unchecked remove the original content
+				}						
+			});
+		}		
+	});
+	//the function deals with validation on checkboxes without any chosen
+	$("#btn-submit").click(function() {
+		//alert(arr);
+		$('#hidden').val(encodeURI(arr));
+		$(".error").hide();
+		var hasError = false;
+					
+		if(arr == ''){//no checkbox checked
+			$("#hidden").after('<span class="error">请至少选择一个城市或者景区！</span><br/>');
+			hasError = true;
+		}						
+		
+		if(hasError == true)
+			return false;
+		
+		if($("ul").validate()){
+			//alert("您通过了考验");
+			return true;
+		}else{
+			alert("砖头没有搬好啊！请搬成这样：第一行从左到右 1 2 3 第二行从左到右 4 5 6");
+			return false;
+		}
+	});		
+});
+</script>
+<style type="text/css">
+#main .votestep{
+	text-indent: 30px;
+	font-size: 15px;
+	margin: 1px;
+}
+</style>
+</head>
+
+<body>
+<div id="header">
+  <iframe src="../header.html" width=980 height=91 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="nav">
+  <iframe src="../nav.html" width=980 height=40 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="primary">
+  <div id="baike">
+    <iframe src="../baike.html" width=120 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+  <div id="main">
+    <div id="location">您的位置： <a href="../index.html">旅游宰客榜首页</a> 》》<a href="listindex.html">旅游宰客榜</a> 》》投票页</div>
+    <form name="commonlist" action="../voteAction!vote" method="post">
+    	<div id="description">
+    		<p class="votestep">投票说明：</p>
+    		<p class="votestep">如果您出门游玩被宰过，想出口闷气的话，那您来对地方了！您在这里可以给那些曾经坑骗过您的国内外旅游城市、景区和国家投票。</p>
+    		<p class="votestep">也许您曾经投诉过，也许您曾经报警甚至起诉过，顶用么？大多数情况下恐怕未必。</p>
+    		<p class="votestep">靠天靠地不如靠自己，众人拾柴火焰高！您来这里投出宝贵的一票，不仅是行使您的权利，也会最终帮助其他游客！</p>
+    		<p class="votestep">目前一共有9个排行榜，其中普通榜单4个，特色榜单5个。这里是给4个普通榜单进行投票（分别是<a href="city.html">国内城市宰客榜</a>、
+    		<a href="intercity.html">海外国家宰客榜</a>、<a href="resort.html">国内景区宰客榜</a>和<a href="interresort.html">海外景区宰客榜</a>）。</p>
+    		<p class="votestep">2个特色榜单（<a href="../individual/hill.html">名山宰客榜</a>和<a href="../individual/temple.html">烧香拜佛榜</a>）可以接受单独投票，
+    			其他3个特色榜单（<a href="../individual/park.html">公园对比榜</a>、<a href="../individual/museum.html">博物馆对比榜</a>
+    			和<a href="../individual/roadfee.html">过路费对比榜</a>）目前不开放投票，不过可以发表评论和表达支持。</p>
+    		<p class="votestep">旅游宰客榜是新生事物，正在起步阶段，比较粗糙，很多地方还欠缺经验，不可能尽善尽美。不过总得有人尝试，有一个地方集中大家的呐喊，汇聚大家的力量！
+    			您可以去<a href="voteadvice.html">评论页面</a>发表您的意见和建议，也可以给我们发送<a href="mailto:lyzk.org@gmail.com">邮件</a>，
+    			您的宝贵意见和建议是我们前进的动力，谢谢！</p>
+    		<p class="votestep">投票步骤：</p>
+    		<p class="votestep">第一步：选择旅游目的地所在大区（<i style="color: red;">点击红色大区名称</i>）。共有7个大区：中国，亚洲，北美，欧洲，非洲，南美，大洋洲；</p>
+    		<p class="votestep">第二步：如果您在第一步选择了中国，前往第三步。<br/>
+		       如果您在第一步选择了其他6个大区（中国之外的大洲），相关国家、城市和景区会直接列出。然后直接前往第四步；</p>
+    		<p class="votestep">第三步：继续选择中国的省份或地区（<i style="color: green;">点击绿色省份或地区名称</i>），共有34个中国省级行政区（含香港，澳门和台湾），该省份的城市和景区会被列出；</p>
+    		<p class="votestep">第四步：选择您不中意的国家，城市或者景区（<i style="color: blue;">点击其蓝色名称旁边的复选框</i>），选择结果会动态显示出来，以供您参考；</p>
+    		<p class="votestep">第五步：您可以重复第一步重新选择7个大区中的一个；可以重复第二步显示除中国之外其他6个大区包含的国家、城市和景区；可以重复第三步显示中国各省份的城市和景区；继续在第四步添加国家、城市或者景区。
+    		一旦您选择完毕，请按照提示玩一个小游戏——搬砖头。把6块蓝色砖头搬成这样：第一行从左到右 1 2 3 第二行从左到右 4 5 6。	目的在于防止恶意机器人自动提交，对于由此给您可能带来的操作上的麻烦，还请见谅；</p>
+    		<p class="votestep">第六步：砖头搬到合适方位后，点击“投票” 按钮，投票完毕。</p>
+		</div>
+		<div id="continent">
+			<br/>
+			首先选择某个国家或者大洲：
+			<label for="china">中国</label>
+			<label for="asia">亚洲</label>
+			<label for="northamerica">北美</label>
+			<label for="southamerica">南美</label>
+			<label for="africa">非洲</label>
+			<label for="oceania">大洋洲</label>
+			<label for="europe">欧洲</label>
+		</div>
+		<br/>
+		<div id="province"></div>
+		<br/>		
+		<div id="area"></div>
+		<br/>
+		<div id="choice" style="display: none;">您选择了：
+		</div>
+		<br/>
+		<div id="submit" style="display: none;">
+			<input id="hidden" name="votehidden" type="hidden" value="" />
+			<fieldset>
+				<legend>
+					<label>投票之前请玩一下搬砖头吧！把6块蓝色砖头搬成这样：第一行从左到右 
+					<b>1 2 3</b> 第二行从左到右 
+					<b>4 5 6</b>
+					</label>
+				</legend>
+				<div class="captcha_wrap">
+					<div class="captcha">鼠标点住数字进行拖动</div>
+						<ul id="sortable">
+							<li class="captchaItem">1</li>
+							<li class="captchaItem">2</li>
+							<li class="captchaItem">3</li>
+							<li class="captchaItem">4</li>
+							<li class="captchaItem">5</li>
+							<li class="captchaItem">6</li>
+						</ul>
+				</div>
+			</fieldset>
+			<input type="submit" value="投票" id="btn-submit" />
+		</div>
+	</form>
+  </div>
+  <div id="right">
+    <iframe src="../right.html" width=90 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+</div>
+<div id="footer">
+  <iframe src="../footer.html" width=980 height=70 frameborder="0" scrolling="no"></iframe>
+</div>
+</body>
+<!-- InstanceEnd --></html>

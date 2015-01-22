@@ -1,0 +1,7 @@
+@CHARSET "UTF-8";
+#result{
+	width: 500px;
+	height:500px;
+	margin-top: 10px;
+	float: left;	
+}

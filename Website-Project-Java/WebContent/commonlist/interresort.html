@@ -1,0 +1,479 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>海外景区（城市）宰客榜</title>
+
+<script type="text/javascript" src="../jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="../jslib/jquery.bxslider2.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.easing.1.3.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.jqplot.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.barRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.categoryAxisRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.pointLabels.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../style/jquery.jqplot.css" />
+<link rel="stylesheet" type="text/css" href="../style/style2.css" />
+<link rel="stylesheet" type="text/css" href="../style/individual.novote.css" />
+<link rel="stylesheet" type="text/css" href="../style/search.css" />
+
+<script type="text/javascript">
+$(function() {
+	//set default comment hint
+	$("#comment").val("请在这里发表您的评论，谢谢");
+	$("#comment").select();
+	$("#comment").click(checkdefault);
+	$("#comment").focusin(checkdefault);
+	
+	//allow #innerscroll1 (in thanscroll) to dynamically scroll
+	$('#innerscroll1').bxSlider({
+		auto: true,
+		autoHover: true,
+		margin: 70,
+	    controls: false,
+	    pause: 15000,
+	    speed: 5000,
+	    pager: false
+	});
+		
+	//show the hint if the support express is voted!
+	if($(":input[type=radio]").attr("disabled") =="disabled"){
+		$("#info1").html("您已经表达过您的支持了");		
+	}
+	
+	/*
+	 * when the window is loaded, show the comments for interresort list
+	 */
+	$.post("../interresortListAction!getExpressCount", {},function(returnedData,status){
+		if("success" == status){
+			$("#totalzaike").html(returnedData);
+		}
+	});
+	
+	/*
+	 * when the window is loaded, show the comments for interresort list
+	 */
+	$.post("../interresortListAction!getInterResortComments", {}, function(returnedData,status) {
+		if ("success" == status) {
+			var result = eval(returnedData);
+			
+			$("#content").html("");
+			for ( var index in result) {
+				var c = result[index];
+				//$("#content").prepend("<tr align='center'><td width='10%' bgcolor='#9ff'>" + c.nickname + "</td><td width='70%' bgcolor='#cff'>" + c.comment+ "</td><td bgcolor='#fcf'>" + c.commentDate + "</td>");
+				var nn = c.nickname;
+				if("" == nn)
+					nn = "空";
+				$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + c.comment +"</div><div class='date'>" + c.commentDate + "</div></div>");
+			}
+						
+			//how much items per page to show
+			var show_per_page = 10; 
+			//getting the amount of elements inside content div
+			var number_of_items = $('#content').children().size();
+			//calculate the number of pages we are going to have
+			var number_of_pages = Math.ceil(number_of_items/show_per_page);
+			
+			//set the value of our hidden input fields
+			$('#current_page').val(0);
+			$('#show_per_page').val(show_per_page);
+			
+			//now when we got all we need for the navigation let's make it '
+			
+			/* 
+			what are we going to have in the navigation?
+				- link to previous page
+				- links to specific pages
+				- link to next page
+			*/
+			//var navigation_html = '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var navigation_html = '<a class="first_link" href="javascript:go_to_page(0);">第一页</a>' + '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var current_link = 0;
+			while(number_of_pages > current_link){
+				navigation_html += '<a class="page_link" href="javascript:go_to_page(' + current_link +')" longdesc="' + current_link +'">'+ (current_link + 1) +'</a>';
+				current_link++;
+			}
+			//navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>';
+			navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>' + '<a class="first_link" href="javascript:go_to_page(' + (number_of_pages-1) + ');">最后一页</a>';
+			
+			$('#page_navigation').html(navigation_html);
+			
+			//add active_page class to the first page link
+			$('#page_navigation .page_link:first').addClass('active_page');
+			
+			//hide all the elements inside content div
+			$('#content').children().css('display', 'none');
+			
+			//and show the first n (show_per_page) elements
+			$('#content').children().slice(0, show_per_page).css('display', 'block');
+		}
+	});
+	
+	//2. register click event on #btn to add comment on interresort_comment
+	$("#btn").click(function() {
+		if($("#comment").val() == "" || $("#comment").val() == "请在这里发表您的评论，谢谢"){//simple validation with empty or default condition
+			$("#commentSpan").html("<p><b>评论不能为空</b></p>");
+			return false;		
+		}else{//submit the json object {nickname,comment}
+			$("#commentSpan").html("<p>谢谢您的评论</p>");
+			$.post("../interresortListAction!addInterResortComment", {"nickname":encodeURI($("#nickname").val()),"comment":encodeURI($("#comment").val())}, 
+				function(returnedData,status) {
+					if ("success" == status){
+						//$("#content").prepend($("#comment").val() + "<br/>");  //insert the new comment firstly;
+						var nn = $("#nickname").val();
+						if("" == nn)
+							nn = "空";
+						$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + $("#comment").val() +"</div><div class='date'>" 
+						+ new Date().toLocaleString() + "</div></div>");
+						$("#commentSpan").html("");
+					}
+				});
+			$(this).attr("disabled","disabled");
+		}			
+	});
+	
+	/*
+	 * bind the click event to each radio box to vote the express support on this interresort list
+	 */
+	$(":input[type=radio]").click(function() {
+		//1. if any radio box is selected, disable all;
+		$(":input[type=radio]").attr("disabled","disabled"); 
+		//1.5 increment the total support count
+		$("#totalzaike").html(parseInt($("#totalzaike").html()) + 1);
+		//2.show chart1 div
+		$("#info1").html("");
+		$("#chart1").show();
+		$("#chart1").html("请稍候...");
+		//3.pass the user choice to action via ajax post() method
+		$.post("../interresortListAction!express", {support:$(this).val()}, function(returnedData,status) {
+			if ("success" == status) {
+				$("#chart1").html("");
+				var result = eval(returnedData);
+				temp = result;
+				//4. define plot element to be shown
+				$.jqplot.config.enablePlugins = true;
+			    var ticks = ['完全支持', '支持', '中立', '不太支持', '不支持'];
+			    //5. draw the plot 
+			    plot1 = $.jqplot('chart1', [result], {
+			        // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
+			        animate: !$.jqplot.use_excanvas,
+			        seriesDefaults:{
+			            renderer:$.jqplot.BarRenderer,
+			            pointLabels: { show: true }
+			        },
+			        axes: {
+			            xaxis: {
+			                renderer: $.jqplot.CategoryAxisRenderer,
+			                ticks: ticks
+			            }
+			        },
+			        highlighter: { show: false }
+			    });			 	
+			}
+		});
+	});
+});
+
+//used for default comment hint
+function checkdefault() {
+	var txt = $(this).val();  //the current text in the area
+	if(txt == "请在这里发表您的评论，谢谢")
+		$(this).val("");
+	$(this).focusout(retdefault);	
+}
+//used for default comment hint
+function retdefault(){
+	var txt = $(this).val();
+	if(txt == ""){
+		$(this).val("请在这里发表您的评论，谢谢");
+		$(this).select();
+	}		
+	$(this).click(checkdefault);
+	$(this).focusin(checkdefault);
+}
+
+function previous(){
+	
+	new_page = parseInt($('#current_page').val()) - 1;
+	//if there is an item before the current active link run the function
+	if($('.active_page').prev('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function next(){
+	new_page = parseInt($('#current_page').val()) + 1;
+	//if there is an item after the current active link run the function
+	if($('.active_page').next('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function go_to_page(page_num){
+	//get the number of items shown per page
+	var show_per_page = parseInt($('#show_per_page').val());
+	
+	//get the element number where to start the slice from
+	start_from = page_num * show_per_page;
+	
+	//get the element number where to end the slice
+	end_on = start_from + show_per_page;
+	
+	//hide all children elements of content div, get specific items and show them
+	$('#content').children().css('display', 'none').slice(start_from, end_on).css('display', 'block');
+	
+	/*get the page link that has longdesc attribute of the current page and add active_page class to it
+	and remove that class from previously active page link*/
+	$('.page_link[longdesc=' + page_num +']').addClass('active_page').siblings('.active_page').removeClass('active_page');
+	
+	//update the current page input field
+	$('#current_page').val(page_num);
+};
+
+</script>
+</head>
+
+<body>
+<div id="header">
+  <iframe src="../header.html" width=980 height=91 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="nav">
+  <iframe src="../nav.html" width=980 height=40 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="primary">
+  <!-- InstanceBeginEditable name="baike" -->  
+  <div id="baike">
+    <iframe src="../baike.html" width=120 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+  <div id="main">
+    <div id="location"><a name="articletop">您的位置</a>： <a href="../index.html">旅游宰客榜首页</a> 》》<a href="listindex.html">旅游宰客榜</a> 》》海外景区（城市）宰客榜</div>
+    <div id="list">
+		<h2 align="center">海外景区（城市）宰客榜（暂行）</h2>
+		<div id="share">
+			<!-- JiaThis Button BEGIN -->
+			<div class="jiathis_style">
+				<span class="jiathis_txt">分享到：</span>
+				<a class="jiathis_button_qzone" /><a class="jiathis_button_tsina" />
+				<a class="jiathis_button_tqq" /><a class="jiathis_button_renren" />
+				<a class="jiathis_button_kaixin001" /><a class="jiathis_button_tsohu" />
+				<a class="jiathis_button_feixin" /><a class="jiathis_button_douban" />
+				<a class="jiathis_button_fb" /><a class="jiathis_button_tieba" />
+				<a class="jiathis_button_tianya" /><a class="jiathis_button_twitter" />
+				<a class="jiathis_button_googleplus" /><a class="jiathis_button_t163" />
+				<a class="jiathis_button_xiaoyou" /><a class="jiathis_button_mop" />
+				<a class="jiathis_button_tifeng" /><a class="jiathis_button_gmail" />
+				
+				<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+				<a class="jiathis_counter_style"></a>
+			</div>
+			<script type="text/javascript" >
+			var jiathis_config={
+				boldNum:15,
+				siteNum:15,
+				sm:"taobao,hi,meilishuo,51,sohu,tpeople,189share,huaban,ifensi,hexun,ydnote,ymail,hotmail,tyaolan,toeeee",
+				summary:"",
+				hideMore:false
+			}
+			</script>
+			<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+			<!-- JiaThis Button END -->
+		</div>
+		<div id="intro">
+			<table border="0" style="color: #060606;" cellspacing="0" cellpadding="0">
+					<tr align="center">
+						<td>前往其他榜单：</td>
+						<td><a href="city.html">国内城市榜&nbsp&nbsp</a></td>
+						<td><a href="resort.html">国内景区榜&nbsp&nbsp</a></td>
+						<td><a href="intercity.html">海外国家榜&nbsp&nbsp</a></td>
+						<td><a href="../individual/hill.html">名山宰客榜&nbsp&nbsp</a></td>
+						<td><a href="../individual/temple.html">烧香拜佛榜&nbsp&nbsp</a></td>
+						<td><a href="../individual/park.html">公园对比榜&nbsp&nbsp</a></td>
+						<td><a href="../individual/museum.html">博物馆榜&nbsp&nbsp</a></td>
+						<td><a href="../individual/roadfee.html">过路费榜&nbsp&nbsp</a></td>
+					</tr>
+			</table>
+			<br/>
+			<p style="color: purple;">提示：总投票没有超过2000票的情况下，本榜单只是暂行；一旦超过2000票，将根据投票定期发布正式榜单。</p>
+			<p style="color: purple;">总投票数目是指访客在<a href="vote.html">投票页面</a>给所有国内城市、国内景区、海外国家和海外景区投票数目的总和。</p>
+			<br/>
+		</div>
+		<div class="innerlist">
+			<br/>
+			<label class="innertitle"><b>榜首：曼谷 普吉岛</b></label>
+			<br />
+			<img align="left" src="../images/lists/list_interresort_pujidao.jpg" width="372" height="240" 
+				title="中国游客东南亚游的重点就在泰国，曼谷和普吉岛是必到之地，所以挨宰的案例多如牛毛，让我们看看一个典型的骗购假珠宝流程"  
+				alt="中国游客东南亚游的重点就在泰国，曼谷和普吉岛是必到之地，所以挨宰的案例多如牛毛，让我们看看一个典型的骗购假珠宝流程" />
+			<p>中国游客东南亚游的重点就在泰国，曼谷和普吉岛是必到之地，所以挨宰的案例多如牛毛，让我们看看一个典型的骗购假珠宝流程。</p>
+			<p>1. 大王宫前或者其他景点，有人告诉你景点不开门，给了你一些其他推荐景点；2.他推荐的景点里必然有珠宝店，会有免税打折的噱头来吸引你；3.一般情况下会有嘟嘟车或者廉价出租以很便宜的价格带你游玩这些推荐景点；
+				4.不过你总会在其中的一个或者几个景点“偶遇”另一个骗子，继续给你洗脑；5.到了珠宝店，一般情况很冷清，有人会告诉你这是别人都不知道的大便宜，你有幸才捡着了！结果一不留神你就会被宰！
+				此类消费纠纷最多！同时，在曼谷机场, 还有几个专门欺骗中国游客的托儿；</p>
+			<p>有的游客气愤之极：“那些一厢情愿相信泰国人纯朴可爱的人该醒醒了！在泰国，凡是经过商业开发的旅游区都是以宰客骗钱为己任的，特别是像普吉岛这种地方。
+				本地人的谦逊、友善，以及看似诚信也只不过是一种完善的商业制度，为的就是多挣些钱。”</p>
+			<p>在普吉岛“有幸”发现一种新的宰客方式：劣质的海底漫步照相！根据网友攻略反映，洗出来的海底漫步照片全是模糊的！</p>
+			<p>此外，在中国佛道名山、古寺屡次出现的假僧人行骗现象（请参阅<a href="../individual/temple.html">烧香拜佛榜</a>）也出现在普吉岛！旅游旺季吸引了很多这样的骗子。
+				他们打扮成僧人的模样要钱，有泰国的本地骗子，但是绝大部分来自柬埔寨。</p>
+			<p>于是，曼谷和普吉岛以中国游客被宰的普遍程度和新鲜花样高居榜首！</p>
+			<p>【曼谷 普吉岛<a href="http://www.lvping.com/showjournal-d191-r1342501-journals.html" target="_blank">参考1</a>，
+				<a href="http://lvyou.elong.com/948950/tour/a0176409.html" target="_blank">参考2</a>，
+				<a href="http://www.gzlvyou.com/gonglue.aspx?keyid=3915" target="_blank">参考3</a>，
+				<a href="http://thai.17wh.com/guide/20101110_26667.html" target="_blank">参考4</a>，
+				<a href="http://www.lvping.com/showjournal-d191-r1173869-journals.html" target="_blank">参考5</a>，
+				<a href="http://www.zizaike.com/travelogues/98008" target="_blank">参考6</a>，
+				<a href="http://www.lvping.com/showjournal-d364-r959437-journals.html" target="_blank">参考7</a>，
+				<a href="http://www.shuzhu.net/thread-204-1-1.html" target="_blank">参考8</a>，
+				<a href="http://www.suyuan.org/zxgx/news/fjxw/201201/1740.html" target="_blank">参考9</a>，
+				<a href="http://tieba.baidu.com/f?kz=471812693" target="_blank">参考10</a>】
+			</p>
+			<p class="directvote">直接去<a href="vote.html">投票</a></p>
+		</div>
+		<div class="innerlist">
+			<br/>
+			<label class="innertitle"><b>榜眼：东京 大阪</b></label>
+			<br/>
+			<img align="left" src="../images/lists/list_interresort_tokyo.jpg" width="372" height="240" 
+				title="这个5夜6天日本游的最低价格有时低至4000元人民币，伴随而来的往往是导游向游客乱敲竹杠的问题"  
+				alt="这个5夜6天日本游的最低价格有时低至4000元人民币，伴随而来的往往是导游向游客乱敲竹杠的问题" />
+			<p>让我们看看NHK最新纪录片里面的细节，主要是关于东京一线游中存在的种种针对中国游客的宰客行为，一般发生在参观东京和大阪的旅游团。</p>
+			<p>譬如“5夜6天日本游”，中国国内旅行社根本不安排上午出发的航班，而是安排下午出发晚上抵达东京的航班，这样做的结果，是游客到了东京成田机场后直接被拉到机场酒店休息。
+				该机场并不在东京，而是在千叶县，高速公路上开车需要一个半小时。</p>
+			<p>这个5夜6天日本游的最低价格有时低至4000元人民币，伴随而来的往往是导游向游客乱敲竹杠的问题。游客到了日本之后会发现无论到哪里，日本的导游都要额外收钱。比如去迪斯尼乐园，收1万日元（约800元），到银座购物，
+				也被收4000日元（约320元）。几天下来，实际交给旅行社和导游的钱，比旅游费多了1倍，超过8000元人民币。如果游客不舍得花这个冤枉钱，导游会恐吓游客：“你如果不去，我们通知日本大使馆，
+				你以后就拿不到来日本的签证。”最后，导游把实在不愿掏钱去银座购物的游客，直接扔到距离银座较远的东京日比谷公园，让不懂日语，不知自己在何处的游客们在公园里晒太阳。</p>
+			<p>同时NHK电视台发现中国游客被带去购物的“免税店”，都不是日本一些大商业公司开办的家电商店或药妆店（这些店基本上都可免税），而是带到了很偏僻，平时很少有人知道的大楼里，在那里开设的“免税店”里安排购物，
+				而且事前被告知“这里最便宜最安全”，结果可想而知了，中国游客人为刀俎我为鱼肉了！</p>
+			<p>因此，东京和大阪作为这条宰客流水线的主要城市荣登榜眼！</p>
+			<p>【东京 大阪<a href="http://blog.sina.com.cn/s/blog_4cd1c1670102dxsj.html" target="_blank">参考1</a>，
+				<a href="http://www.ribenyouxue.cn/2012/0401/660.html" target="_blank">参考2</a>，
+				<a href="http://www.hokaka.com/post/2010-01-19/17291510" target="_blank">参考3</a>】
+			</p>
+			<p class="directvote">直接去<a href="vote.html">投票</a></p>
+		</div>
+		<div class="innerlist">
+			<br/>
+			<label class="innertitle"><b>探花：济州岛</b></label>
+			<br/>
+			<img align="left" src="../images/lists/list_interresort_jizhoudao.jpg" width="372" height="240" 
+				title="济州岛低价团，游客三思而后行！" alt="济州岛低价团，游客三思而后行！" />
+			<p>部分旅游中介以到济州博彩旅游可免除食宿费为诱饵招揽国内游客，当地不断发生中国游客因欠赌金护照被扣的情况。我国驻光州总领馆因此特别提醒赴济州岛旅游的中国公民，一定要选择具有正规资质的旅行社了解信息，
+				安排行程。如选择自由行，不要轻信所谓“免费食宿”等不实信息，避免上当受骗。</p>
+			<p>同时，根据长期生活在济州岛的网友反映，岛上还有一些购物陷阱。有时导游领去的化妆品免税店其实就是华侨个人开的专门坑中国游客的化妆品店，专门推销那些廉价化妆品，尤其以肉毒杆菌为首忽悠同胞。
+				还有打着高丽参旗号的假营养品、玻璃制成的假紫水晶、民俗村的马骨粉，等等。再说一下景点: 龙头岩是免费的景点就是一块破石头. 神秘道路免费(假的神秘道路), 涉地钾免费. 城山日出峰, 汉拿树木园等景点团票每人10元都不到. 
+				那我们再看一下潜水艇每人300元人民币自费项目, 什么敲打乐队150-200自费项目,还有好多贵的景点都是自费项目，这些自费项目也是旅行社的赚钱项目，而且旅行社收的费用按换率算比实际价格还要高。</p>
+			<p>济州岛低价团，游客三思而后行！</p>
+			<p>【济州岛<a href="http://www.mf321.com/zixun/20120308/00819391.html" target="_blank">参考1</a>，
+				<a href="http://tieba.baidu.com/p/1223513135" target="_blank">参考2</a>，
+				<a href="http://bj.58.com/guojilvyou/10285843702795x.shtml" target="_blank">参考3</a>】
+			</p>
+			<p class="directvote">直接去<a href="vote.html">投票</a></p>
+		</div>
+		<div class="twinlist">
+			<div class="leftlist">
+				<br/>
+				<label class="lefttitle"><b>第四名：罗马</b></label>
+				<br/>
+				<img align="left" src="../images/lists/list_interresort_roma.jpg" width="240" height="180" 
+					title="意大利首都的黑出租很出名；观光马车混乱的收费标准一直为游客所诟病；遇到吉普赛孩子一定要小心你的钱包和口袋！有时也会出现假警察和假服务人员！"  
+					alt="意大利首都的黑出租很出名；观光马车混乱的收费标准一直为游客所诟病；遇到吉普赛孩子一定要小心你的钱包和口袋！有时也会出现假警察和假服务人员！" />
+				<p>意大利首都的黑出租很出名；观光马车混乱的收费标准一直为游客所诟病；遇到吉普赛孩子一定要小心你的钱包和口袋！有时也会出现假警察和假服务人员！</p>
+				<p> 另有台湾游客贪图免费水上TAXI，被领至私人码头骗买玻璃制品的经历。</p>
+				<p>【罗马<a href="http://fashion.ifeng.com/travel/news/world/detail_2012_02/03/12271516_1.shtml" target="_blank">参考1</a>，
+					<a href="http://blog.sina.com.cn/s/blog_4ca92fe10100g2kb.html" target="_blank">参考2</a>，
+					<a href="http://www.daodao.com/Tourism-g187791-c5-n14655_Qita.html" target="_blank">参考3</a>，
+					<a href="http://jkismn33.pixnet.net/blog/post/67372585-%E7%BE%A9%E5%A4%A7%E5%88%A9%E4%BA%BA%E7%86%B1%E6%83%85%E4%B8%8B%E9%9A%B1%E8%97%8F%E4%B9%8B%E9%A8%99%E5%B1%80%EF%BC%81%E5%A8%81%E5%B0%BC%E6%96%AF%E9%A3%AF%E5%BA%97%E8%A1%8C%E9%A8%99" target="_blank">参考4</a>】
+				</p>
+			</div>
+			<div class="rightlist">
+				<br/>
+				<label class="righttitle"><b>第五名：纽约</b></label>
+				<br/>
+				<img align="left" src="../images/lists/list_interresort_newyork.jpg" width="240" height="180" 
+					title="此外，纽约作为世界第一大都市，潜在的宰客行为不少，比如地铁站或者火车站假装盘缠用尽讨要回程旅费的骗子、街头玩牌或者魔术表演的混混、少数不标清价格的热狗摊等等，范围虽广，性质不算恶劣。"  
+					alt="此外，纽约作为世界第一大都市，潜在的宰客行为不少，比如地铁站或者火车站假装盘缠用尽讨要回程旅费的骗子、街头玩牌或者魔术表演的混混、少数不标清价格的热狗摊等等，范围虽广，性质不算恶劣。" />
+				<p>美国纽约市的出租车早在2007年就装上了GPS，但一些出租车司机通过调高计价器资费标准来疯狂“宰客”。美国纽约市出租车委员会2010年3月公布说，纽约出租车司机两年来多收费用达830多万美元。
+					有的游客还碰到过时报广场乘坐三轮车宰客的事件。</p>
+				<p>此外，纽约作为世界第一大都市，其他宰客风险不少，比如地铁站或者火车站假装盘缠用尽讨要回程旅费的骗子、街头玩牌或者魔术表演的混混、少数不标清价格的热狗摊等等，范围虽广，性质不算恶劣。</p>
+				<p>【纽约<a href="http://fashion.ifeng.com/travel/news/world/detail_2012_02/03/12271516_2.shtml" target="_blank">参考1</a>，
+					<a href="http://world.kankanews.com/zongheng/2012-08-17/1443697.shtml" target="_blank">参考2</a>，
+					<a href="http://info.txooo.com/PreCheat/2-1054/1339468.htm" target="_blank">参考3</a>】
+				</p>
+				<p class="directvote">直接去<a href="vote.html">投票</a></p>
+			</div>
+		</div>
+		<div class="twinlist">
+			<div class="leftlist">
+				<br/>
+				<label class="lefttitle"><b>候选：巴黎 伦敦 马德里</b></label>
+				<br/>
+				<p>如同纽约，大凡热门旅游城市，必然会有一些小偷小摸，小骗小拐，败坏游客的心情，诈扁游客的钱包。
+					总体上看，欧美旅游市场还是比较规范的；但在一些热门旅游城市，仍需小心谨慎！</p>
+				<p><b>意犹未尽的朋友们可以订阅我们的<a href="../mail/mailindex.html">邮件服务</a>，毫不费力了解更多榜单信息、宰客奇闻、安全常识等。
+					也可以前往<a href="../news/newsindex.html">新闻主页</a>浏览更多与海外旅游风险相关的内容。</b></p>
+			</div>
+			<div class="rightlist">
+				<br/>
+				<label class="righttitle"><b>特别安全提醒城市和景区</b></label>
+				<br/>
+				<p>治安不好：莫斯科，约翰内斯堡，开罗；</p>
+				<p>易发恐怖事件：巴厘岛，巴格达，耶路撒冷，大马士革；</p>
+				<p>极恶劣自然环境：撒哈拉沙漠；</p>
+				<p>旅游自由度较差：平壤；</p>
+				<p>卫生条件差，易感染传染病：金边，雅加达。</p>
+				<p><b>国外这些城市和景区其实还好了，国内很多热门景区都收费昂贵，宰客凶猛！可以前往<a href="../download/download.html">下载页面</a>
+					下载最新版的《旅游风险手册》和《旅游安全手册》了解宰客行情。</b></p>
+				<p class="directvote">直接去<a href="vote.html">投票</a></p>
+			</div>
+		</div>		
+	</div>
+	<div id="bottom" style="float: left; width: 750px;">
+		<br/>
+		<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+		<br/>
+	</div>
+	<div id="express">
+		<b>民意小测验：</b>
+		<label>您认可这个排行榜吗？请选择下面的一项表个态吧</label> 
+		<br /> 
+		<input type="radio"	name="support" value="city1" />完全支持 
+		<input type="radio"	name="support" value="city2" />支持 
+		<input type="radio"	name="support" value="city3" />中立 
+		<input type="radio"	name="support" value="city4" />不太支持 
+		<input type="radio"	name="support" value="city5" />不支持 
+		<br />
+		<br />
+		&nbsp;已经有<label id="totalzaike"></label>个表态了
+		<div id="info1"></div>
+	</div>
+	<div id="chart1"></div>
+	<br /> 
+	<div id="innercomment">
+		<h3>请发表您的意见：</h3><br />
+		<input type='hidden' id='current_page' /> 
+		<input type='hidden' id='show_per_page' />
+		<table>
+			<tr><td>昵称(可选):</td><td><input type="text" id="nickname" name="nickname" size="12" maxlength="12"/></td></tr>
+			<tr><td>评论:（限200字）</td><td><textarea rows="10" cols="75" id="comment" name="comment" maxlength="200"></textarea></td></tr>
+			<tr><td><input id="btn" type="button" value="发表评论" /></td><td><span id="commentSpan"></span></td></tr>
+		</table>			 
+		<br />
+	现有评论如下：
+		<br/>
+		<table>
+			<tr align="center"><td width="50px">用户名</td><td width="610px">评论</td><td>日期</td></tr>
+		</table>			
+	</div>
+	<br />
+	<div id="content">评论正在加载中，请稍候</div>
+	<div id='page_navigation'></div>
+  </div>
+  <div id="right">
+    <iframe src="../right.html" width=90 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+</div>
+<div id="footer">
+  <iframe src="../footer.html" width=980 height=70 frameborder="0" scrolling="no"></iframe>
+</div>
+</body>
+</html>

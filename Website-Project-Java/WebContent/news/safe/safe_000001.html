@@ -1,0 +1,450 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- 宰客新闻——，旅游安全——，宰客实录——或政策更新—— -->
+<title>华山被捅游客称保安围殴 望目击者现身做证</title>
+
+<script type="text/javascript" src="../../jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="../../jslib/jquery.bxslider2.min.js"></script>
+<script type="text/javascript" src="../../jslib/jquery.easing.1.3.min.js"></script>
+<script type="text/javascript" src="../../jslib/jquery.jqplot.min.js"></script>
+<script type="text/javascript" src="../../jslib/jqplot.barRenderer.min.js"></script>
+<script type="text/javascript" src="../../jslib/jqplot.categoryAxisRenderer.min.js"></script>
+<script type="text/javascript" src="../../jslib/jqplot.pointLabels.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../../style/jquery.jqplot.css" />
+<link rel="stylesheet" type="text/css" href="../../style/style2.css" />
+<link rel="stylesheet" type="text/css" href="../../style/individual.novote.css" />
+<link rel="stylesheet" type="text/css" href="../../style/news.css" />
+<link rel="stylesheet" type="text/css" href="../../style/search.css" />
+
+<script type="text/javascript">
+/*
+ * 一共有4类新闻：宰客新闻，旅游安全，宰客实录和政策更新，分别对应的名称是/zaike/news_000001, /safe/safe_000001, /shilu/shilu_000001, /rule/rule_000001。
+ * 一共有3类表情系统：宰客（zaike），支持（support），态度（attitude），本类是类似新浪表情符号表达的态度系统。
+ * 因此应该根据新闻的内容和标题来决定使用哪个表情系统。 
+ * 一条新闻的诞生需要以下一些步骤，既然使用copy-modify的方式来产生：
+ * 1. 找到该新闻，觉得有价值后，首先决定该划分进入哪个新闻类别。这样就可以起相应的名称，比如正式的第一个宰客新闻就（内部）起名为news_000001；
+ * 2. 在新闻主页（newsindex.html）和旅游新闻汇总页面（zaikenews.html）分别加入该新闻的链接，也许会加在新闻主页的头条或者某个图片显示中；
+ * 3. 如果需要，在宰客榜主页加到新闻显示或者图片显示区域。至此，所有需要添加链接的HTML页面已经就绪；
+ * 4. 从模板页中拷贝并且改为现用名；
+ * 5. 根据其新闻类别和表情系统分类修改：变量news_name和生成图表的ticks描述；
+ * 6. 接下来是html格式和内容部分的修改。修改网页标题， div main部分的位置标题信息，图片，新闻来源，日期，编辑等实质内容。
+ * 以及根据选择的表情系统，修改div express的输入内容；
+ * 7. 使用后台或者前台网页管理端在数据库中表express_attitude中对选中的那个添加名称为“attitude+news_name”的一项，代表其表情，完毕！后台管理端使用ExpressAttitudeAdminServiceTest中的一个添加。
+ */
+ 
+//此处名称，遵循这个规范：宰客新闻，旅游安全，宰客实录和政策更新，对应news_000001, safe_000001, shilu_000001, rule_000001。
+var news_name = "safe_000001";
+$(function() {
+	//set default comment hint
+	$("#comment").val("请在这里发表您的评论，谢谢");
+	$("#comment").select();
+	$("#comment").click(checkdefault);
+	$("#comment").focusin(checkdefault);
+	
+	//allow #innerscroll1 (in thanscroll) to dynamically scroll
+	$('#innerscroll1').bxSlider({
+		auto: true,
+		autoHover: true,
+		margin: 70,
+	    controls: false,
+	    pause: 15000,
+	    speed: 5000,
+	    pager: false
+	});
+	
+	//show the hint if the support express is voted!
+	if($(":input[type=radio]").attr("disabled") =="disabled"){
+		$("#info1").html("您已经表达过您的支持了");		
+	}
+		
+	/*
+	 * 态度表情应该用getAttitudeCount
+	 */
+	$.post("../../newsAction!getAttitudeCount", {"name":news_name},function(returnedData,status){
+		if("success" == status){
+			$("#total").html(returnedData);
+		}
+	}); 
+	
+	/*
+	 * when the window is loaded, show the comments for this news
+	 */
+	$.post("../../newsAction!getNewsComments", {"name":news_name}, function(returnedData,status) {
+		if ("success" == status) {
+			var result = eval(returnedData);
+			
+			$("#content").html("");
+			for ( var index in result) {
+				var c = result[index];
+				//$("#content").prepend("<tr align='center'><td width='10%' bgcolor='#9ff'>" + c.nickname + "</td><td width='70%' bgcolor='#cff'>" + c.comment+ "</td><td bgcolor='#fcf'>" + c.commentDate + "</td>");
+				var nn = c.nickname;
+				if("" == nn)
+					nn = "空";
+				$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + c.comment +"</div><div class='date'>" + c.commentDate + "</div></div>");
+			}
+						
+			//how much items per page to show
+			var show_per_page = 10; 
+			//getting the amount of elements inside content div
+			var number_of_items = $('#content').children().size();
+			//calculate the number of pages we are going to have
+			var number_of_pages = Math.ceil(number_of_items/show_per_page);
+			
+			//set the value of our hidden input fields
+			$('#current_page').val(0);
+			$('#show_per_page').val(show_per_page);
+			
+			//now when we got all we need for the navigation let's make it '
+			
+			/* 
+			what are we going to have in the navigation?
+				- link to previous page
+				- links to specific pages
+				- link to next page
+			*/
+			//var navigation_html = '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var navigation_html = '<a class="first_link" href="javascript:go_to_page(0);">第一页</a>' + '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var current_link = 0;
+			while(number_of_pages > current_link){
+				navigation_html += '<a class="page_link" href="javascript:go_to_page(' + current_link +')" longdesc="' + current_link +'">'+ (current_link + 1) +'</a>';
+				current_link++;
+			}
+			//navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>';
+			navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>' + '<a class="first_link" href="javascript:go_to_page(' + (number_of_pages-1) + ');">最后一页</a>';
+			
+			$('#page_navigation').html(navigation_html);
+			
+			//add active_page class to the first page link
+			$('#page_navigation .page_link:first').addClass('active_page');
+			
+			//hide all the elements inside content div
+			$('#content').children().css('display', 'none');
+			
+			//and show the first n (show_per_page) elements
+			$('#content').children().slice(0, show_per_page).css('display', 'block');
+		}
+	});
+	
+	//2. register click event on #btn to add comment on this news
+	$("#btn").click(function() {
+		if($("#comment").val() == "" || $("#comment").val() == "请在这里发表您的评论，谢谢"){//simple validation with empty or default condition
+			$("#commentSpan").html("<p><b>评论不能为空</b></p>");
+			return false;		
+		}else{//submit the json object {nickname,comment}
+			$("#commentSpan").html("<p>谢谢您的评论</p>");
+			$.post("../../newsAction!addNewsComment", {"name":news_name, "nickname":encodeURI($("#nickname").val()),"comment":encodeURI($("#comment").val())}, 
+				function(returnedData,status) {
+					if ("success" == status){
+						//$("#content").prepend($("#comment").val() + "<br/>");  //insert the new comment firstly;
+						var nn = $("#nickname").val();
+						if("" == nn)
+							nn = "空";
+						$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + $("#comment").val() +"</div><div class='date'>" 
+						+ new Date().toLocaleString() + "</div></div>");
+						$("#commentSpan").html("");
+					}
+				});
+			$(this).attr("disabled","disabled");
+		}			
+	});
+	
+	/*
+	 * bind the click event to each radio box to vote the express zaike or attitude or support on this news
+	 */
+	$(":input[type=radio]").click(function() {
+		//1. if any radio box is selected, disable all;
+		$(":input[type=radio]").attr("disabled","disabled"); 
+		//1.5 increment the total support count
+		$("#total").html(parseInt($("#total").html()) + 1);
+		//2.show chart1 div
+		$("#info1").html("");
+		$("#chart1").show();
+		$("#chart1").html("请稍候...");
+		//3.pass the user choice to action via ajax post() method
+		$.post("../../newsAction!expressAttitude", {attitude:$(this).val(),"name":news_name}, function(returnedData,status) {
+			if ("success" == status) {
+				$("#chart1").html("");
+				var result = eval(returnedData);
+				temp = result;
+				//4. define plot element to be shown
+				$.jqplot.config.enablePlugins = true;
+				//根据新闻的性质，决定这里图标的显示文字内容
+				var ticks = ['难过', '愤慨', '同情', '无聊', '可笑'];
+			    //5. draw the plot 
+			    plot1 = $.jqplot('chart1', [result], {
+			        // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
+			        animate: !$.jqplot.use_excanvas,
+			        seriesDefaults:{
+			            renderer:$.jqplot.BarRenderer,
+			            pointLabels: { show: true }
+			        },
+			        axes: {
+			            xaxis: {
+			                renderer: $.jqplot.CategoryAxisRenderer,
+			                ticks: ticks
+			            }
+			        },
+			        highlighter: { show: false }
+			    });			 	
+			}
+		});
+	});
+});
+
+//used for default comment hint
+function checkdefault() {
+	var txt = $(this).val();  //the current text in the area
+	if(txt == "请在这里发表您的评论，谢谢")
+		$(this).val("");
+	$(this).focusout(retdefault);	
+}
+//used for default comment hint
+function retdefault(){
+	var txt = $(this).val();
+	if(txt == ""){
+		$(this).val("请在这里发表您的评论，谢谢");
+		$(this).select();
+	}		
+	$(this).click(checkdefault);
+	$(this).focusin(checkdefault);
+}
+
+function previous(){
+	
+	new_page = parseInt($('#current_page').val()) - 1;
+	//if there is an item before the current active link run the function
+	if($('.active_page').prev('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function next(){
+	new_page = parseInt($('#current_page').val()) + 1;
+	//if there is an item after the current active link run the function
+	if($('.active_page').next('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function go_to_page(page_num){
+	//get the number of items shown per page
+	var show_per_page = parseInt($('#show_per_page').val());
+	
+	//get the element number where to start the slice from
+	start_from = page_num * show_per_page;
+	
+	//get the element number where to end the slice
+	end_on = start_from + show_per_page;
+	
+	//hide all children elements of content div, get specific items and show them
+	$('#content').children().css('display', 'none').slice(start_from, end_on).css('display', 'block');
+	
+	/*get the page link that has longdesc attribute of the current page and add active_page class to it
+	and remove that class from previously active page link*/
+	$('.page_link[longdesc=' + page_num +']').addClass('active_page').siblings('.active_page').removeClass('active_page');
+	
+	//update the current page input field
+	$('#current_page').val(page_num);
+};
+</script>
+</head>
+
+<body>
+<div id="header">
+  <iframe src="../../header.html" width=980 height=91 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="nav">
+  <iframe src="../../nav.html" width=980 height=40 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="primary">
+  <div id="baike">
+    <iframe src="../../baike.html" width=120 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+  <div id="main">
+   <div id="location"><a name="articletop"></a>您的位置： <a href="../../index.html">旅游宰客榜首页</a> 》》<a href="../newsindex.html">新闻</a> 》》华山被捅游客称保安围殴 望目击者现身做证</div>
+   <div id="newstitle"><h2>华山被捅游客称保安围殴 望目击者现身做证</h2></div><!-- 新闻的标题应该写在此处以及上一行末尾 -->
+   <div id="resource">
+   		文章来源： 武汉晚报 于 2012-10-04   本网站新闻取自各大新闻媒体，新闻内容并不代表本网站立场！
+   		<table border="0">
+			<tr align="center" valign="middle">
+			<td align="center">
+				<!-- 新浪关注 -->
+				<iframe width="63" height="24" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0" scrolling="no" border="0" src="http://widget.weibo.com/relationship/followbutton.php?language=zh_cn&width=63&height=24&uid=1782515283&style=1&btn=red&dpc=1"></iframe>
+			</td>
+			<td align="center">
+				<!-- 人人喜欢 -->
+				<script type="text/javascript" charset="utf-8">
+					(function(){
+						var p = [], w=92, h=24,
+						lk = {
+						url:'http://www.lyzk.org'||location.href, /*喜欢的URL(不含如分页等无关参数)*/
+						title:'旅游宰客榜'||document.title, /*喜欢标题(可选)*/
+						description:'', /*喜欢简介(可选)*/
+						image:'' /*喜欢相关图片的路径(可选)*/
+						};
+						for(var i in lk){
+							p.push(i + '=' + encodeURIComponent(lk[i]||''));
+						}
+						document.write('<iframe scrolling="no" frameborder="0" allowtransparency="true" src="http://www.connect.renren.com/like/v2?'+p.join('&')+'" style="width:'+w+'px;height:'+h+'px;"></iframe>');
+					})();
+				</script>
+			</td>
+			<td align="center">
+				<!-- 人人关注 -->
+				<iframe scrolling="no" frameborder="0" allowtransparency="true" src="http://widget.renren.com/plugin/followbutton?page_id=601522402&color=0&model=0" style="width:78px;height:24px;" ></iframe>
+			</td>
+			<td align="center">
+				<!-- 开心转贴 -->
+				<script src="http://rest.kaixin001.com/api/Repaste_js.php" type="text/javascript"></script>
+				<div id="kx001_btn_repaste" style="margin: 0px; padding: 0px"></div>
+				<script type="text/javascript">
+					KX001_REPASTE_LINK.init(2,"转帖");
+				</script>
+			</td>
+			<td align="center">
+				<!-- 开心赞 -->
+				<iframe allowTransparency='true'  id='like_view' frameborder='0' scrolling='no' marginheight='0' marginwidth='0' hspace='0' vspace='0' style='height:24px;width:65px;' src='http://www.kaixin001.com/like/like.php?url=http%3A%2F%2Fwww.lyzk.org&show_faces=false'></iframe>
+			</td>
+			<td align="center">
+				<!-- qq赞 -->
+				<a version="1.0" class="qzOpenerDiv" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_likeurl" target="_blank">赞</a>
+				<script  src="http://qzonestyle.gtimg.cn/qzone/app/qzlike/qzopensl.js#jsdate=20110603&style=3&showcount=1&width=87&height=24" charset="utf-8" defer="defer" ></script>
+			</td>
+			</tr>
+		</table>
+   </div>
+   <div id="list"><!-- 此处是新闻内容，图片什么的，可以放在中间 -->
+   		<br/>
+   		<!-- 插图连同图示词语 -->
+		<p align="center"><img src="../../images/news/safe_000001_001.jpg" border="0" /></p>
+		<br/>
+		<center>“华山论刀”事件中的伤者</center>
+   		<p><b>华山人如潮 是谁在“论刀”</b></p>
+   		<p>
+　　补度蜜月的小夫妻被捅伤伤者连发4条微博讲述经过电视记者挨打是因另一件事华山官网否认发生安全事故景区员工向来打不还手？
+　　来自武汉的网友@专属小棉袄昨发微博：殴打游客，多名游客被刀捅伤，砸了陕西电视台前去采访的孙姓记者的摄像机，并殴打记者。身中十一刀的伤者泣血求媒体朋友关注！
+　　昨天上午，武汉晚报官博接到@专属小棉袄转发的受伤游客@纵伤的微博后，本报记者辗转拨通了@纵伤的电话。他姓董，29岁，内蒙古包头市青山区人，十一和妻子家的亲戚共5人游玩华山。
+　　他说，2日晚上10点多他们下山，本来从下缆车的地方到山下售票处有景区的摆渡车接他们，但因为人太多，造成道路拥堵，摆渡车并没有接他们。
+　　他们一家走到山下售票点，发现售票点已被砸。他的小舅子向售票点的人反映情况，要求退摆渡车的车票，不到5分钟就看见有人殴打小舅子，他的妻子去扯劝也遭到殴打。小董忙上去帮忙，不想成了围殴的中心，20多人打他。他亲眼看见，有四五个着保安服、戴保安帽的人夹杂在行凶者中。最后，他都不知道自己和妻子是怎样被人用刀子捅伤的。
+　　后来，他和妻子被送到华阴市人民医院救治。昨天仍住在医院的小董告诉记者，医生说，他身上有9处刀伤，其中头上有两处，因有两处伤口不大，最后只缝了7处伤口；妻子的伤要轻些，有两处刀伤。</p>
+		<p><b>补度蜜月的小夫妻被捅伤</b></p>
+		<p>
+　　昨天从电话中，记者能感觉小董说话的精神还行。
+　　事发后，小董以@纵伤的名字发微博：“老婆没有跟我过什么好日子，上班以来的每个假期都在和我给我的姥姥陪床，今年五月份我的姥姥去世了，享年84岁。十一原打算圆老婆一个蜜月梦，但是又出了这个事，我不怕疼，但是我受不了我老婆受伤，好心人请帮帮我们两个无权无势只想维护自己权益的人，顿首。”
+　　记者问小董：“@专属小棉袄帮你转发这条微博，他是你朋友吗？”
+　　“这个网友我有印象，帮我转发了不少，但我不认识他。真没想到我的微博能这么快被转发这么多，我要感谢包括湖北在内的全国各地的网友。”他说，当初发这条微博，就是希望引起当时在场的热心人能拍照留证。</p>
+		
+		<p><b>伤者连发4条微博讲述经过</b></p>   		   		
+		<p>　　昨天下午1点24分，小董开始发微博：“首先感谢大家对我们夫妻的关注。这两天由于我受伤，发表微博的初衷及手机没电的原因，一直未对事件进行详细说明，请大家谅解。因为网上现在有多种版本的出现，现郑重声明此微博是本人对外公布我和妻子真实情况的唯一途径。再次感谢各位正义的热心网友、媒体。我相信公道自在人心。”
+　　接着，他又连发了4条微博，讲述事件经过：
+　　“十月二日我们全家一行五人准备爬华山，当时准备乘坐索道上山，所以买了东门的门票。到达东门以后被告知，还需要买一张往返于售票处与索道之间的摆渡车票，票价40元，售票人员解释说上东门必须乘摆渡车，并且承诺节日期间摆渡车二十四小时营运，不管我们几点下索道都会接。
+　　“票价是去20元，返回20元。我们到达索道口后发现排队买索道票的人特别多，据说要排三四个小时，于是几人研究决定徒步登上华山。在此介绍我们五个人：我和我妻子，妻子的表姐表姐夫，妻子的表弟。
+　　“上山途中发现山路上人特别多，尤其是下山的人，我们上山的队伍好歹一分钟挪一个台阶，下山的队伍排成了两三排，好久也不挪动。而且人越来越多，并不时有上山人见此状打消登山计划加入下山行列。于是我们决定登山后无论如何要排队乘坐索道下山，因为觉得天黑下山人多不安全。
+　　“我们到达山顶是晚上六点左右，正好有人不想排队坐索道，我们就按原价一百五十元两张的价格，买了他们的索道返程票。其中有两个四川的情侣还和我们成为了聊友，包括下山后在售票口还遇见了他们，整个挨打过程他们都亲历，如果他们能看到这条微博，希望他们能给我们做个证明。”
+		</p>
+		
+		<p><b>电视记者挨打是因另一件事</b></p>
+		<p>
+　　网上说，小董受伤时，陕西电视台的一位孙姓记者也被打，摄像机被砸。
+　　对此，记者昨天上午连线了这位孙姓记者。他说，其实，2号晚上10点左右，他和一张姓记者在东山门那采访游客拥堵的事情。他把车停在东山门停车场，张姓同事一人扛着摄像机去拍摄，两人相距五六十米。大约十来分钟，只见张记者一身土，手、脸肿着跑过来，说自己被打了，机器被抢了。
+　　据张记者说：他刚打开机器拍了几分钟，就有人问他是干啥的，他说是陕西电视台记者。然后左右有人不停地推他，说你拍什么拍，接着追打他，把摄像机抢了。他可以肯定，行凶者中，有人手里拿着喇叭，就是那些景区工作人员通知游客上车的喇叭。
+　　孙记者说，他报警后，警察将他们送到华阴市人民医院，随后看见小董和他妻子被送到医院，然后他们在医院采访了游客被打一事。
+　　他说，小董进医院整个处理时间感觉不是很长，出来后，他采访小董，小董还能回答问题，因此判断不是那种致命的重伤。</p>
+		<p></p>
+		<p><b>华山官网否认发生安全事故</b></p>
+　　<p>3日，华山景区管委会主任霍文军针对2日的游客滞留和拥堵情况，通过“华山风景名胜区”官方微博向登山游客和网友表示歉意。同时，华山景区管委会在华山官网上发布《关于十月二日华山景区东线拥堵情况说明》，称10月2日，华山景区东线旅游出现了“井喷”现象，到下午3点，共有2.7万游客从东线进山和出山，致使瓦庙沟区域游客人数剧增。
+　　由于部分购票游客等待登山时间过长，“起哄闹事”，要求退票，并提出补偿往返交通费用等要求，华山游客中心及时采取停止售票和疏导游客的措施，但是由于游人过多，游客登山速度依然缓慢并在景区局部产生了拥堵。景区再次启动应急预案，协调增派人员前往现场疏导游客。并称截至当晚22时，滞留游客已全部被工作人员护送下山，没有发生任何安全事故。
+　　据华山官网转载人民网西安10月3日电：2日23：59，陕西省公安厅副厅长陈里发布微博称，他已和陕西省公安厅指挥中心联系，华山滞留人员具体数目不详，应该在数百人以上。当地公安民警和当地政府300余人已经上山营救引导下山。
+　　6分钟后，陈里再次发布微博称，刚接华山公安局领导电话，山上游客基本疏散完了。正在有序下山。请渭南政府、公安，旅游部门，一定及时掌握山上情况，千万不要出事!警方可协调景区退票，组织人员营救百姓下山。
+　　昨天下午，本报记者就游客挨打事件@陈里，他回复说：“我不太清楚。我不分管刑事和治安。你可以@华阴公安在线 @陕西渭南公安 。谢谢”
+　　据@华阴公安在线3日 22:05：关于华山景区游客被伤一案，华阴警方接到报案后，已立案受理，抽调警力正在全力调查之中。</p>
+		<p><b>景区员工向来打不还手？</b></p>
+		<p>
+　　昨天下午，记者电话采访了华山景区管委会宣传部长潘向明。他说，网传信息与真实情况存在差异，华山景区员工在工作中一向本着骂不还嘴、打不还手的工作原则，斗殴行凶现场在华山东山门外停车场内，行凶者与华山保安无关。至于什么人行凶的，华阴警方已成立专案组展开调查。
+　　他说，当晚游客受伤后，华山旅游服务公司副总就将伤者送往医院治疗，并派专人守候；同时，垫付了所有医疗费用。当晚，要求退票的游客的门票已退完。昨天上午，华山景区管委会党工委副书记马建平等领导还到医院看望了小董和他妻子。
+　　小董昨天下午3点发微博说：“华阴市的赵市长刚才带着医院领导来看我和我老婆了。” </p>
+		<br/>
+		<br/>
+		<br/>
+		<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+		<br/>
+		<div id="editor">责任编辑：harry</div>
+		<div id="bottomshare">
+			<div class="jiathis_style">
+				<span class="jiathis_txt">分享到：</span>
+				<a class="jiathis_button_qzone">QQ空间</a><a class="jiathis_button_tsina">新浪微薄</a>
+				<a class="jiathis_button_tqq">腾讯微薄</a><a class="jiathis_button_renren">人人网</a>
+				<a class="jiathis_button_kaixin001">开心网</a><a class="jiathis_button_tsohu">搜狐微博</a>
+				<a class="jiathis_button_feixin">飞信</a><a class="jiathis_button_douban">豆瓣</a>
+				<a class="jiathis_button_fb">Facebook</a><a class="jiathis_button_tieba">百度贴吧</a>
+				<a class="jiathis_button_tianya">天涯社区</a>	<a class="jiathis_button_twitter">Twitter</a>
+				<a class="jiathis_button_googleplus">Google+</a><a class="jiathis_button_t163">网易微博</a>
+				<a class="jiathis_button_xiaoyou">朋友网</a><a class="jiathis_button_mop">猫扑推客</a>
+				<a class="jiathis_button_tifeng">凤凰微博</a>	<a class="jiathis_button_gmail">Gmail邮箱</a>
+			
+				<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+				<a class="jiathis_counter_style"></a>
+			</div>
+			<script type="text/javascript" >
+				var jiathis_config={
+					boldNum:15,
+					siteNum:15,
+					sm:"taobao,hi,meilishuo,51,sohu,tpeople,189share,huaban,ifensi,hexun,ydnote,ymail,hotmail,tyaolan,toeeee",
+					summary:"",
+					hideMore:false
+				}
+			</script>
+			<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+			<!-- JiaThis Button END -->
+		</div>				
+	</div>
+	<div id="express">
+		<b>民意小测验：</b>
+		<label>您对华山论刀的受害者有什么想法？请选择下面的一项表个态吧</label> 
+		<br /> 
+		<input type="radio" name="attitude" value="attitude1" />难过
+		<input type="radio" name="attitude" value="attitude2" />愤慨
+		<input type="radio" name="attitude" value="attitude3" />同情
+		<input type="radio" name="attitude" value="attitude4" />无聊
+		<input type="radio" name="attitude" value="attitude5" />可笑
+		<br />
+		<br />
+		&nbsp;已经有<label id="total"></label>个表态了
+		<div id="info1"></div>
+	</div>
+	<div id="chart1"></div>
+	<br /> 
+	<div id="innercomment">
+		<h3>请发表您的意见：</h3><br />
+		<input type='hidden' id='current_page' /> 
+		<input type='hidden' id='show_per_page' />
+		<table>
+			<tr><td>昵称(可选):</td><td><input type="text" id="nickname" name="nickname" size="12" maxlength="12"/></td></tr>
+			<tr><td>评论:（限200字）</td><td><textarea rows="10" cols="75" id="comment" name="comment" maxlength="200"></textarea></td></tr>
+			<tr><td><input id="btn" type="button" value="发表评论" /></td><td><span id="commentSpan"></span></td></tr>
+		</table>			 
+		<br />
+	现有评论如下：
+		<br/>
+		<table>
+			<tr align="center"><td width="50px">用户名</td><td width="610px">评论</td><td>日期</td></tr>
+		</table>			
+	</div>
+	<br />
+	<div id="content">评论正在加载中，请稍候</div>
+	<div id='page_navigation'></div>
+  </div>
+  <div id="right">
+    <iframe src="../../right.html" width=90 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+</div>
+<div id="footer">
+  <iframe src="../../footer.html" width=980 height=70 frameborder="0" scrolling="no"></iframe>
+</div>
+</body>
+</html>

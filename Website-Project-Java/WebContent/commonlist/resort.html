@@ -1,0 +1,506 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>国内景区宰客榜</title>
+
+<script type="text/javascript" src="../jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="../jslib/jquery.bxslider2.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.easing.1.3.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.jqplot.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.barRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.categoryAxisRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.pointLabels.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../style/jquery.jqplot.css" />
+<link rel="stylesheet" type="text/css" href="../style/style2.css" />
+<link rel="stylesheet" type="text/css" href="../style/individual.novote.css" />
+<link rel="stylesheet" type="text/css" href="../style/search.css" />
+
+<script type="text/javascript">
+$(function() {
+	//set default comment hint
+	$("#comment").val("请在这里发表您的评论，谢谢");
+	$("#comment").select();
+	$("#comment").click(checkdefault);
+	$("#comment").focusin(checkdefault);
+	
+	//allow #innerscroll1 (in thanscroll) to dynamically scroll
+	$('#innerscroll1').bxSlider({
+		auto: true,
+		autoHover: true,
+		margin: 70,
+	    controls: false,
+	    pause: 15000,
+	    speed: 5000,
+	    pager: false
+	});
+		
+	//show the hint if the support express is voted!
+	if($(":input[type=radio]").attr("disabled") =="disabled"){
+		$("#info1").html("您已经表达过您的支持了");		
+	}
+	
+	/*
+	 * when the window is loaded, show the comments for resort list
+	 */
+	$.post("../resortListAction!getExpressCount", {},function(returnedData,status){
+		if("success" == status){
+			$("#totalzaike").html(returnedData);
+		}
+	});
+	
+	/*
+	 * when the window is loaded, show the comments for resort list
+	 */
+	$.post("../resortListAction!getResortComments", {}, function(returnedData,status) {
+		if ("success" == status) {
+			var result = eval(returnedData);
+			
+			$("#content").html("");
+			for ( var index in result) {
+				var c = result[index];
+				//$("#content").prepend("<tr align='center'><td width='10%' bgcolor='#9ff'>" + c.nickname + "</td><td width='70%' bgcolor='#cff'>" + c.comment+ "</td><td bgcolor='#fcf'>" + c.commentDate + "</td>");
+				var nn = c.nickname;
+				if("" == nn)
+					nn = "空";
+				$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + c.comment +"</div><div class='date'>" + c.commentDate + "</div></div>");
+			}
+						
+			//how much items per page to show
+			var show_per_page = 10; 
+			//getting the amount of elements inside content div
+			var number_of_items = $('#content').children().size();
+			//calculate the number of pages we are going to have
+			var number_of_pages = Math.ceil(number_of_items/show_per_page);
+			
+			//set the value of our hidden input fields
+			$('#current_page').val(0);
+			$('#show_per_page').val(show_per_page);
+			
+			//now when we got all we need for the navigation let's make it '
+			
+			/* 
+			what are we going to have in the navigation?
+				- link to previous page
+				- links to specific pages
+				- link to next page
+			*/
+			//var navigation_html = '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var navigation_html = '<a class="first_link" href="javascript:go_to_page(0);">第一页</a>' + '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var current_link = 0;
+			while(number_of_pages > current_link){
+				navigation_html += '<a class="page_link" href="javascript:go_to_page(' + current_link +')" longdesc="' + current_link +'">'+ (current_link + 1) +'</a>';
+				current_link++;
+			}
+			//navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>';
+			navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>' + '<a class="first_link" href="javascript:go_to_page(' + (number_of_pages-1) + ');">最后一页</a>';
+			
+			$('#page_navigation').html(navigation_html);
+			
+			//add active_page class to the first page link
+			$('#page_navigation .page_link:first').addClass('active_page');
+			
+			//hide all the elements inside content div
+			$('#content').children().css('display', 'none');
+			
+			//and show the first n (show_per_page) elements
+			$('#content').children().slice(0, show_per_page).css('display', 'block');
+		}
+	});
+	
+	//2. register click event on #btn to add comment on resort_comment
+	$("#btn").click(function() {
+		if($("#comment").val() == "" || $("#comment").val() == "请在这里发表您的评论，谢谢"){//simple validation with empty or default condition
+			$("#commentSpan").html("<p><b>评论不能为空</b></p>");
+			return false;		
+		}else{//submit the json object {nickname,comment}
+			$("#commentSpan").html("<p>谢谢您的评论</p>");
+			$.post("../resortListAction!addResortComment", {"nickname":encodeURI($("#nickname").val()),"comment":encodeURI($("#comment").val())}, 
+				function(returnedData,status) {
+					if ("success" == status){
+						//$("#content").prepend($("#comment").val() + "<br/>");  //insert the new comment firstly;
+						var nn = $("#nickname").val();
+						if("" == nn)
+							nn = "空";
+						$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + $("#comment").val() +"</div><div class='date'>" 
+						+ new Date().toLocaleString() + "</div></div>");
+						$("#commentSpan").html("");
+					}
+				});
+			$(this).attr("disabled","disabled");
+		}			
+	});
+	
+	/*
+	 * bind the click event to each radio box to vote the express support on this resort list
+	 */
+	$(":input[type=radio]").click(function() {
+		//1. if any radio box is selected, disable all;
+		$(":input[type=radio]").attr("disabled","disabled"); 
+		//1.5 increment the total support count
+		$("#totalzaike").html(parseInt($("#totalzaike").html()) + 1);
+		//2.show chart1 div
+		$("#info1").html("");
+		$("#chart1").show();
+		$("#chart1").html("请稍候...");
+		//3.pass the user choice to action via ajax post() method
+		$.post("../resortListAction!express", {support:$(this).val()}, function(returnedData,status) {
+			if ("success" == status) {
+				$("#chart1").html("");
+				var result = eval(returnedData);
+				temp = result;
+				//4. define plot element to be shown
+				$.jqplot.config.enablePlugins = true;
+			    var ticks = ['完全支持', '支持', '中立', '不太支持', '不支持'];
+			    //5. draw the plot 
+			    plot1 = $.jqplot('chart1', [result], {
+			        // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
+			        animate: !$.jqplot.use_excanvas,
+			        seriesDefaults:{
+			            renderer:$.jqplot.BarRenderer,
+			            pointLabels: { show: true }
+			        },
+			        axes: {
+			            xaxis: {
+			                renderer: $.jqplot.CategoryAxisRenderer,
+			                ticks: ticks
+			            }
+			        },
+			        highlighter: { show: false }
+			    });			 	
+			}
+		});
+	});
+});
+
+//used for default comment hint
+function checkdefault() {
+	var txt = $(this).val();  //the current text in the area
+	if(txt == "请在这里发表您的评论，谢谢")
+		$(this).val("");
+	$(this).focusout(retdefault);	
+}
+//used for default comment hint
+function retdefault(){
+	var txt = $(this).val();
+	if(txt == ""){
+		$(this).val("请在这里发表您的评论，谢谢");
+		$(this).select();
+	}		
+	$(this).click(checkdefault);
+	$(this).focusin(checkdefault);
+}
+
+function previous(){
+	
+	new_page = parseInt($('#current_page').val()) - 1;
+	//if there is an item before the current active link run the function
+	if($('.active_page').prev('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function next(){
+	new_page = parseInt($('#current_page').val()) + 1;
+	//if there is an item after the current active link run the function
+	if($('.active_page').next('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function go_to_page(page_num){
+	//get the number of items shown per page
+	var show_per_page = parseInt($('#show_per_page').val());
+	
+	//get the element number where to start the slice from
+	start_from = page_num * show_per_page;
+	
+	//get the element number where to end the slice
+	end_on = start_from + show_per_page;
+	
+	//hide all children elements of content div, get specific items and show them
+	$('#content').children().css('display', 'none').slice(start_from, end_on).css('display', 'block');
+	
+	/*get the page link that has longdesc attribute of the current page and add active_page class to it
+	and remove that class from previously active page link*/
+	$('.page_link[longdesc=' + page_num +']').addClass('active_page').siblings('.active_page').removeClass('active_page');
+	
+	//update the current page input field
+	$('#current_page').val(page_num);
+};
+
+</script>
+</head>
+
+<body>
+<div id="header">
+  <iframe src="../header.html" width=980 height=91 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="nav">
+  <iframe src="../nav.html" width=980 height=40 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="primary">
+  <div id="baike">
+    <iframe src="../baike.html" width=120 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+  <div id="main">
+    <div id="location"><a name="articletop">您的位置</a>： <a href="../index.html">旅游宰客榜首页</a> 》》<a href="listindex.html">旅游宰客榜</a> 》》国内景区宰客榜</div>
+    <div id="list">
+		<h2 align="center">国内景区宰客榜（暂行）</h2>
+		<div id="share">
+			<!-- JiaThis Button BEGIN -->
+			<div class="jiathis_style">
+				<span class="jiathis_txt">分享到：</span>
+				<a class="jiathis_button_qzone" /><a class="jiathis_button_tsina" />
+				<a class="jiathis_button_tqq" /><a class="jiathis_button_renren" />
+				<a class="jiathis_button_kaixin001" /><a class="jiathis_button_tsohu" />
+				<a class="jiathis_button_feixin" /><a class="jiathis_button_douban" />
+				<a class="jiathis_button_fb" /><a class="jiathis_button_tieba" />
+				<a class="jiathis_button_tianya" /><a class="jiathis_button_twitter" />
+				<a class="jiathis_button_googleplus" /><a class="jiathis_button_t163" />
+				<a class="jiathis_button_xiaoyou" /><a class="jiathis_button_mop" />
+				<a class="jiathis_button_tifeng" /><a class="jiathis_button_gmail" />
+				
+				<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+				<a class="jiathis_counter_style"></a>
+			</div>
+			<script type="text/javascript" >
+			var jiathis_config={
+				boldNum:15,
+				siteNum:15,
+				sm:"taobao,hi,meilishuo,51,sohu,tpeople,189share,huaban,ifensi,hexun,ydnote,ymail,hotmail,tyaolan,toeeee",
+				summary:"",
+				hideMore:false
+			}
+			</script>
+			<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+			<!-- JiaThis Button END -->
+		</div>
+		<div id="intro">
+			<table border="0" style="color: #060606;" cellspacing="0" cellpadding="0">
+					<tr align="center">
+						<td>前往其他榜单：</td>
+						<td><a href="city.html">国内城市榜&nbsp&nbsp</a></td>
+						<td><a href="intercity.html">海外国家榜&nbsp&nbsp</a></td>
+						<td><a href="interresort.html">海外景区榜&nbsp&nbsp</a></td>
+						<td><a href="../individual/hill.html">名山宰客榜&nbsp&nbsp</a></td>
+						<td><a href="../individual/temple.html">烧香拜佛榜&nbsp&nbsp</a></td>
+						<td><a href="../individual/park.html">公园对比榜&nbsp&nbsp</a></td>
+						<td><a href="../individual/museum.html">博物馆榜&nbsp&nbsp</a></td>
+						<td><a href="../individual/roadfee.html">过路费榜&nbsp&nbsp</a></td>
+					</tr>
+			</table>
+			<br/>
+			<p style="color: purple;">提示：总投票没有超过2000票的情况下，本榜单只是暂行；一旦超过2000票，将根据投票定期发布正式榜单。</p>
+			<p style="color: purple;">总投票数目是指访客在<a href="vote.html">投票页面</a>给所有国内城市、国内景区、海外国家和海外景区投票数目的总和。</p>
+			<br/>
+		</div>
+		<div class="innerlist">
+			<br/>
+			<label class="innertitle"><b>榜首：西双版纳</b></label>
+			<br />
+			<img align="left" src="../images/lists/list_resort_xishuangbanna.jpg" width="372" height="240" 
+				title="西双版纳也是云南旅游的一个缩影：自然风光和民族风情令人陶醉，不过旅游人文环境实在欠佳，与海南难分伯仲！"  
+				alt="西双版纳也是云南旅游的一个缩影：自然风光和民族风情令人陶醉，不过旅游人文环境实在欠佳，与海南难分伯仲！" />
+			<p>按照版纳当地人的说法，“这里山清水秀，阳光明媚，几乎没有工业，四季瓜果不断，各个少数民族的传统美食更是让人欲罢不能！而且真正的版纳人民自己生活的地方，民风很淳朴，
+				很多村村寨寨至今路不拾遗，夜不闭户！老百姓过着悠闲而平静的生活。”（据<a href="http://gonglue.551.cn/Item/14866.aspx" target="_blank">西双版纳旅游防骗攻略</a>）。</p>
+			<p>那么游客的感受呢？可能会被旅行社骗到缅甸那边拜假和尚上天价香；掏三倍门票被黑导游带到热带植物园；被出租司机讹高价路费；被信口雌黄的售货员骗得买假玉器；
+				被艳舞噱头招徕到黑店敲诈得吐血；被傣家村寨推销高价假药；...等等。旅游环境不是一般的黑啊！游客一个不小心就有可能落入陷阱，被宰没商量。</p>
+			<p>当地工商、物价部门着急了，屡屡使出绝招“坐店监管”。但欺客宰客现象野火烧不尽，春风吹又生。</p>
+			<p>西双版纳是云南旅游的一个缩影：自然风光和民族风情令人陶醉，不过旅游人文环境实在欠佳，与海南难分伯仲！</p>
+			<p>西双版纳宰客的特点在于，别的地方有的宰客伎俩这里全有，更以“抢新郎”、“撞洞房”等民族风俗为幌子大行坑蒙拐骗的绝活儿，让游客欲罢不能！</p>
+			<p>因此西双版纳力压国内其他名山大川，旅游胜地，荣登榜首！</p>
+			<p class="directvote">直接去<a href="vote.html">投票</a></p>			
+		</div>
+		<div class="innerlist">
+			<br/>
+			<label class="innertitle"><b>并列榜眼：天涯海角</b></label>
+			<br/>
+			<img align="left" src="../images/lists/list_resort_tianyahaijiao.jpg" width="372" height="240" 
+				title="天涯海角的宰客现象是整个海南的缩影，宰客模式成熟固定：以旖旎的自然风光吸引游客，进而通过吃住行购物等手段宰客谋求暴利！"  
+				alt="天涯海角的宰客现象是整个海南的缩影，宰客模式成熟固定：以旖旎的自然风光吸引游客，进而通过吃住行购物等手段宰客谋求暴利！" />
+			<p>天涯海角的宰客现象是整个海南旅游的缩影，模式成熟固定：以旖旎的自然风光吸引游客，进而通过吃住行购物等手段宰客谋求暴利！</p>
+			<p>文字已经不能够表达游客的愤懑和不满了，因此有了这首“<a href="http://v.youku.com/v_show/id_XMzQ5NjE3OTA4.html" target="_blank">请到天涯海角来（三亚宰客版）</a>”！</p>
+			<p>对于海鲜排档一顿饭动辄几千上万的价格是否合理，当地工商物价部门推三阻四，迟迟不肯面对游客的质疑，寒了游客的心，也阻断了无数人前往度假休闲的路！诚所谓自作自受！</p>
+			<p>海鲜可以不吃，那么其他饭菜呢？有人在微博上贴出了一张账单，一頓普通的早餐花費280元，其中一杯牛奶就要110元！</p>
+			<p>要真在超市买了110块钱的牛奶，全倒在浴缸里，够洗澡了！</p>
+			<p>于是天涯海角作为三亚和海南的宰客代表荣登榜眼！</p>
+			<p class="directvote">直接去<a href="vote.html">投票</a></p>
+		</div>
+		<div class="innerlist">
+			<br/>
+			<label class="innertitle"><b>并列榜眼：少林寺</b></label>
+			<br/>
+			<img align="left" src="../images/lists/list_resort_shaolinsi.jpg" width="372" height="240" 
+				title="少林寺及其周边的鬼魅香火是中华佛教信仰的善种播在唯利是图的市场经济土壤中结出的一朵恶之花"  
+				alt="少林寺及其周边的鬼魅香火是中华佛教信仰的善种播在唯利是图的市场经济土壤中结出的一朵恶之花" />
+			<p>如果说天涯海角借自然风景为依托构筑宰客陷阱，那么少林寺就凭佛教文化和猎奇心理来灌游客迷汤。</p>
+			<p>少林寺及其周边的鬼魅香火是中华佛教信仰的善种播在唯利是图的市场经济土壤中结出的一朵恶之花。利用信徒的向善心理和游客对武侠文化和古老传说的景仰，
+				以各种堂而皇之的手段（上香、拜佛、开光、刻印、求签、布道）来牟取不当利益，
+				严重玷污千年佛道文化，这里不加赘述，详情请参考<a href="../individual/temple.html">烧香拜佛榜</a>。</p>
+			<p>少林寺的和尚们也许很冤枉，不过利用这颗摇钱树生财有道的旅游业者和利益攸关人士则能骗就骗，哪里管达摩老祖在九泉下是否被他们气得一佛出世二佛升天？！</p>
+			<p>不过达摩祖师也别太郁闷，据传香港中旅集团不是与河南登封市签署了《合作框架协议书》，打算把少林寺上市么！如果当真的话，祖师加个头衔，达摩CEO！与时俱进咯！</p>
+			<p class="directvote">直接去<a href="vote.html">投票</a></p>
+		</div>
+		<div class="innerlist">
+			<br/>
+			<label class="innertitle"><b>探花：凤凰古城</b></label>
+			<br/>
+			<img align="left" src="../images/lists/list_resort_fenghuang.jpg" width="372" height="240" 
+				title="游客本想去领略淳朴民风民俗和美丽自然风光，感受当地土家和苗民文化，可是很多时候却事与愿违，被当地恶劣的旅游环境搞得一筹莫展。"  
+				alt="游客本想去领略淳朴民风民俗和美丽自然风光，感受当地土家和苗民文化，可是很多时候却事与愿违，被当地恶劣的旅游环境搞得一筹莫展。" />
+			<p>能够压倒各处老字号旅游胜地，荣登探花位置，凤凰这个名不见经传的小地方当然有其宰客独到之处！</p>
+			<p>除了各地共有的一些宰客特征外，还有三点非常突出：街边黑车疯狂拉客；层出不穷的游客被殴事件；由本地旅游董事长声称的“游客是猪”的宣言。</p>
+			<p>游客本想去领略淳朴民风民俗和美丽自然风光，感受当地土家和苗民文化，可是很多时候却事与愿违，被当地恶劣的旅游环境搞得一筹莫展。</p>
+			<p>据凤凰旅游业内人士自己讲，2011年湖南省旅游局收到57%的旅游投诉来自凤凰，其中一半以上投诉宰客现象！</p>
+			<p>果真是凤凰一出，谁与争锋！</p>
+			<p class="directvote">直接去<a href="vote.html">投票</a></p>
+		</div>
+		<div class="twinlist">
+			<div class="leftlist">
+				<br/>
+				<label class="lefttitle"><b>第四名：九寨沟</b></label>
+				<br/>
+				<img align="left" src="../images/lists/list_resort_jiuzhaigou.jpg" width="240" height="180" 
+					title="九寨沟（连同黄龙）风景如画、游人如织就不用多说了，但遗憾的是美丽的地方不一定所有的事都美丽。"  
+					alt="九寨沟（连同黄龙）风景如画、游人如织就不用多说了，但遗憾的是美丽的地方不一定所有的事都美丽。" />
+				<p>九寨沟（连同黄龙）风景如画、游人如织就不用多说了，但遗憾的是美丽的地方不一定所有的事都那么美好。</p>
+				<p>黑导游，黑车，假藏药，假玉器首饰，让你防不胜防。去九寨沟，请一定小心！</p>				
+			</div>
+			<div class="rightlist">
+				<br/>
+				<label class="righttitle"><b>第五名：兵马俑</b></label>
+				<br/>
+				<img align="left" src="../images/lists/list_resort_bingmayong.jpg" width="240" height="180" 
+					title="始皇帝如果还活着，看到自己乡土上的不肖子孙们如此胡作非为，一定会被气得再次翘辫子，只是不知道这次是否不选秦俑陪葬，相反要拉着这些骗子一起共赴黄泉。"  
+					alt="始皇帝如果还活着，看到自己乡土上的不肖子孙们如此胡作非为，一定会被气得再次翘辫子，只是不知道这次是否不选秦俑陪葬，相反要拉着这些骗子一起共赴黄泉。" />
+				<p>始皇帝如果还活着，看到本乡本土的不肖子孙们如此胡作非为，一定会被气得再次翘辫子，只是不知道这次是否不选秦俑陪葬，相反要拉着这些骗子一起共赴黄泉。</p>
+				<p>西安火车站前往兵马俑的黑公交要小心，当地小店起劲叫卖的纪念品要留意，路边高高堆起的假古董必须避开，导游推荐的其他游览场所一定警惕。</p>
+				<p class="directvote">直接去<a href="vote.html">投票</a></p>
+			</div>
+		</div>
+		<div class="twinlist">
+			<div class="leftlist">
+				<br/>
+				<label class="lefttitle"><b>第六名：阳朔</b></label>
+				<br/>
+				<img align="left" src="../images/lists/list_resort_yangshuo.jpg" width="240" height="180" 
+					title="以中国最好的健康旅游目的地之一著称的广西阳朔近年来连爆“黑店”宰客事件，游人被掮客以看“艳舞”为名拉进“黑店”后，几杯“特饮”就要价超万，不给钱就“别想出去”，被宰游人“脱险”后惊叹“阳朔之行太恐怖”。！"  
+					alt="以中国最好的健康旅游目的地之一著称的广西阳朔近年来连爆“黑店”宰客事件，游人被掮客以看“艳舞”为名拉进“黑店”后，几杯“特饮”就要价超万，不给钱就“别想出去”，被宰游人“脱险”后惊叹“阳朔之行太恐怖”。" />
+				<p>以中国最好的健康旅游目的地之一著称的广西阳朔近年来连爆“黑店”宰客事件，游人被掮客以看“艳舞”为名拉进“黑店”后，几杯“特饮”就要价超万，不给钱就“别想出去”，被宰游客“脱险”后惊叹“阳朔之行太恐怖”。</p>
+			</div>
+			<div class="rightlist">
+				<br/>
+				<label class="righttitle"><b>第七名：避暑山庄 木兰围场</b></label>
+				<br/>
+				<img align="left" src="../images/lists/list_resort_bishushanzhuang.jpg" width="240" height="180" 
+					title="避暑山庄旅游以黑车、假寺庙、劣质住宿和水货景点闻名；木兰围场（坝上草原）以山寨烤羊和骑马骗人出名，此外游客如果贪图便宜省门票，会被私带进围场的指定地方消费，得不偿失。"  
+					alt="避暑山庄旅游以黑车、假寺庙、劣质住宿和水货景点闻名；木兰围场（坝上草原）以山寨烤羊和骑马骗人出名，此外游客如果贪图便宜省门票，会被私带进围场的指定地方消费，得不偿失。" />
+				<p>避暑山庄旅游以黑车、假寺庙、劣质住宿和水货景点闻名；木兰围场（坝上草原）以山寨烤羊和骑马骗人出名，此外游客如果贪图便宜省门票，会被私带进围场的指定地方消费，得不偿失。</p>
+				<p class="directvote">直接去<a href="vote.html">投票</a></p>
+			</div>
+		</div>
+		<div class="twinlist">
+			<div class="leftlist">
+				<br/>
+				<label class="lefttitle"><b>第八名：夫子庙</b></label>
+				<br/>
+				<img align="left" src="../images/lists/list_resort_fuzimiao.jpg" width="240" height="180" 
+					title="吃东西住旅店价高质次，所谓老字号更是丢人现眼，“秦淮八绝”，贻笑大方！"  alt="吃东西住旅店价高质次，所谓老字号更是丢人现眼，“秦淮八绝”，贻笑大方！" />
+				<p>典型的外地游客集散地，同样的东西比别的地方贵一大截，几乎只要是参团的游客，必然会被忽悠到这里消费，以地下商场为甚。</p>
+				<p>吃东西住旅店价高质次，所谓老字号很多名不符实。“秦淮八绝”，贻笑大方！</p>
+				<p>此类旅游景区的典型代表还有西安的回民巷，北京的前门大栅栏等。</p>			
+			</div>
+			<div class="rightlist">
+				<br/>
+				<label class="righttitle"><b>第九名：香格里拉</b></label>
+				<br/>
+				<img align="left" src="../images/lists/list_resort_xianggelila.jpg" width="240" height="180" 
+					title="以天价假藏药出名，随便搜索一下，无数游客被骗买假藏药，远远压倒其他“传统”宰客手段，堪称一绝！"  
+					alt="以天价假藏药出名，随便搜索一下，无数游客被骗买假藏药，远远压倒其他“传统”宰客手段，堪称一绝！" />
+				<p>以天价假藏药出名，随便搜索一下，无数游客被骗买假藏药，远远压倒其他“传统”宰客手段，堪称一绝！</p>
+				<p class="directvote">直接去<a href="vote.html">投票</a></p>
+			</div>
+		</div>
+		<div class="twinlist">
+			<div class="leftlist">
+				<br/>
+				<label class="lefttitle"><b>第十名：井冈山</b></label>
+				<br/>
+				<img align="left" src="../images/lists/list_resort_jinggangshan.jpeg" width="240" height="180" 
+					title="与其他名胜相比，井冈山的旅游环境还凑合，也就是有时吃得贵了些量少了些，住得次了些价高了些，买东西缺斤短两以次充好，可是井冈山可是顶着红色旅游的黄金招牌啊！"  
+					alt="与其他名胜相比，井冈山的旅游环境还凑合，也就是有时吃得贵了些量少了些，住得次了些价高了些，买东西缺斤短两以次充好，可是井冈山可是顶着红色旅游的黄金招牌啊！" />
+				<p>与其他名胜相比，井冈山的旅游环境还凑合，也就是有时吃得贵了些量少了些，住得次了些价高了些，买东西缺斤短两以次充好，可是井冈山可是顶着红色旅游的黄金招牌啊！</p>
+				<p>想想看，游客满怀景仰来参观红色圣地，却得到如此待遇，换谁能受得了？延安和西柏坡也有类似问题。</p>
+				<p>所以井冈山上榜没商量！</p>
+			</div>
+			<div class="rightlist">
+				<br/>
+				<label class="righttitle"><b>候选：八达岭长城 北戴河 黄山 武夷山 庐山 华山 崂山 法门寺 峨眉山 五台山</b></label>
+				<br/>
+				<p>八达岭长城 北戴河：京郊旅游的代表。八达岭很不错，问题是黑车一日游打着八达岭十三陵的幌子干着不法勾当；北戴河作为老牌避暑胜地，也困扰于普遍的海边宰客现象，比如海鲜高价，出租费高，等等。</p>
+				<p>黄山 武夷山 庐山 华山 崂山: 海内名山，风景秀丽，其中“五岳归来不看山，黄山归来不看岳”，“自古华山一条路”，吸引着广大游客。
+					通病在于地方旅游业者杀鸡取卵，从吃购住行上处处下刀子，伤了很多游客的心。详情请参考<a href="../individual/hill.html">名山宰客榜</a>。</p>
+				<p>法门寺 峨眉山 五台山：前者是珍存有唯一佛指骨舍利的名寺；后两者是佛教名山，古刹众多。既然是香火繁盛，也就类似少林寺，以坑蒙信徒游客著称，
+					详情请参考<a href="../individual/temple.html">烧香拜佛榜</a>和<a href="../individual/hill.html">名山宰客榜</a>。</p>
+				<p><b>意犹未尽的朋友们可以订阅我们的<a href="../mail/mailindex.html">邮件服务</a>，毫不费力了解更多榜单信息、宰客奇闻、安全常识等。
+					也可以前往<a href="../news/newsindex.html">新闻主页</a>浏览更多与旅游风险相关的内容。</b></p>
+				<p><b>国内很多热门景区都收费昂贵，宰客凶猛！可以前往<a href="../download/download.html">下载页面</a>
+					下载最新版的《旅游风险手册》和《旅游安全手册》了解宰客行情。</b></p>
+				<p class="directvote">直接去<a href="vote.html">投票</a></p>
+			</div>
+		</div>			
+	</div>
+	<div id="bottom" style="float: left; width: 750px;">
+		<br/>
+		<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+		<br/>
+	</div>
+	<div id="express">
+		<b>民意小测验：</b>
+		<label>您认可这个排行榜吗？请选择下面的一项表个态吧</label> 
+		<br /> 
+		<input type="radio"	name="support" value="city1" />完全支持 
+		<input type="radio"	name="support" value="city2" />支持 
+		<input type="radio"	name="support" value="city3" />中立 
+		<input type="radio"	name="support" value="city4" />不太支持 
+		<input type="radio"	name="support" value="city5" />不支持 
+		<br />
+		<br />
+		&nbsp;已经有<label id="totalzaike"></label>个表态了
+		<div id="info1"></div>
+	</div>
+	<div id="chart1"></div>
+	<br /> 
+	<div id="innercomment">
+		<h3>请发表您的意见：</h3><br />
+		<input type='hidden' id='current_page' /> 
+		<input type='hidden' id='show_per_page' />
+		<table>
+			<tr><td>昵称(可选):</td><td><input type="text" id="nickname" name="nickname" size="12" maxlength="12"/></td></tr>
+			<tr><td>评论:（限200字）</td><td><textarea rows="10" cols="75" id="comment" name="comment" maxlength="200"></textarea></td></tr>
+			<tr><td><input id="btn" type="button" value="发表评论" /></td><td><span id="commentSpan"></span></td></tr>
+		</table>			 
+		<br />
+	现有评论如下：
+		<br/>
+		<table>
+			<tr align="center"><td width="50px">用户名</td><td width="610px">评论</td><td>日期</td></tr>
+		</table>			
+	</div>
+	<br />
+	<div id="content">评论正在加载中，请稍候</div>
+	<div id='page_navigation'></div>
+  </div>
+  <div id="right">
+    <iframe src="../right.html" width=90 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+</div>
+<div id="footer">
+  <iframe src="../footer.html" width=980 height=70 frameborder="0" scrolling="no"></iframe>
+</div>
+</body>
+<!-- InstanceEnd --></html>

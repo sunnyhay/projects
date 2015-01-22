@@ -1,0 +1,221 @@
+@CHARSET "UTF-8";
+/*
+ * 用于不投票单项榜单页面
+ */
+ #page_navigation a{
+	padding:3px;
+	border:1px solid gray;
+	margin:2px;
+	color:black;
+	text-decoration:none
+}
+.active_page{
+	background:darkblue;
+	color:white !important;
+}
+
+.rightroll{
+	width: 90px;
+	height: 140px;
+}
+
+#main{
+	width: 763px;
+}
+
+#main #list{
+	width: 760px;
+	margin: 1px;
+	margin-bottom: 8px;
+	border-top: 1px ridge black;
+}
+
+#main #list .comp p{
+	text-indent: 30px;
+	font-size: 15px;
+	margin: 1px;
+}
+
+#main #list #intro p{
+	text-indent: 30px;
+	font-size: 15px;
+	margin: 1px;
+}
+
+#main #list .pair p{
+	text-indent: 30px;
+	font-size: 15px;
+	margin: 1px;
+}
+
+#main #list .directvote{
+	text-align: right;
+	font-size: 12px;
+}
+
+#main .innerlist{
+	width:750px;
+	margin:3px;
+	padding:3px;
+	margin-bottom: 8px;
+}
+
+#main .innerlist .innertitle{
+	font-size: 20px;
+	color: red;	
+}
+
+#main .innerlist p{
+	text-indent: 32px;
+	font-size: 16px;
+	margin:2px;
+}
+
+#main .innerlist .gotovote{
+	text-align: right;
+	font-size: 12px;
+	float: right;
+	
+}
+
+#main .twinlist{
+	width: 750px;
+	height: 290px;
+	margin: 1px;
+	padding: 1px;
+}
+
+#main .twinlist .gotovote{
+	text-align: right;
+	font-size: 12px;
+	float: right;
+}
+
+#main .twinlist .leftlist{
+	width: 370px;
+	margin: 1px;
+	padding: 1px;
+	float: left;
+}
+
+#main .twinlist .leftlist .lefttitle{
+	font-size: 18px;
+	color: red;
+}
+
+#main .twinlist .leftlist p{
+	text-indent: 32px;
+	font-size: 16px;
+	margin: 0px;
+}
+
+#main .twinlist .rightlist{
+	width: 370px;
+	margin: 1px;
+	padding: 1px;
+	float: left;	
+	border-left: 1px dotted blue;
+}
+
+#main .twinlist .rightlist .righttitle{
+	font-size: 18px;
+	color: red;
+}
+
+#main .twinlist .rightlist p{
+	text-indent: 32px;
+	font-size: 16px;
+	margin: 0px;
+}
+
+#main #share{
+	width: 758px;
+	height: 25px;
+	margin: 0x;
+	padding: 0x;
+	border-bottom: 1px dotted blue;
+}
+
+#main #share .jiathis_style{
+	float: right;
+}
+
+#main #express{
+	//border:1px solid gray;
+	width: 405px;
+	height: 150px;
+	margin: 1px;
+	padding-top: 10px;
+	float: left;
+	border-top: 1px dotted blue;
+	border-bottom: 1px dotted black;
+}
+#main #express input{
+	margin: 15px 4px 5px 2px;
+}
+
+#main #express #info1{
+	margin-left: 4px;
+	margin-top: 20px;
+}
+
+#chart1{
+	border:1px solid gray;
+	margin: 1px;
+	float: right;	
+	height: 150px; 
+	width: 350px;
+	display: none;
+}
+
+#innercomment{
+	float: left;
+	width: 760px;
+}
+
+#content{
+	float: left;
+	width: 760px;
+	margin: 1px;	
+}
+
+#content .component{
+	margin-top:5px;
+	padding: 0px;
+	border: 1px dotted gray;
+	width: 755px;
+	float: left;
+}
+
+#content .component .nick{
+	margin: 0px;
+	padding: 0px;
+	width: 70px;
+	float: left;
+}
+
+#content .component .comment{
+	margin-left: 8px;
+	margin-right: 3px;
+	padding: 0px;
+	width: 567px;
+	float: left;
+}
+
+#content .component .date{
+	margin-left: 5px;
+	padding: 0px;
+	width: 100px;
+	float: left;
+}
+
+#page_navigation{
+	float: left;
+	width: 760px;
+	margin: 2px;	
+}
+
+#innerscroll1{
+	 height:140px;
+	 width:90px;
+}

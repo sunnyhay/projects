@@ -1,0 +1,511 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>海外国家宰客榜</title>
+<script type="text/javascript" src="../jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="../jslib/jquery.bxslider2.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.easing.1.3.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.jqplot.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.barRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.categoryAxisRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.pointLabels.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../style/jquery.jqplot.css" />
+<link rel="stylesheet" type="text/css" href="../style/style2.css" />
+<link rel="stylesheet" type="text/css" href="../style/individual.novote.css" />
+<link rel="stylesheet" type="text/css" href="../style/search.css" />
+
+<script type="text/javascript">
+$(function() {
+	//set default comment hint
+	$("#comment").val("请在这里发表您的评论，谢谢");
+	$("#comment").select();
+	$("#comment").click(checkdefault);
+	$("#comment").focusin(checkdefault);
+	
+	//allow #innerscroll1 (in thanscroll) to dynamically scroll
+	$('#innerscroll1').bxSlider({
+		auto: true,
+		autoHover: true,
+		margin: 70,
+	    controls: false,
+	    pause: 15000,
+	    speed: 5000,
+	    pager: false
+	});
+		
+	//show the hint if the support express is voted!
+	if($(":input[type=radio]").attr("disabled") =="disabled"){
+		$("#info1").html("您已经表达过您的支持了");		
+	}
+	
+	/*
+	 * when the window is loaded, show the comments for intercity list
+	 */
+	$.post("../intercityListAction!getExpressCount", {},function(returnedData,status){
+		if("success" == status){
+			$("#totalzaike").html(returnedData);
+		}
+	});
+	
+	/*
+	 * when the window is loaded, show the comments for intercity list
+	 */
+	$.post("../intercityListAction!getInterCityComments", {}, function(returnedData,status) {
+		if ("success" == status) {
+			var result = eval(returnedData);
+			
+			$("#content").html("");
+			for ( var index in result) {
+				var c = result[index];
+				//$("#content").prepend("<tr align='center'><td width='10%' bgcolor='#9ff'>" + c.nickname + "</td><td width='70%' bgcolor='#cff'>" + c.comment+ "</td><td bgcolor='#fcf'>" + c.commentDate + "</td>");
+				var nn = c.nickname;
+				if("" == nn)
+					nn = "空";
+				$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + c.comment +"</div><div class='date'>" + c.commentDate + "</div></div>");
+			}
+						
+			//how much items per page to show
+			var show_per_page = 10; 
+			//getting the amount of elements inside content div
+			var number_of_items = $('#content').children().size();
+			//calculate the number of pages we are going to have
+			var number_of_pages = Math.ceil(number_of_items/show_per_page);
+			
+			//set the value of our hidden input fields
+			$('#current_page').val(0);
+			$('#show_per_page').val(show_per_page);
+			
+			//now when we got all we need for the navigation let's make it '
+			
+			/* 
+			what are we going to have in the navigation?
+				- link to previous page
+				- links to specific pages
+				- link to next page
+			*/
+			//var navigation_html = '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var navigation_html = '<a class="first_link" href="javascript:go_to_page(0);">第一页</a>' + '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var current_link = 0;
+			while(number_of_pages > current_link){
+				navigation_html += '<a class="page_link" href="javascript:go_to_page(' + current_link +')" longdesc="' + current_link +'">'+ (current_link + 1) +'</a>';
+				current_link++;
+			}
+			//navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>';
+			navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>' + '<a class="first_link" href="javascript:go_to_page(' + (number_of_pages-1) + ');">最后一页</a>';
+			
+			$('#page_navigation').html(navigation_html);
+			
+			//add active_page class to the first page link
+			$('#page_navigation .page_link:first').addClass('active_page');
+			
+			//hide all the elements inside content div
+			$('#content').children().css('display', 'none');
+			
+			//and show the first n (show_per_page) elements
+			$('#content').children().slice(0, show_per_page).css('display', 'block');
+		}
+	});
+	
+	//2. register click event on #btn to add comment on intercity_comment
+	$("#btn").click(function() {
+		if($("#comment").val() == "" || $("#comment").val() == "请在这里发表您的评论，谢谢"){//simple validation with empty or default condition
+			$("#commentSpan").html("<p><b>评论不能为空</b></p>");
+			return false;		
+		}else{//submit the json object {nickname,comment}
+			$("#commentSpan").html("<p>谢谢您的评论</p>");
+			$.post("../intercityListAction!addInterCityComment", {"nickname":encodeURI($("#nickname").val()),"comment":encodeURI($("#comment").val())}, 
+				function(returnedData,status) {
+					if ("success" == status){
+						//$("#content").prepend($("#comment").val() + "<br/>");  //insert the new comment firstly;
+						var nn = $("#nickname").val();
+						if("" == nn)
+							nn = "空";
+						$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + $("#comment").val() +"</div><div class='date'>" 
+						+ new Date().toLocaleString() + "</div></div>");
+						$("#commentSpan").html("");
+					}
+				});
+			$(this).attr("disabled","disabled");
+		}			
+	});
+	
+	/*
+	 * bind the click event to each radio box to vote the express support on this intercity list
+	 */
+	$(":input[type=radio]").click(function() {
+		//1. if any radio box is selected, disable all;
+		$(":input[type=radio]").attr("disabled","disabled"); 
+		//1.5 increment the total support count
+		$("#totalzaike").html(parseInt($("#totalzaike").html()) + 1);
+		//2.show chart1 div
+		$("#info1").html("");
+		$("#chart1").show();
+		$("#chart1").html("请稍候...");
+		//3.pass the user choice to action via ajax post() method
+		$.post("../intercityListAction!express", {support:$(this).val()}, function(returnedData,status) {
+			if ("success" == status) {
+				$("#chart1").html("");
+				var result = eval(returnedData);
+				temp = result;
+				//4. define plot element to be shown
+				$.jqplot.config.enablePlugins = true;
+			    var ticks = ['完全支持', '支持', '中立', '不太支持', '不支持'];
+			    //5. draw the plot 
+			    plot1 = $.jqplot('chart1', [result], {
+			        // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
+			        animate: !$.jqplot.use_excanvas,
+			        seriesDefaults:{
+			            renderer:$.jqplot.BarRenderer,
+			            pointLabels: { show: true }
+			        },
+			        axes: {
+			            xaxis: {
+			                renderer: $.jqplot.CategoryAxisRenderer,
+			                ticks: ticks
+			            }
+			        },
+			        highlighter: { show: false }
+			    });			 	
+			}
+		});
+	});
+});
+
+//used for default comment hint
+function checkdefault() {
+	var txt = $(this).val();  //the current text in the area
+	if(txt == "请在这里发表您的评论，谢谢")
+		$(this).val("");
+	$(this).focusout(retdefault);	
+}
+//used for default comment hint
+function retdefault(){
+	var txt = $(this).val();
+	if(txt == ""){
+		$(this).val("请在这里发表您的评论，谢谢");
+		$(this).select();
+	}		
+	$(this).click(checkdefault);
+	$(this).focusin(checkdefault);
+}
+
+function previous(){
+	
+	new_page = parseInt($('#current_page').val()) - 1;
+	//if there is an item before the current active link run the function
+	if($('.active_page').prev('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function next(){
+	new_page = parseInt($('#current_page').val()) + 1;
+	//if there is an item after the current active link run the function
+	if($('.active_page').next('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function go_to_page(page_num){
+	//get the number of items shown per page
+	var show_per_page = parseInt($('#show_per_page').val());
+	
+	//get the element number where to start the slice from
+	start_from = page_num * show_per_page;
+	
+	//get the element number where to end the slice
+	end_on = start_from + show_per_page;
+	
+	//hide all children elements of content div, get specific items and show them
+	$('#content').children().css('display', 'none').slice(start_from, end_on).css('display', 'block');
+	
+	/*get the page link that has longdesc attribute of the current page and add active_page class to it
+	and remove that class from previously active page link*/
+	$('.page_link[longdesc=' + page_num +']').addClass('active_page').siblings('.active_page').removeClass('active_page');
+	
+	//update the current page input field
+	$('#current_page').val(page_num);
+};
+
+</script>
+</head>
+
+<body>
+<div id="header">
+  <iframe src="../header.html" width=980 height=91 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="nav">
+  <iframe src="../nav.html" width=980 height=40 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="primary">
+  <!-- InstanceBeginEditable name="baike" -->  
+  <div id="baike">
+    <iframe src="../baike.html" width=120 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+  <!-- InstanceEndEditable -->
+  <!-- InstanceBeginEditable name="MainEditRegion" -->
+  <div id="main">
+    <div id="location"><a name="articletop">您的位置</a>： <a href="../index.html">旅游宰客榜首页</a> 》》<a href="listindex.html">旅游宰客榜</a> 》》海外国家宰客榜</div>
+    <div id="list">
+		<h2 align="center">海外国家宰客榜（暂行）</h2>
+		<div id="share">
+			<!-- JiaThis Button BEGIN -->
+			<div class="jiathis_style">
+				<span class="jiathis_txt">分享到：</span>
+				<a class="jiathis_button_qzone" /><a class="jiathis_button_tsina" />
+				<a class="jiathis_button_tqq" /><a class="jiathis_button_renren" />
+				<a class="jiathis_button_kaixin001" /><a class="jiathis_button_tsohu" />
+				<a class="jiathis_button_feixin" /><a class="jiathis_button_douban" />
+				<a class="jiathis_button_fb" /><a class="jiathis_button_tieba" />
+				<a class="jiathis_button_tianya" /><a class="jiathis_button_twitter" />
+				<a class="jiathis_button_googleplus" /><a class="jiathis_button_t163" />
+				<a class="jiathis_button_xiaoyou" /><a class="jiathis_button_mop" />
+				<a class="jiathis_button_tifeng" /><a class="jiathis_button_gmail" />
+				
+				<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+				<a class="jiathis_counter_style"></a>
+			</div>
+			<script type="text/javascript" >
+			var jiathis_config={
+				boldNum:15,
+				siteNum:15,
+				sm:"taobao,hi,meilishuo,51,sohu,tpeople,189share,huaban,ifensi,hexun,ydnote,ymail,hotmail,tyaolan,toeeee",
+				summary:"",
+				hideMore:false
+			}
+			</script>
+			<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+			<!-- JiaThis Button END -->
+		</div>
+		<div id="intro">
+			<table border="0" style="color: #060606;" cellspacing="0" cellpadding="0">
+					<tr align="center">
+						<td>前往其他榜单：</td>
+						<td><a href="city.html">国内城市榜&nbsp&nbsp</a></td>
+						<td><a href="resort.html">国内景区榜&nbsp&nbsp</a></td>
+						<td><a href="interresort.html">海外景区榜&nbsp&nbsp</a></td>
+						<td><a href="../individual/hill.html">名山宰客榜&nbsp&nbsp</a></td>
+						<td><a href="../individual/temple.html">烧香拜佛榜&nbsp&nbsp</a></td>
+						<td><a href="../individual/park.html">公园对比榜&nbsp&nbsp</a></td>
+						<td><a href="../individual/museum.html">博物馆榜&nbsp&nbsp</a></td>
+						<td><a href="../individual/roadfee.html">过路费榜&nbsp&nbsp</a></td>
+					</tr>
+			</table>
+			<br/>
+			<p style="color: purple;">提示：总投票没有超过2000票的情况下，本榜单只是暂行；一旦超过2000票，将根据投票定期发布正式榜单。</p>
+			<p style="color: purple;">总投票数目是指访客在<a href="vote.html">投票页面</a>给所有国内城市、国内景区、海外国家和海外景区投票数目的总和。</p>
+			<br/>
+			<br/>
+			<p>与中国游客在自己国家遭遇到的种种宰客行径相比，其实海外旅行相对而言风险小得多，不过仍然难以完全避免。</p>
+			<p>限于旅游政策、经济因素和外语水平，中国游客一般选择参团海外旅行。如果是低价旅行团，旅行社和导游的宰客愿景会大大膨胀。
+				参团旅游的宰客条件也相对便利，因为护照被集体收走，行程加入很多购物或者不知名景点参观环节，以这样的方式来不仅弥补团费，而且赚黑心钱。</p>
+			<p>国门打开也就是最近十几年的事情，中国游客的海外旅行经历相对贫乏，旅游文明程度相对欠缺（比如有些人随地吐痰扔杂物，
+				公众场合大声喧哗或者打电话，排队不遵守秩序等），因此有些游客在某些国家会不可避免受到不平等对待。</p>
+			<p>请仔细观看本榜单和<a href="interresort.html">海外景区宰客榜</a>，字里行间透露出一个触目惊心的事实：
+				海外中国游客被骗被宰，很多情况下背后都有负责组团的和当地接团的华人旅行社（两岸三地）和华人导游（以及极少数懂汉语外国导游）的黑手！
+				几乎可以看作是国内旅游宰客产业的海外自然延伸。宰的就是自己人，不宰白不宰！</p>
+			<p>那么旅游监管部门为此做了些什么呢？除了不定期发布旅游安全警报，是不是应该从制度上和执行上对国内出境游旅行社施加更加严格的管理呢？</p>
+		</div>
+		<div class="innerlist">
+			<br/>
+			<label class="innertitle"><b>榜首：日本</b></label>
+			<br />
+			<img align="left" src="../images/lists/list_intercity_japan.jpg" width="372" height="240" 
+				title="与东南亚国家相对低的旅游从业者素质比较，在日本这样规范的旅游市场居然还是发生了大面积的针对中国参团游客的诈骗购物活动，而且长时间得不到有效制止，还是把日本送上了海外国家宰客榜的榜首！"  
+				alt="与东南亚国家相对低的旅游从业者素质比较，在日本这样规范的旅游市场居然还是发生了大面积的针对中国参团游客的诈骗购物活动，而且长时间得不到有效制止，还是把日本送上了海外国家宰客榜的榜首！" />
+			<p>虽然对日本这个国家没有什么好感，可是从整理搜集来的日本游宰客案例来看，日本旅游管理部门、日本媒体以及主要的旅游从业者基本上是各尽其职，本分从业的，鲜有蓄意宰客行为。
+				只有少部分日本旅游从业者在餐饮住宿和娱乐场所环节参与了对中国游客的坑蒙拐骗，不过背后的主导仍旧是那些华人旅行社和导游。</p>
+			<p>然而，与东南亚国家相对低的旅游从业者素质比较，在日本这样规范的旅游市场居然还是发生了大面积的针对中国参团游客的诈骗购物活动，	而且长时间得不到有效制止，足以把日本送上了海外国家宰客榜的榜首！</p>
+			<p>几乎所有抵达日本的中国游客，在旅游大巴上听到导游讲的第一句话就是：“日本虽然是一个法制国家，但是也有骗子。所以，买东西一定要到免税店去购买，那里东西最便宜，最安全。</p>
+			<p>根据日本NHK电视台最新的专题节目，接待中国旅游团的基本上都是中国人（包括台湾人、香港人和大陆人），而且，这些导游大多无证。报道中，NHK记者在日本皇宫前询问了20位带中国旅游团的导游，
+				结果只有1个人有资格证书。部分免税店与导游、地接社勾结宰客，种种现象，让人触目惊心。此外，根据一些游客反映，绅士模样的日本司机真的有时候不绅士，兜远路赚钱不少见。</p>
+			<p>一些从日本回来的游客就惊讶地发现，自己竟然被“免税店”宰了。“免税店”的利润分成内幕：自己截留50%，分给旅行社25%，再分给导游25%。日本游中还常有偷梁换柱的猫腻。
+				说是带你去吃日本有名的“神户牛肉”或是高档海鲜，其实有的是以次充好。</p>
+			<p>【日本<a href="http://travel.cntv.cn/20120824/102925.shtml" target="_blank">参考1</a>，
+				<a href="http://travel.qingdaonews.com/content/2012-09/06/content_9401460_3.htm" target="_blank">参考2</a>，
+				<a href="http://fashion.ifeng.com/travel/news/world/detail_2012_02/03/12271516_1.shtml" target="_blank">参考3</a>，
+				<a href="http://sh.eastday.com/m/20120824/u1a6808017_2.html" target="_blank">参考4</a>，
+				<a href="http://www.mafengwo.cn/i/636630.html" target="_blank">参考5</a>，
+				<a href="http://weiba.weibo.com/10023/t/yzpQ1y5Ux" target="_blank">参考6</a>】
+			</p>
+			<p class="directvote">直接去<a href="vote.html">投票</a></p>				
+		</div>
+		<div class="innerlist">
+			<br/>
+			<label class="innertitle"><b>榜眼：泰国</b></label>
+			<br/>
+			<img align="left" src="../images/lists/list_intercity_thailand.png" width="372" height="240" 
+				title="一句话，去泰国要高度注意自己的钱包！"  alt="一句话，去泰国要高度注意自己的钱包！" />
+			<p>从各种旅游论坛和博客的海外游防骗攻略来看，泰国绝对应该坐上榜首宝座！之所以在日本之下屈居榜眼，是因为泰国也是旅游市场很不规范的发展中国家，
+				所以中国游客在那里挨宰并不令人惊讶。看看下面很多游客在泰国被宰的方式，比起国内也是不遑多让！</p>
+			<p>出租：泰国的出租车宰客可是出了名的。曼谷出租车有两种，一种是小汽车，另一种是机动三轮车，叫“嘟嘟车”。小汽车有计价器，但司机大都不肯打表，提高价格与乘客讨价还价。
+				而“嘟嘟车”也很有猫腻，一般会直接将游客拉到珠宝店去待上20分钟才走，这样就可以拿到回扣。</p>
+			<p>购物：宰客的场所主要是珠宝店、皮包店、蛇园（这可是国内都很罕见的新鲜方式啊！）、燕窝店，大多冠以堂皇的泰国国家某某中心招牌。</p>
+			<p>泰国骗子最爱穿，推荐幸运佛。有网友总结：在泰国一定要注意，凡是有说着中文自动靠上来的，基本上都是骗子。换汇：其手法和国内的黄牛有异曲同工之妙。</p>
+			<p>自费游览项目：这是几招骗钱招数中最毒的一招。名目繁多啊！海钓、烧烤、骑大象游森林、海上玄宫、泰缅边境游及夜游桂河、泰国古式安摩及帝王餐、猴子学校等。
+				比如在巴堤雅最重要的活动是去珊瑚岛观光，而自费项目的大沙岛，仅是同一个岛的山背面，坐一趟船上岛，再用车载你到岛的另一面下海，这就把免费游览和自费游览同时解决了。
+				收费约人民币300元。</p>
+			<p>一句话，去泰国玩要盯紧钱包，最好练就老僧入定的本事，对周围的刮噪不闻不问！</p>
+			<p>【泰国<a href="http://fashion.ifeng.com/travel/news/world/detail_2012_02/03/12271516_0.shtml" target="_blank">参考1</a>，
+				<a href="http://www.tianya.cn/publicforum/content/free/1/2403175.shtml" target="_blank">参考2</a>，
+				<a href="http://tha.yaolvyou.com/1222171502.html" target="_blank">参考3</a>，
+				<a href="http://szbbs.sznews.com/viewthread.php?tid=1174886" target="_blank">参考4</a>，
+				<a href="http://lvyou.elong.com/948950/tour/a0176409.html" target="_blank">参考5</a>，
+				<a href="http://tieba.baidu.com/p/1818541382" target="_blank">参考6</a>，
+				<a href="http://xsccmbtt.blog.sohu.com/203037258.html" target="_blank">参考7</a>，
+				<a href="http://www.hn8868.com/Html/shxw/20120809013852103.html" target="_blank">参考8</a>】
+			</p>
+			<p class="directvote">直接去<a href="vote.html">投票</a></p>
+		</div>
+		<div class="innerlist">
+			<br/>
+			<label class="innertitle"><b>探花：韩国</b></label>
+			<br/>
+			<img align="left" src="../images/lists/list_intercity_korea.jpg" width="372" height="240" 
+				title="韩国能够高居探花位置的主要原因在于一项绝活：整容旅游！总体上中国游客整容的费用往往是韩国当地人的数倍乃至十倍以上！"  
+				alt="韩国能够高居探花位置的主要原因在于一项绝活：整容旅游！总体上中国游客整容的费用往往是韩国当地人的数倍乃至十倍以上！" />
+			<p>首尔市政府2012年9月24日刚刚发布的消息：考虑到将有大批中国游客在国庆黄金周期间访韩，为此，将于9月27日到10月7日间严厉打击针对外国游客的宰客行为！
+				一方面这是好事，首尔市政府相信不会像一些国内的旅游监管部门那么色厉内荏，光说不练，中国游客的利益会得到更好的保障！另外一方面，看看人家准备检查的几个方面：
+				商家是否明码标价，出租车宰客，没有明码标价的练歌厅等。这么来说，从购物（尤其是特色物品比如太极人参等）到出租车到娱乐场所，中国游客被宰的范围还是很普遍的！</p>
+			<p>当然，韩国能够高居探花位置的主要原因在于一项绝活：整容旅游！总体上中国游客整容的费用往往是韩国当地人的数倍乃至十倍以上！</p>
+			<p>于是韩国光荣当选为本榜探花郎！</p>
+			<p>【韩国<a href="http://travel.sina.com.cn/world/2012-09-25/0939183933.shtml" target="_blank">参考1</a>，
+				<a href="http://society.voc.com.cn/article/201203/201203071652523669.html" target="_blank">参考2</a>，
+				<a href="http://zhidao.baidu.com/question/80258892.html" target="_blank">参考3</a>，
+				<a href="http://www.wretch.cc/blog/addlov/25083849" target="_blank">参考4</a>】
+			</p>
+			<p class="directvote">直接去<a href="vote.html">投票</a></p>
+		</div>
+		<div class="twinlist">
+			<div class="leftlist">
+				<br/>
+				<label class="lefttitle"><b>第四名：马尔代夫</b></label>
+				<br/>
+				<img align="left" src="../images/lists/list_intercity_maerdaifu.jpg" width="240" height="180" 
+					title="国家旅游局发布游特别提示，赴马尔代夫的中国游客应防范诈骗"  alt="国家旅游局发布游特别提示，赴马尔代夫的中国游客应防范诈骗" />
+				<p>国家旅游局、外交部领事司和中国驻马尔代夫使馆提醒赴马中国游客尽量找当地规模大、正规合法的旅行社，切勿一味追求低价！马尔代夫这么巴掌大的地方也是中国游客被宰的热门场所，谁让那里环境优美，胜似天堂呢！
+					近年来马尔代夫屡屡发生中国游客被骗事件！</p>
+				<p>【马尔代夫<a href="http://d.lotour.com/Maldives/20120530/666533.shtml" target="_blank">参考1</a>，
+					<a href="http://tra.zohi.tv/traveltips/2012/07/2012-07-23253418.html" target="_blank">参考2</a>，
+					<a href="http://maerdaifu.mipang.com/gonglue/1279740.html" target="_blank">参考3</a>】
+				</p>
+			</div>
+			<div class="rightlist">
+				<br/>
+				<label class="righttitle"><b>第五名：新加坡 马来西亚</b></label>
+				<br/>
+				<img align="left" src="../images/lists/list_intercity_singapore.jpg" width="240" height="180" 
+					title="相对泰国，这两个国家对待中国游客，已经算是比较厚道了。尽管如此，仍然有一些骗局存在，比如刮刮奖，比如合成祖母绿宝石，比如出租宰客，等等，宰客手段了无新意，范围也不广泛。"  
+					alt="相对泰国，这两个国家对待中国游客，已经算是比较厚道了。尽管如此，仍然有一些骗局存在，比如刮刮奖，比如合成祖母绿宝石，比如出租宰客，等等，宰客手段了无新意，范围也不广泛。" />
+				<p>相对泰国，这两个国家对待中国游客，已经算是比较厚道了。尽管如此，仍然有一些骗局存在，比如刮刮奖，比如合成祖母绿宝石，比如出租宰客，等等，宰客手段了无新意，范围也不广泛。</p>
+				<p>【新加坡 马来西亚<a href="http://www.lytpw.com/new/15588.html" target="_blank">参考1</a>，
+					<a href="http://www.lvping.com/showjournal-d53-r880272-journals.html" target="_blank">参考2</a>，
+					<a href="http://www.backpackers.com.tw/forum/archive/index.php/t-377217.html" target="_blank">参考3</a>，
+					<a href="http://www.91town.com/thread-16784897-1-1.html" target="_blank">参考4</a>，
+					<a href="http://ask.qyer.com/question/147746.html" target="_blank">参考5</a>，
+					<a href="http://bbs.beibaotu.com/forum.php?mod=viewthread&tid=1184360&extra=page%3D1&page=1" target="_blank">参考6</a>】
+				</p>
+				<p class="directvote">直接去<a href="vote.html">投票</a></p>
+			</div>
+		</div>
+		<div class="twinlist">
+			<div class="leftlist">
+				<br/>
+				<label class="lefttitle"><b>第六名：埃及</b></label>
+				<br/>
+				<img align="left" src="../images/lists/list_intercity_egypt.jpg" width="240" height="180" 
+					title="作为世界闻名的金字塔和狮身人面像的故乡，埃及也是诈骗和宰客的天堂"  
+					alt="作为世界闻名的金字塔和狮身人面像的故乡，埃及也是诈骗和宰客的天堂" />
+				<p>作为世界闻名的金字塔和狮身人面像的故乡，埃及也是诈骗和宰客的天堂！从中国游客埃及游的各类攻略来看，似乎遍地陷阱啊！
+					可能这也是第三世界国家的一个普遍问题。既然国家制度建设并不完善规范，怎么可能指望旅游市场独善其身呢！不过比起东南亚和东亚这些临近国家，
+					去埃及的中国游客数量有限，所以埃及目前屈居第六。随着越来越多的有闲有钱中国游客前往瞻仰金字塔，可以期待埃及在本榜单节节高升！</p>
+				<p>【埃及<a href="http://bbs.qyer.com/viewthread.php?tid=335584" target="_blank">参考1</a>，
+					<a href="http://mail.scu.edu.tw/~agnes/ejnotice.htm" target="_blank">参考2</a>，
+					<a href="http://www.chinaare.com/archiver/?tid-872.html" target="_blank">参考3</a>，
+					<a href="http://bbs.tuniu.com/thread-113915-0.html" target="_blank">参考4</a>，
+					<a href="http://blog.sina.com.cn/s/tj_55ff89580101etxb.html" target="_blank">参考5</a>，
+					<a href="http://www.banzhu.com/article/1586630-2" target="_blank">参考6</a>，
+					<a href="http://blog.mjjq.com/archives/1819.html" target="_blank">参考7</a>，
+					<a href="http://travel.cn.yahoo.com/yxk/20110620/6pt0.html" target="_blank">参考8</a>，
+					<a href="http://www.backpackers.com.tw/forum/archive/index.php/t-31626.html" target="_blank">参考9</a>】
+				</p>
+				<br/>
+				<p>特别安全提醒：请留意以下一些国家的旅游安全状况。</p>
+				<p>治安不好：南非，苏丹；</p>
+				<p>卫生条件差，易感染传染病：柬埔寨，印尼；</p>
+				<p>易发恐怖事件：以色列，叙利亚，利比亚，伊拉克。</p>
+			</div>
+			<div class="rightlist">
+				<br/>
+				<label class="righttitle"><b>候选：越南 欧盟国家 美国 澳大利亚 朝鲜</b></label>
+				<br/>
+				<p>越南的旅游业比起泰国马来西亚是大大不如，前往当地旅游的中国游客数量不多，尽管如此，还是有一些当地宰客的抱怨；</p>
+				<p>欧盟，美国和澳大利亚的旅游市场相对成熟规范，不过对于习惯团进团出的中国游客而言，还是可能会遭遇多购物少游览的困境，毕竟是由华人旅行社负责组织，
+					那么旅行社和导游也许会根据旅游团性质（主要是根据团费）来决定宰客程度。所以小心挑选名声好价格不是那么低得离谱的路线和旅行社，应该从很大程度上降低旅游风险。</p>
+				<p>朝鲜2010年向中国游客开放了旅游市场，但是从目前游客反映来看，存在一些问题，主要就是团费太贵了，前往板门店旅游的团甚至比韩国方向出发的类似路线贵一倍；
+					吃住待遇一般，毕竟朝鲜经济开放程度很低，所以物资缺乏，物价奇贵；只能看朝方希望游客看到的景观，旅游自由度太低。话说回来，人家朝鲜可不藏着掖着背地里宰你！
+					团费贵，因为旅游资源稀缺，物以稀为贵；不能随意脱团与当地居民搭讪或者拍照，说明人家自尊心高度敏感。不抓紧时间去，过些年也许就没这么独特的景致供人探奇了！</p>
+				<p><b>国外这些城市和景区其实还好了，国内很多热门景区都收费昂贵，宰客凶猛！可以前往<a href="../download/download.html">下载页面</a>
+					下载最新版的《旅游风险手册》和《旅游安全手册》了解宰客行情。</b></p>
+					<p><b>意犹未尽的朋友们可以订阅我们的<a href="../mail/mailindex.html">邮件服务</a>，毫不费力了解更多榜单信息、宰客奇闻、安全常识等。
+					也可以前往<a href="../news/newsindex.html">新闻主页</a>浏览更多与海外旅游风险相关的内容。</b></p>
+				<p class="directvote">直接去<a href="vote.html">投票</a></p>
+			</div>
+		</div> 
+	</div>
+	<div id="bottom" style="float: left; width: 750px;">
+		<br/>
+		<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+		<br/>
+	</div>
+	<div id="express">
+		<b>民意小测验：</b>
+		<label>您认可这个排行榜吗？请选择下面的一项表个态吧</label> 
+		<br /> 
+		<input type="radio"	name="support" value="city1" />完全支持 
+		<input type="radio"	name="support" value="city2" />支持 
+		<input type="radio"	name="support" value="city3" />中立 
+		<input type="radio"	name="support" value="city4" />不太支持 
+		<input type="radio"	name="support" value="city5" />不支持 
+		<br />
+		<br />
+		&nbsp;已经有<label id="totalzaike"></label>个表态了
+		<div id="info1"></div>
+	</div>
+	<div id="chart1"></div>
+	<br /> 
+	<div id="innercomment">
+		<h3>请发表您的意见：</h3><br />
+		<input type='hidden' id='current_page' /> 
+		<input type='hidden' id='show_per_page' />
+		<table>
+			<tr><td>昵称(可选):</td><td><input type="text" id="nickname" name="nickname" size="12" maxlength="12"/></td></tr>
+			<tr><td>评论:（限200字）</td><td><textarea rows="10" cols="75" id="comment" name="comment" maxlength="200"></textarea></td></tr>
+			<tr><td><input id="btn" type="button" value="发表评论" /></td><td><span id="commentSpan"></span></td></tr>
+		</table>			 
+		<br />
+	现有评论如下：
+		<br/>
+		<table>
+			<tr align="center"><td width="50px">用户名</td><td width="610px">评论</td><td>日期</td></tr>
+		</table>			
+	</div>
+	<br />
+	<div id="content">评论正在加载中，请稍候</div>
+	<div id='page_navigation'></div>
+  </div>
+  <!-- InstanceEndEditable -->
+  <!-- InstanceBeginEditable name="right" -->
+  <div id="right">
+    <iframe src="../right.html" width=90 height=1328 frameborder="0" scrolling="no"></iframe>    
+  </div>  
+</div>
+<div id="footer">
+  <iframe src="../footer.html" width=980 height=70 frameborder="0" scrolling="no"></iframe>
+</div>
+</body>
+</html>

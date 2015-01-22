@@ -1,0 +1,801 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>名山宰客榜</title>
+
+<script type="text/javascript" src="../jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="../jslib/jquery.bxslider2.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.easing.1.3.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.jqplot.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.pieRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.barRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.categoryAxisRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.pointLabels.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../style/jquery.jqplot.css" />
+<link rel="stylesheet" type="text/css" href="../style/style2.css" />
+<link rel="stylesheet" type="text/css" href="../style/individual.novote.css" />
+<link rel="stylesheet" type="text/css" href="../style/search.css" />
+
+<script type="text/javascript">
+var arr = new Array();  //hold all the checked hill choices;
+$(function() {
+	//set default comment hint
+	$("#comment").val("请在这里发表您的评论，谢谢");
+	$("#comment").select();
+	$("#comment").click(checkdefault);
+	$("#comment").focusin(checkdefault);
+	
+	//allow #innerscroll1 (in thanscroll) to dynamically scroll
+	$('#innerscroll1').bxSlider({
+		auto: true,
+		autoHover: true,
+		margin: 70,
+	    controls: false,
+	    pause: 15000,
+	    speed: 5000,
+	    pager: false
+	});
+	
+	//show the hint if the support express is voted!
+	if($(":input[type=radio]").attr("disabled") =="disabled"){
+		$("#info1").html("您已经表达过您的支持了");		
+	}
+	
+	/*
+	 * when the window is loaded, show the chart from current votes
+	 */
+	 $("#showVote").html("投票数据正在加载中，请稍候");
+	 $("#showVote").show(); 
+	 $.post("../hillListAction!getHillVotes", {}, function(returnedData,status) {
+		if("success" == status){
+			var result = eval(returnedData);
+			var total = 0;
+			for(var index in result){
+				//alert(index);
+				var c = result[index];
+				total += c;
+				$("#hillvote" + index).html(c);
+				$("#tophillvote" + index).html(c);
+			}
+			$("#totalvote").html(total);
+			
+			//then draw the chart
+			$("#showVote").html("");
+			
+			var item1 = result[0];  //泰山
+			var item2 = result[1];  //华山
+			var item3 = result[2];  //黄山
+			var item4 = result[3];  //嵩山
+			var item5 = result[4];  //九华山
+			var item6 = result[5];  //峨眉山
+			var item7 = result[6];  //庐山 
+			var item8 = result[7];  //青城山 
+			var item9 = result[8];  //衡山 
+			var item10 = result[9];  //雁荡山 
+			var item11 = result[10];  //武夷山 
+			var item12 = result[11];  //井冈山 
+			var item13 = result[12];  //五台山 
+			var item14 = result[13];  //崂山 
+			var item15 = result[14];  //恒山
+			
+			$.jqplot.config.enablePlugins = true;
+					    
+		    var data = new Array();
+		    
+		    var p1 = ['泰山',item1];
+		    var p2 = ['华山',item2];
+		    var p3 = ['黄山',item3];
+		    var p4 = ['嵩山',item4];
+		    var p5 = ['九华山',item5];
+		    var p6 = ['峨眉山',item6];
+		    var p7 = ['庐山',item7];
+		    var p8 = ['青城山',item8];
+		    var p9 = ['衡山',item9];
+		    var p10 = ['雁荡山',item10];
+		    var p11 = ['武夷山',item11];
+		    var p12 = ['井冈山',item12];
+		    var p13 = ['五台山',item13];
+		    var p14 = ['崂山',item14];
+		    var p15 = ['恒山',item15];
+		    			    
+		    data.push(p1);
+		    data.push(p2);
+		    data.push(p3);
+		    data.push(p4);
+		    data.push(p5);
+		    data.push(p6);
+		    data.push(p7);
+		    data.push(p8);
+		    data.push(p9);
+		    data.push(p10);
+		    data.push(p11);
+		    data.push(p12);
+		    data.push(p13);
+		    data.push(p14);
+		    data.push(p15);
+		    		    
+		    plot1 = $.jqplot('showVote', [data], {
+		        // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
+		        animate: !$.jqplot.use_excanvas,
+		        seriesDefaults: {
+		            // Make this a pie chart.
+		            renderer: $.jqplot.PieRenderer,
+		            rendererOptions: {
+		              // Put data labels on the pie slices.
+		              // By default, labels show the percentage of the slice.
+		              showDataLabels: true,
+		            }
+		          },
+		          legend: { show:true, location: 'e' }			        
+		    });  	
+		}
+	});
+	
+	/*
+	 * when the window is loaded, show the express count for hill list
+	 */
+	$.post("../hillListAction!getExpressCount", {},function(returnedData,status){
+		if("success" == status){
+			$("#totalzaike").html(returnedData);
+		}
+	});
+	
+	/*
+	 * when the window is loaded, show the comments for hill list
+	 */
+	$.post("../hillListAction!getHillComments", {}, function(returnedData,status) {
+		if ("success" == status) {
+			var result = eval(returnedData);
+			
+			$("#content").html("");
+			for ( var index in result) {
+				var c = result[index];
+				//$("#content").prepend("<tr align='center'><td width='10%' bgcolor='#9ff'>" + c.nickname + "</td><td width='70%' bgcolor='#cff'>" + c.comment+ "</td><td bgcolor='#fcf'>" + c.commentDate + "</td>");
+				var nn = c.nickname;
+				if("" == nn)
+					nn = "空";
+				$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + c.comment +"</div><div class='date'>" + c.commentDate + "</div></div>");
+			}
+			
+			//how much items per page to show
+			var show_per_page = 10; 
+			//getting the amount of elements inside content div
+			var number_of_items = $('#content').children().size();
+			//calculate the number of pages we are going to have
+			var number_of_pages = Math.ceil(number_of_items/show_per_page);
+			
+			//set the value of our hidden input fields
+			$('#current_page').val(0);
+			$('#show_per_page').val(show_per_page);
+						
+			//var navigation_html = '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var navigation_html = '<a class="first_link" href="javascript:go_to_page(0);">第一页</a>' + '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var current_link = 0;
+			while(number_of_pages > current_link){
+				navigation_html += '<a class="page_link" href="javascript:go_to_page(' + current_link +')" longdesc="' + current_link +'">'+ (current_link + 1) +'</a>';
+				current_link++;
+			}
+			//navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>';
+			navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>' + '<a class="first_link" href="javascript:go_to_page(' + (number_of_pages-1) + ');">最后一页</a>';
+			
+			$('#page_navigation').html(navigation_html);
+			
+			//add active_page class to the first page link
+			$('#page_navigation .page_link:first').addClass('active_page');
+			
+			//hide all the elements inside content div
+			$('#content').children().css('display', 'none');
+			
+			//and show the first n (show_per_page) elements
+			$('#content').children().slice(0, show_per_page).css('display', 'block');
+		}
+	});
+	
+	//register check
+	$(":checkbox").click(function() {
+		var rem = decodeURI($(this).val());
+		if($(this).attr("checked") == "checked"){
+			arr.push(rem);
+			//alert(arr);
+		}else{
+			arr = jQuery.grep(arr, function(value) {
+				return value != rem;
+				});
+			//alert(arr);
+		}		
+	});
+	
+	//register click event on #vote to add a vote record on hill list
+	$("#vote").click(function() {
+		if($(":input[type=checkbox]:checked").length > 0){
+			$("#showVote").html("<img src=../images/lists/hill_express.jpg alt=占山为王，鱼肉游客哇！ width=755 height=400 title=占山为王，鱼肉游客哇！/>");
+			//alert(arr);
+			$.post("../hillListAction!vote", {"hillCheck":encodeURI(arr)}, 
+					function(returnedData,status) {
+						if ("success" == status){
+							$(":checkbox").attr("disabled","disabled");
+							$("#vote").attr("disabled","disabled");
+							var result = eval(returnedData);
+							
+							//new pie chart
+							var total = 0;
+							for(var index in result){
+								//alert(index);
+								var c = result[index];
+								total += c;
+								$("#hillvote" + index).html(c);
+								$("#tophillvote" + index).html(c);
+							}
+							$("#totalvote").html(total);
+							
+							//then draw the chart
+							$("#showVote").html("");
+							
+							var item1 = result[0];  //泰山
+							var item2 = result[1];  //华山
+							var item3 = result[2];  //黄山
+							var item4 = result[3];  //嵩山
+							var item5 = result[4];  //九华山
+							var item6 = result[5];  //峨眉山
+							var item7 = result[6];  //庐山 
+							var item8 = result[7];  //青城山 
+							var item9 = result[8];  //衡山 
+							var item10 = result[9];  //雁荡山 
+							var item11 = result[10];  //武夷山 
+							var item12 = result[11];  //井冈山 
+							var item13 = result[12];  //五台山 
+							var item14 = result[13];  //崂山 
+							var item15 = result[14];  //恒山
+									
+							$.jqplot.config.enablePlugins = true;
+									    
+						    var data = new Array();
+						    
+						    var p1 = ['泰山',item1];
+						    var p2 = ['华山',item2];
+						    var p3 = ['黄山',item3];
+						    var p4 = ['嵩山',item4];
+						    var p5 = ['九华山',item5];
+						    var p6 = ['峨眉山',item6];
+						    var p7 = ['庐山',item7];
+						    var p8 = ['青城山',item8];
+						    var p9 = ['衡山',item9];
+						    var p10 = ['雁荡山',item10];
+						    var p11 = ['武夷山',item11];
+						    var p12 = ['井冈山',item12];
+						    var p13 = ['五台山',item13];
+						    var p14 = ['崂山',item14];
+						    var p15 = ['恒山',item15];
+						    			    
+						    data.push(p1);
+						    data.push(p2);
+						    data.push(p3);
+						    data.push(p4);
+						    data.push(p5);
+						    data.push(p6);
+						    data.push(p7);
+						    data.push(p8);
+						    data.push(p9);
+						    data.push(p10);
+						    data.push(p11);
+						    data.push(p12);
+						    data.push(p13);
+						    data.push(p14);
+						    data.push(p15);
+						    
+						    plot1 = $.jqplot('showVote', [data], {
+						        // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
+						        animate: !$.jqplot.use_excanvas,
+						        seriesDefaults: {
+						            // Make this a pie chart.
+						            renderer: $.jqplot.PieRenderer,
+						            rendererOptions: {
+						              // Put data labels on the pie slices.
+						              // By default, labels show the percentage of the slice.
+						              showDataLabels: true,
+						            }
+						          },
+						          legend: { show:true, location: 'e' }			        
+						    });  
+						}						
+					});
+		}else{
+			$("#vote").after('<span><b>请选择以上至少一项</b></span>');
+			//$("#showVote").html("<b>请选择以上至少一项</b>");
+			return false;
+		}		
+	});
+	
+	//register click event on #btn to add comment on hill_comment
+	$("#btn").click(function() {
+		if($("#comment").val() == "" || $("#comment").val() == "请在这里发表您的评论，谢谢"){//simple validation with empty or default condition
+			$("#commentSpan").html("<p><b>评论不能为空</b></p>");
+			return false;
+		}else{//submit the json object {nickname,comment}
+			$("#commentSpan").html("<p>谢谢您的评论</p>");
+			$.post("../hillListAction!addHillComment", {"nickname":encodeURI($("#nickname").val()),"comment":encodeURI($("#comment").val())}, 
+				function(returnedData,status) {
+					if ("success" == status){
+						//$("#content").prepend($("#comment").val() + "<br/>");  //insert the new comment firstly;
+						var nn = $("#nickname").val();
+						if("" == nn)
+							nn = "空";
+						$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + $("#comment").val() +"</div><div class='date'>" 
+						+ new Date().toLocaleString() + "</div></div>");
+						$("#commentSpan").html("");
+					}				
+				});
+			$(this).attr("disabled","disabled");
+		}			
+	});
+	
+	/*
+	 * bind the click event to each radio box to vote the express support on this hill list
+	 */
+	$(":input[type=radio]").click(function() {
+		//1. if any radio box is selected, disable all;
+		$(":input[type=radio]").attr("disabled","disabled"); 
+		//1.5 increment the total support count
+		$("#totalzaike").html(parseInt($("#totalzaike").html()) + 1);
+		//2.show chart1 div
+		$("#info1").html("");
+		$("#chart1").show();
+		$("#chart1").html("请稍候...");
+		//3.pass the user choice to action via ajax post() method
+		$.post("../hillListAction!express", {support:$(this).val()}, function(returnedData,status) {
+			if ("success" == status) {
+				$("#chart1").html("");
+				var result = eval(returnedData);
+				temp = result;
+				//4. define plot element to be shown
+				$.jqplot.config.enablePlugins = true;
+			    var ticks = ['完全支持', '支持', '中立', '不太支持', '不支持'];
+			    //5. draw the plot 
+			    plot1 = $.jqplot('chart1', [result], {
+			        // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
+			        animate: !$.jqplot.use_excanvas,
+			        seriesDefaults:{
+			            renderer:$.jqplot.BarRenderer,
+			            pointLabels: { show: true }
+			        },
+			        axes: {
+			            xaxis: {
+			                renderer: $.jqplot.CategoryAxisRenderer,
+			                ticks: ticks
+			            }
+			        },
+			        highlighter: { show: false }
+			    });			 	
+			}
+		});
+	});
+});
+
+//used for default comment hint
+function checkdefault() {
+	var txt = $(this).val();  //the current text in the area
+	if(txt == "请在这里发表您的评论，谢谢")
+		$(this).val("");
+	$(this).focusout(retdefault);	
+}
+//used for default comment hint
+function retdefault(){
+	var txt = $(this).val();
+	if(txt == ""){
+		$(this).val("请在这里发表您的评论，谢谢");
+		$(this).select();
+	}		
+	$(this).click(checkdefault);
+	$(this).focusin(checkdefault);
+}
+
+function previous(){
+	
+	new_page = parseInt($('#current_page').val()) - 1;
+	//if there is an item before the current active link run the function
+	if($('.active_page').prev('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function next(){
+	new_page = parseInt($('#current_page').val()) + 1;
+	//if there is an item after the current active link run the function
+	if($('.active_page').next('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function go_to_page(page_num){
+	//get the number of items shown per page
+	var show_per_page = parseInt($('#show_per_page').val());
+	
+	//get the element number where to start the slice from
+	start_from = page_num * show_per_page;
+	
+	//get the element number where to end the slice
+	end_on = start_from + show_per_page;
+	
+	//hide all children elements of content div, get specific items and show them
+	$('#content').children().css('display', 'none').slice(start_from, end_on).css('display', 'block');
+	
+	/*get the page link that has longdesc attribute of the current page and add active_page class to it
+	and remove that class from previously active page link*/
+	$('.page_link[longdesc=' + page_num +']').addClass('active_page').siblings('.active_page').removeClass('active_page');
+	
+	//update the current page input field
+	$('#current_page').val(page_num);
+};
+</script>
+
+<style>
+#main #front{
+	width: 762px;
+	border: 1px solid gray;
+	margin: 0px;
+	float: left;
+}
+#main #votearea{
+	width: 762px;
+	border: 1px solid gray;
+	margin: 0px;
+	float: left;
+}
+</style>
+</head>
+
+<body>
+<div id="header">
+  <iframe src="../header.html" width=980 height=91 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="nav">
+  <iframe src="../nav.html" width=980 height=40 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="primary">
+  <div id="baike">
+    <iframe src="../baike.html" width=120 height=1328 frameborder="0" scrolling="no"></iframe>    
+  </div>
+  <div id="main">
+    <div id="location"><a name="articletop">您的位置</a>： <a href="../index.html">旅游宰客榜首页</a> 》》<a href="../commonlist/listindex.html">旅游宰客榜</a> 》》名山宰客榜</div>
+    <div id="front">
+		<h2 align="center">名山宰客榜（暂行）  总投票数：<label id="totalvote"></label>张</h2>  
+		<div id="share">
+			<!-- JiaThis Button BEGIN -->
+			<div class="jiathis_style">
+				<span class="jiathis_txt">分享到：</span>
+				<a class="jiathis_button_qzone" /><a class="jiathis_button_tsina" />
+				<a class="jiathis_button_tqq" /><a class="jiathis_button_renren" />
+				<a class="jiathis_button_kaixin001" /><a class="jiathis_button_tsohu" />
+				<a class="jiathis_button_feixin" /><a class="jiathis_button_douban" />
+				<a class="jiathis_button_fb" /><a class="jiathis_button_tieba" />
+				<a class="jiathis_button_tianya" /><a class="jiathis_button_twitter" />
+				<a class="jiathis_button_googleplus" /><a class="jiathis_button_t163" />
+				<a class="jiathis_button_xiaoyou" /><a class="jiathis_button_mop" />
+				<a class="jiathis_button_tifeng" /><a class="jiathis_button_gmail" />
+				
+				<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+				<a class="jiathis_counter_style"></a>
+			</div>
+			<script type="text/javascript" >
+			var jiathis_config={
+				boldNum:15,
+				siteNum:15,
+				sm:"taobao,hi,meilishuo,51,sohu,tpeople,189share,huaban,ifensi,hexun,ydnote,ymail,hotmail,tyaolan,toeeee",
+				summary:"",
+				hideMore:false
+			}
+			</script>
+			<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+			<!-- JiaThis Button END -->
+		</div>
+	</div>
+	<div id="intro">
+		<table border="0" style="color: #060606;" cellspacing="0" cellpadding="0">
+			<tr align="center">
+				<td>前往其他榜单：</td>
+				<td><a href="../commonlist/city.html">国内城市榜&nbsp&nbsp</a></td>
+				<td><a href="../commonlist/resort.html">国内景区榜&nbsp&nbsp</a></td>
+				<td><a href="../commonlist/intercity.html">海外国家榜&nbsp&nbsp</a></td>
+				<td><a href="../commonlist/interresort.html">海外景区榜&nbsp&nbsp</a></td>
+				<td><a href="temple.html">烧香拜佛榜&nbsp&nbsp</a></td>
+				<td><a href="park.html">公园对比榜&nbsp&nbsp</a></td>
+				<td><a href="museum.html">博物馆榜&nbsp&nbsp</a></td>
+				<td><a href="roadfee.html">过路费榜&nbsp&nbsp</a></td>
+			</tr>
+		</table>
+		<br/>
+		<p style="color: purple;">提示：没有超过500票的情况下，本榜单只是暂行；一旦超过500票，将根据投票定期发布正式榜单。</p>
+		<br/>		
+	</div>
+	<div class="innerlist">
+		<br/>
+		<label class="innertitle"><b>榜首：庐山  </b></label>
+		（得票：<label class="innertitle" id="tophillvote6"></label>张）		
+		<br />
+		<img align="left" src="../images/lists/list_hill_lushan.jpg" width="372" height="240" 
+			title="庐山高居榜首的原因在于宰客的全面性"  alt="庐山高居榜首的原因在于宰客的全面性" />
+		<p>庐山高居榜首的原因在于宰客的全面性。</p>
+		<p>吃，有“绿野山庄”、“永盛生态小吃”为代表的一大批黑餐馆；</p>
+		<p>住，价格浮动很大，所以欺客现象并不罕见；</p>
+		<p>行，仔细看看参考2，就知道黑车黑导游多么猖獗！无论在火车站还是山脚市镇，乘车都需要游客具备大智慧和好运气；</p>
+		<p>购物，街边假药材遍布，什么灵芝、石莲子、益肾子、不老草等药材统统骗人；</p>
+		<p>假和尚假道士不时招摇过市，据很多游客反映半山腰那些庙宇道观充斥骗人鬼把戏；</p>			
+		<p>最令游客意想不到的是，昂贵的180元大门票仅仅是个开始，各处小景点的收费接踵而至，想逛所有重要景观？不停掏钱吧！</p>
+		<p>游客面对如此面面俱到的宰客陷阱和门票连环套，只能徒呼枉然！</p>
+		<p>庐山以及其他很多上榜名山，还会在<a href="temple.html">烧香拜佛榜</a>中详加揭露。</p>
+		<p>【庐山<a href="http://home.jxnews.com.cn/archiver/?tid-1315155.html" target="_blank">参考1</a>，
+			<a href="http://blog.sina.com.cn/s/blog_755c66cd0100v1oj.html" target="_blank">参考2</a>，
+			<a href="http://www.17u.net/wd/showguide/810200" target="_blank">参考3</a>，
+			<a href="http://www.cfcp.cn/news/show.php?itemid=3306" target="_blank">参考4</a>，
+			<a href="http://www.51763.com/庐山旅游攻略.html" target="_blank">参考5</a>，
+			<a href="http://www.mafengwo.cn/i/874496.html" target="_blank">参考6</a>，
+			<a href="http://tieba.baidu.com/p/388255877" target="_blank">参考7</a>，
+			<a href="http://www.zuiyouji.com/youji/8530/庐山不想说爱你" target="_blank">参考8</a>】
+		</p>
+		<b class="gotovote">直接去<a href="#gotovote">投票</a></b>
+	</div>
+	<div class="innerlist">
+		<br/>
+		<label class="innertitle"><b>榜眼：黄山</b></label>
+		（得票：<label class="innertitle" id="tophillvote2"></label>张）		
+		<br/>
+		<img align="left" src="../images/lists/list_hill_huangshan.jpg" width="372" height="240" 
+			title="黄山宰客突出之处在于黑车追客揽客的劲头堪称热情似火"  alt="黄山宰客突出之处在于黑车追客揽客的劲头堪称热情似火" />
+		<p>针对一个特定景点的防骗视频是很罕见的，然而黄山却有幸在一段长达10分钟（见参考1）的视频中被做为反面教材曝光了！从视频披露的内容来看，黄山位居榜眼顺理成章！</p>
+		<p>去谷歌搜一下“黄山 旅游 宰客”或者“黄山 旅游 骗”，关于黄山的文字版防骗手册（游记）特别多，说明广大游客的被宰教训特别深刻，因此咬牙切齿者甚众。</p>
+		<p>据众多游客反映，黄山宰客突出之处在于黑车追客揽客的劲头堪称热情似火，无论是面包车、三轮车、出租车、黑巴士，无论你是在街上、火车站、宾馆大堂、饭馆里，你总能感受到如狼似虎的纠缠，堪称黄山一绝啊！</p>
+		<p>黄山、庐山以及其他很多上榜名山，也都在<a href="../commonlist/resort.html">国内景区宰客榜</a>中三度亮相！</p>
+		<p>【黄山<a href="http://v.ku6.com/show/9Zacs9g5esiewemL.html" target="_blank">参考1</a>，
+			<a href="http://www.hs112.com/news/438.html" target="_blank">参考2</a>，
+			<a href="http://www.hsykzj.com/Article/416.html" target="_blank">参考3</a>，
+			<a href="http://www.lvping.com/showjournal-d19-r857503-journals.html" target="_blank">参考4</a>，
+			<a href="http://huangshan.cncn.com/article/135035/" target="_blank">参考5</a>，
+			<a href="http://www.yododo.com/area/guide/0137402BC0CF1B99FF808081373D3EC6" target="_blank">参考6</a>】
+		</p>
+		<b class="gotovote">直接去<a href="#gotovote">投票</a></b>
+	</div>
+	<div class="innerlist">
+		<br/>
+		<label class="innertitle"><b>探花：华山</b></label>
+		（得票：<label class="innertitle" id="tophillvote1"></label>张）		
+		<br/>
+		<img align="left" src="../images/lists/list_hill_huashan.jpg" width="372" height="240" 
+			title="能够引来人民日报时评，可见华山宰客风气之恶劣！”！"  alt="能够引来人民日报时评，可见华山宰客风气之恶劣！" />
+		<p>能够引来人民日报时评（见参考1），可见华山宰客风气之恶劣！</p>
+		<p>吃住挨宰、劣质纪念品、假出家人行骗、高价门票，等等。与其他名山类似，宰客黑网遍布。</p>
+		<p>最黑的就是乘车。一般都是从西安火车站出发前往华山，火车站广场上为华山游招徕生意的黑车黑导游（当然还有不少招徕去兵马俑法门寺华清池的）如过江之鲫，稍不留神游客就会被忽悠上黑车。</p>
+		<p>个人经验：我和另外两位同学上世纪90年代登华山的时候，当地人素质那个叫低啊！痞子们直接在每个好风景前面占山为王，用我们的相机拍照，他就要死皮赖脸收2元钱！一路都是，争吵无数次，害得心情大坏，所以发誓只上那么一回。</p>
+		<p>五岳宰客，华山为首！</p>
+		<p>【华山<a href="http://www.inxian.com/20100630/9248" target="_blank">参考1</a>，
+			<a href="http://opinion.people.com.cn/GB/40604/3381228.html" target="_blank">参考2</a>，
+			<a href="http://www.mafengwo.cn/i/704391.html" target="_blank">参考3</a>，
+			<a href="http://www.douban.com/group/topic/21856772/" target="_blank">参考4</a>，
+			<a href="https://yododo.com/area/guide/01226206521C070EFF808081226141AE" target="_blank">参考5</a>】
+		</p>
+		<b class="gotovote">直接去<a href="#gotovote">投票</a></b>
+	</div>
+	<div class="twinlist">
+		<div class="leftlist">
+			<br/>
+			<label class="lefttitle"><b>第四名：武夷山</b></label>
+			（得票：<label class="lefttitle" id="tophillvote10"></label>张）
+			<br/>
+			<img align="left" src="../images/lists/list_hill_wuyishan.jpg" width="240" height="180" 
+				title="武夷山的宰客环境实有独到之处。有人遭遇18骗"  alt="武夷山的宰客环境实有独到之处。有人遭遇18骗" />
+			<p>武夷山宰客面面俱到：有18骗；温柔一刀；”超级防骗防宰攻略“；“武夷山全民宰客”宣言；导游自爆黑幕；恶性暴力事件。（见各参考）</p>
+			<p>难道所有人都跟武夷山苦大仇深？！</p>
+			<p>【武夷山<a href="http://ido.3mt.com.cn/Article/200907/show1580569c33p1.html" target="_blank">参考1</a>，
+				<a href="http://www.lvmama.com/guide/2010/1008-46477.html" target="_blank">参考2</a>，
+				<a href="http://www.qayaa.com/dongnan/fujian/2012-05-12/14550.html" target="_blank">参考3</a>，
+				<a href="http://www.51yougo.com/Html/Synthetical/9030.html" target="_blank">参考4</a>，
+				<a href="http://wuyishan.abang.com/od/lvyouzhusu/a/pianzi.htm" target="_blank">参考5</a>，
+				<a href="http://travel.fznews.com.cn/bgts/2006-8-28/2006828VPA2PCV9ML174026.shtml" target="_blank">参考6</a>，
+				<a href="http://huanbao.2466.cn/travel/luyou/178981.shtml" target="_blank">参考7</a>，
+				<a href="http://www.tianya.cn/publicforum/content/free/1/2095391.shtml" target="_blank">参考8</a>，
+				<a href="http://www.lvping.com/showjournal-d22-r985673-journals.html" target="_blank">参考9</a>】
+			</p>
+		</div>
+		<div class="rightlist">
+			<br/>
+			<label class="righttitle"><b>第五名：峨眉山</b></label>
+			（得票：<label class="righttitle" id="tophillvote5"></label>张）
+			<br/>
+			<img align="left" src="../images/lists/list_hill_emeishan.jpg" width="240" height="180" 
+				title="峨眉山有三个相对少见的宰客方式"  alt="峨眉山有三个相对少见的宰客方式" />
+			<p>峨眉山有三个相对少见的宰客方式：1元钱三轮车游峨眉全城（中间会给你推荐黑店黑饭馆黑商场）、猴子顺手牵羊拿东西和色情敲诈（见各参考），严重败坏佛教名山的清誉！
+				我们会在<a href="temple.html">烧香拜佛榜</a>再一次领略峨眉山的“风采”！</p>
+			<p>【峨眉山<a href="http://www.ciotour.com/xinwen/1101874892.html" target="_blank">参考1</a>，
+				<a href="http://www.51zaike.com/sichuan/1302/861" target="_blank">参考2</a>，
+				<a href="http://www.57ems.com/emei/note3195.html" target="_blank">参考3</a>】
+			</p>
+			<b class="gotovote">直接去<a href="#gotovote">投票</a></b>
+		</div>
+	</div>
+	<div class="twinlist">
+		<div class="leftlist">
+			<br/>
+			<label class="lefttitle"><b>第六名：五台山</b></label>
+			（得票：<label class="lefttitle" id="tophillvote12"></label>张）
+			<br/>
+			<img align="left" src="../images/lists/list_hill_wutaishan.jpg" width="240" height="180" 
+				title="五台山的宰客行为，连居士都实在看不过眼了"  alt="五台山的宰客行为，连居士都实在看不过眼了" />
+			<p>五台山居士看不过眼了，撰写了一则“怎么才能在五台山不被骗”（见参考1）；法师也怒了，博客直指五台山饭店一道500元天价烧茄子（见参考4）。</p>
+			<p>至于烧香请愿求签开光的鬼把戏，也是不胜枚举，<a href="temple.html">另见烧香拜佛榜</a>。</p>
+			<p>【五台山<a href="http://www.wtszx.com/zaixianwenda/zonghewenda/6518.html" target="_blank">参考1</a>，
+				<a href="http://www.yaohuhu.com/deal_6827.html" target="_blank">参考2</a>，
+				<a href="http://www.wts369.com/67a1560d4bcc-794.html" target="_blank">参考3</a>，
+				<a href="http://blog.sina.com.cn/s/blog_6028a92b01011o1u.html" target="_blank">参考4</a>】
+			</p>
+		</div>
+		<div class="rightlist">
+			<br/>
+			<label class="righttitle"><b>第七名：崂山</b></label>
+			（得票：<label class="righttitle" id="tophillvote13"></label>张）
+			<br/>
+			<img align="left" src="../images/lists/list_hill_laoshan.jpg" width="240" height="180" 
+				title="道长们也许并不熟谙高明的穿墙术，却对于问卦敛财熟门熟路"  alt="道长们也许并不熟谙高明的穿墙术，却对于问卦敛财熟门熟路" />
+			<p>崂山道长们并不熟谙穿墙，却对问卦敛财熟门熟路。<a href="temple.html">另见烧香拜佛榜</a>。</p>
+			<p>崂山的黑车黑导游、天价黄花鱼和高价农家宴也闻名遐迩，逼得当地政府出台“餐前签字可先获赔付”的政策，亡羊补牢，是否晚矣？！</p>
+			<p>【崂山<a href="http://district.ce.cn/zg/201209/17/t20120917_23686369.shtml" target="_blank">参考1</a>，
+				<a href="http://www.iouter.com/n46706c16.aspx" target="_blank">参考2</a>，
+				<a href="http://www.cnta.gov.cn/html/2012-3/2012-3-15-14-13-03405.html" target="_blank">参考3</a>，
+				<a href="http://www.hdxxg.com/html/2012/0324/1745475098.htm" target="_blank">参考4</a>】
+			</p>
+			<b class="gotovote">直接去<a href="#gotovote">投票</a></b>
+		</div>
+	</div>
+	<div class="twinlist">
+		<div class="leftlist">
+			<br/>
+			<label class="lefttitle"><b>第八名：井冈山</b></label>
+			（得票：<label class="lefttitle" id="tophillvote11"></label>张）
+			<br/>
+			<img align="left" src="../images/lists/list_hill_jinggangshan.jpg" width="240" height="180" 
+				title="谁让它顶着红色旅游的招牌，政治上应该像党教导的那样永远保持正确，“一切为了群众，一切服务群众”呢！"  
+				alt="谁让它顶着红色旅游的招牌，政治上应该像党教导的那样永远保持正确，“一切为了群众，一切服务群众”呢！" />
+			<p>其实井冈山宰客不算突出，无非是吃得贵了些量少了些，住得次了些价高了些，	买东西缺斤短两以次充好。可是红色旅游是否该“一切为了群众，一切服务群众”呢！</p>
+			<p>【井冈山<a href="http://www.jxcn.cn/20110516/100076786.html" target="_blank">参考1</a>，
+				<a href="http://www.qdyits.com/news.aspx?id=248" target="_blank">参考2</a>，
+				<a href="http://www.china.com.cn/review/txt/2007-04/28/content_8186107.htm" target="_blank">参考3</a>，
+				<a href="http://hlj.rednet.cn/c/2007/04/29/1192624.htm" target="_blank">参考4</a>】
+			</p>
+		</div>
+		<div class="rightlist">
+			<br/>
+			<label class="righttitle"><b>第九名：泰山</b></label>
+			（得票：<label class="righttitle" id="tophillvote0"></label>张）
+			<br/>
+			<img align="left" src="../images/lists/list_hill_taishan.jpg" width="240" height="180" 
+				title="五岳中，泰山宰客程度中等"  alt="五岳中，泰山宰客程度中等" />
+			<p>五岳中，泰山宰客程度中等。从搜索引擎上发现的宰客行为不多，而且缺乏特色，无非是吃住贵，坐车不便宜，庙宇道观有猫腻而已。泰山连同其他三岳会在<a href="temple.html">烧香拜佛榜</a>中继续亮相。</p>
+			<p>【泰山<a href="http://www.tianya.cn/publicforum/content/water/1/1052055.shtml" target="_blank">参考1</a>，
+				<a href="http://www.tahsh.com/270" target="_blank">参考2</a>，
+				<a href="http://www.huoche.net/show_107209/" target="_blank">参考3</a>，
+				<a href="http://www.mafengwo.cn/w/100298.html" target="_blank">参考4</a>】
+			</p>
+			<b class="gotovote">直接去<a href="#gotovote">投票</a></b>
+		</div>
+	</div>
+	<div class="twinlist">
+		<div class="leftlist">
+			<br/>
+			<label class="lefttitle"><b><a name="gotovote"></a>第十名：雁荡山</b></label>
+			（得票：<label class="lefttitle" id="tophillvote9"></label>张）
+			<br/>
+			<img align="left" src="../images/lists/list_hill_yandangshan.jpg" width="240" height="180" 
+				title="从游客的反映中，可以看出当地旅游管理混乱，宰客现象普遍"  alt="从游客的反映中，可以看出当地旅游管理混乱，宰客现象普遍" />
+			<p>许多游客反映当地旅游管理混乱，宰客现象普遍。</p>
+			<p>尽管名声并不如雷贯耳，又非佛道名山，雁荡山却频频发生假道士、假和尚行骗，当真不可思议！于是压倒其他候选名山做了榜尾。</p>
+			<p>【雁荡山<a href="http://www.lvping.com/showjournal-d217-r774296-journals.html" target="_blank">参考1</a>，
+				<a href="http://www.gotoyq.com/hdjl/Shownews.aspx?id=51&infortype=2" target="_blank">参考2</a>，
+				<a href="http://bbs.wzdsb.net/thread-174625-1-1.html" target="_blank">参考3</a>，
+				<a href="http://www.yzcn.net/travel/info/2012/0724/227070.shtml" target="_blank">参考4</a>，
+				<a href="http://www.51zaike.com/zhejiang/781/390" target="_blank">参考5</a>】
+			</p>
+		</div>
+		<div class="rightlist">
+			<br/>
+			<label class="righttitle"><b>候选名山：青城山</b></label>（得票：<label class="righttitle" id="tophillvote7"></label>张）<br/>
+			<label class="righttitle"><b>候选名山：恒山</b></label>（得票：<label class="righttitle" id="tophillvote14"></label>张）<br/>
+			<label class="righttitle"><b>候选名山：衡山</b></label>（得票：<label class="righttitle" id="tophillvote8"></label>张）<br/>
+			<label class="righttitle"><b>候选名山：嵩山</b></label>（得票：<label class="righttitle" id="tophillvote3"></label>张）<br/>
+			<label class="righttitle"><b>候选名山：九华山</b></label>（得票：<label class="righttitle" id="tophillvote4"></label>张）
+			<br/>
+			<p>有人去青城山想贪小便宜省门票，就找“串串”，结果往往被骗。此外当地的农家乐也多有不厚道宰客行为。</p>
+			<p>其他三岳和九华山，会在<a href="temple.html">烧香拜佛榜</a>中现形。</p>
+			<p><b>不止是这些名山，国内很多热门景区都收费昂贵，宰客凶猛！可以前往<a href="../download/download.html">下载页面</a>下载最新版的《旅游风险手册》和《旅游安全手册》了解宰客行情。</b></p>
+			<p><b>意犹未尽的朋友们可以订阅我们的<a href="../mail/mailindex.html">邮件服务</a>，毫不费力了解更多榜单信息、宰客奇闻、安全常识等。
+					也可以前往<a href="../news/newsindex.html">新闻主页</a>浏览更多热门景区宰客相关的内容。</b></p>
+			<p>【<a href="http://ibaoliao.sc.sina.com.cn/report/report/?m=report&act=show_one_news&news_id=1257" target="_blank">参考1</a>，
+				<a href="http://scnews.newssc.org/system/2010/07/04/012794608.shtml" target="_blank">参考2</a>，
+				<a href="http://www.chinabinguan.com/News/ShowArticle.asp?ArticleID=918" target="_blank">参考3</a>】
+			</p>
+		</div>
+		
+	</div>
+	<div id="bottom" style="float: left; width: 750px;">
+		<br/>
+		<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+		<br/>
+	</div>	
+	<div id="votearea">
+		<table border="0" style="color: navy;" cellspacing="18" cellpadding="4">
+			<tr align="left">
+				<td>泰山<input type="checkbox" name="hillCheck" value="泰山" />得票：<label id="hillvote0"></label>张</td>
+				<td>华山<input type="checkbox" name="hillCheck" value="华山" />得票：<label id="hillvote1"></label>张</td>
+				<td>黄山<input type="checkbox" name="hillCheck" value="黄山" />得票：<label id="hillvote2"></label>张</td>
+				<td>嵩山<input type="checkbox" name="hillCheck" value="嵩山" />得票：<label id="hillvote3"></label>张</td>
+			</tr>
+			<tr align="left">
+				<td>九华山<input type="checkbox" name="hillCheck" value="九华山" />得票：<label id="hillvote4"></label>张</td>
+				<td>峨嵋山<input type="checkbox" name="hillCheck" value="峨嵋山" />得票：<label id="hillvote5"></label>张</td>
+				<td>庐山<input type="checkbox" name="hillCheck" value="庐山" />得票：<label id="hillvote6"></label>张</td>
+				<td>青城山<input type="checkbox" name="hillCheck" value="青城山" />得票：<label id="hillvote7"></label>张</td>
+			</tr>			    
+			<tr align="left">
+				<td>衡山<input type="checkbox" name="hillCheck" value="衡山" />得票：<label id="hillvote8"></label>张</td>
+				<td>雁荡山<input type="checkbox" name="hillCheck" value="雁荡山" />得票：<label id="hillvote9"></label>张</td>
+				<td>武夷山<input type="checkbox" name="hillCheck" value="武夷山" />得票：<label id="hillvote10"></label>张</td>
+				<td>井冈山<input type="checkbox" name="hillCheck" value="井冈山" />得票：<label id="hillvote11"></label>张</td>				
+			</tr>
+			<tr align="left">
+				<td>五台山<input type="checkbox" name="hillCheck" value="五台山" />得票：<label id="hillvote12"></label>张</td>
+				<td>崂山<input type="checkbox" name="hillCheck" value="崂山" />得票：<label id="hillvote13"></label>张</td>
+				<td>恒山<input type="checkbox" name="hillCheck" value="恒山" />得票：<label id="hillvote14"></label>张</td>				    
+				<td></td>
+			</tr>
+		</table>		
+		<p>请选择一座或者多座名山（勾选右边的复选框），选完后点击这里-》<input id="vote" type="button" value="投票" /></p>		
+		<div id="showVote" style="height:400px;width:755px;display:none;"></div>		
+	</div>	
+		
+	<div id="express">
+		<b>民意小测验：</b>
+		<label>您认可这个排行榜吗？请选择下面的一项表个态吧</label>
+		<br/>
+		<input type="radio" name="support" value="hill1" />完全支持
+		<input type="radio" name="support" value="hill2" />支持
+		<input type="radio" name="support" value="hill3" />中立
+		<input type="radio" name="support" value="hill4" />不太支持
+		<input type="radio" name="support" value="hill5" />不支持
+		<br/>
+		<br />
+		&nbsp;已经有<label id="totalzaike"></label>个表态了
+		<div id="info1"></div>
+	</div>
+	<br/>
+	<div id="chart1"></div>
+	<br/>
+	<div id="innercomment">
+		<h3>请发表您的意见：</h3><br />
+		<input type='hidden' id='current_page' />
+		<input type='hidden' id='show_per_page' />
+		<table>
+			<tr><td>昵称(可选):</td><td><input type="text" id="nickname" name="nickname" size="12" maxlength="12"/></td></tr>
+			<tr><td>评论:（限200字）</td><td><textarea rows="10" cols="75" id="comment" name="comment" maxlength="200"></textarea></td></tr>
+			<tr><td><input id="btn" type="button" value="发表评论" /></td><td><span id="commentSpan"></span></td></tr>
+		</table>	
+		<br/> 
+	现有评论如下：
+		<br/>
+		<table>
+			<tr align="center"><td width="50px">用户名</td><td width="610px">评论</td><td>日期</td></tr>
+		</table>
+	</div>
+	<div id="content">评论正在加载中，请稍候</div>
+	<div id='page_navigation'></div>
+    
+  </div>
+  <div id="right">
+    <iframe src="../right.html" width=90 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+</div>
+<div id="footer">
+  <iframe src="../footer.html" width=980 height=70 frameborder="0" scrolling="no"></iframe>
+</div>
+</body>
+</html>

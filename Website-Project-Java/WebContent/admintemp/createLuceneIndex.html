@@ -1,0 +1,47 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>生成索引页面</title>
+
+<script type="text/javascript" src="../jslib/jquery-1.7.2.js"></script>
+<link rel="stylesheet" type="text/css" href="../style/admin.css" />
+
+<script type="text/javascript">
+$(function() {
+	$("#btn").click(function() {
+		$("#result").html("<p>正在重新生成索引，请稍候。。。</p>");
+		$(this).attr("disabled","disabled");
+		
+		$.post("../createIndexAdminAction!create", {},function(returnedData,status){
+			if("success" == status){
+				if(true == returnedData)
+					$("#result").html("<p>生成索引完毕。</p>");
+				else
+					$("#result").html("<p>出错！！！</p>");					
+			}
+		});			
+	});
+	$("#query").click(function() {
+		$("#result").html("<p>正在搜索，请稍候。。。</p>");
+		
+		$.post("../createIndexAdminAction!query", {},function(returnedData,status){
+			if("success" == status){
+				if(true == returnedData)
+					$("#result").html("<p>搜索完毕。</p>");
+				else
+					$("#result").html("<p>出错！！！</p>");
+			}
+		});			
+	});
+});
+</script>
+</head>
+<body>
+	请点击以下按钮重新生成索引:
+	<input type="submit" value="生成新索引" id="btn" />
+	<input type="submit" value="搜索（试验）" id="query" />
+	<br/>
+	<div id="result">结果显示在这里</div>		
+</body>
+</html>

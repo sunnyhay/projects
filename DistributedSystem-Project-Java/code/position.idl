@@ -1,0 +1,10 @@
+struct Position{
+	string timestamp;
+	string route;
+	string vehicle;
+	long stopNumber;
+	long numStops;
+	float timeBetweenStops;
+	string trafficConditions;
+	long fillInRatio;
+};

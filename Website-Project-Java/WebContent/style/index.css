@@ -1,0 +1,206 @@
+@CHARSET "UTF-8";
+/*
+ * used for the index.html
+ */
+
+#primary #main .title {
+	padding-top: 0px;
+	padding-right: 0px;
+	padding-bottom: 0px;
+	padding-left: 0px;
+	margin-top: 8px;
+	margin-right: auto;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	letter-spacing: 2px;
+	text-indent: 12px;
+	color: #900;
+}
+
+
+#primary #main #newsframe {
+	margin: 0px;
+	padding: 0px;
+	height: 300px;
+	width: 420px;
+	float: left;
+	border-top-style: ridge;
+	border-right-style: ridge;
+	border-bottom-style: ridge;
+	border-left-style: ridge;
+	border-top-width: 1px;
+	border-right-width: 1px;
+	border-bottom-width: 1px;
+	border-left-width: 1px;
+}
+#primary #main #news {
+	margin: 0px;
+	padding: 0px;
+	height: 300px;
+	width: 335px;
+	float: right;
+	border: 1px ridge #06C;
+	background-image: url(../images/starrain_main.jpg);
+	background-repeat: no-repeat;
+}
+#primary #main #news ul {
+	padding-top: 2px;
+	padding-right: 2px;
+	padding-bottom: 0px;
+	padding-left: 32px;
+	height: 255px;
+	font-size: 18px;
+}
+#primary #main #news ul li {
+	border-bottom-width: 1px;
+	border-bottom-style: dashed;
+	border-bottom-color: #000;
+	margin-top: 4px;
+	margin-right: 1px;
+	margin-bottom: 2px;
+	margin-left: 1px;
+}
+#primary #main #news ul li em {
+	font-style: normal;
+	float: right;
+}
+
+#primary #main #pollzaike {
+	float: left;
+	height: 320px;
+	width: 378px;
+	border: 1px ridge #06C;
+	padding: 0px;
+	margin-top: 2px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	background-image: url(../images/starrain_main.jpg);
+	background-repeat: no-repeat;
+}
+#primary #main .question {
+	font-size: 14px;
+	text-indent: 12px;
+}
+#primary #main #pollzaike input {
+	margin-left: 88px;
+	margin-top: 15px;
+	padding-top: 0px;
+	padding-right: 0px;
+	padding-bottom: 0px;
+	padding-left: 0px;
+}
+#primary #main #pollzaike #chart1 {
+	padding: 0px;
+	height: 240px;
+	width: 378px;
+	margin-top: 6px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	display: none;
+}
+#primary #main #pollmoney {
+	height: 320px;
+	width: 378px;
+	border: 1px ridge #06C;
+	float: right;
+	padding: 0px;
+	margin-top: 2px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	background-image: url(../images/starrain_main.jpg);
+	background-repeat: no-repeat;
+}
+#primary #main #pollmoney #chart2 {
+	padding: 0px;
+	height: 240px;
+	width: 378px;
+	margin-top: 2px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	display: none;
+}
+#primary #main #list {
+	padding: 0px;
+	width: 760px;
+	margin-top: 2px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	border: 1px ridge #06C;
+	float: left;
+	height: 300px;
+}
+#primary #main #list .lp p{
+	margin-top: 10px;
+	font-size: 20px;
+	color: blue;	
+}
+#primary #main #list ul li{
+	margin: 0px;
+	margin-left: 2px;
+	width: 120px;	
+}
+#primary #main #list ul li .tablabel{
+	font-weight: bold;
+	font-size: 16px;
+	color: #900;
+	cursor: pointer;
+}
+#primary #main #list #tabs-1 ul{
+	list-style-type: none;
+}
+#primary #main #list #tabs-1 ul li{
+	color: red;
+	width: 760px;
+	font-size: 20px;
+}
+#primary #main #mail {
+	padding: 0px;
+	float: left;
+	height: 310px;
+	width: 378px;
+	margin-top: 2px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	border: 1px ridge #06C;
+	background-image: url(../images/starrain_main.jpg);
+	background-repeat: no-repeat;
+}
+#primary #main #mail p{
+	margin-left: 5px;
+	margin-right: 5px;
+	font-size: 18px;	
+}
+#primary #main #box {
+	padding: 0px;
+	height: 310px;
+	width: 378px;
+	margin-top: 2px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	border: 1px ridge #06C;
+	float: right;
+	background-image: url(../images/starrain_main.jpg);
+	background-repeat: no-repeat;
+}
+#primary #main #box p{
+	margin-left: 5px;
+	margin-right: 5px;
+	font-size: 16px;	
+}
+#primary #main #guanzhu {
+	padding: 0px;
+	height: 80px;
+	width: 760px;
+	margin-top: 2px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	float: left;
+}

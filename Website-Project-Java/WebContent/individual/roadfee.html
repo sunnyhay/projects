@@ -1,0 +1,718 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>过路费对比榜</title>
+
+<script type="text/javascript" src="../jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="../jslib/jquery.bxslider2.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.easing.1.3.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.jqplot.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.barRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.categoryAxisRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.pointLabels.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../style/jquery.jqplot.css" />
+<link rel="stylesheet" type="text/css" href="../style/style2.css" />
+<link rel="stylesheet" type="text/css" href="../style/individual.novote.css" />
+<link rel="stylesheet" type="text/css" href="../style/roadfee.css" />
+<link rel="stylesheet" type="text/css" href="../style/search.css" />
+
+<script type="text/javascript">
+$(function() {
+	//set default comment hint
+	$("#comment").val("请在这里发表您的评论，谢谢");
+	$("#comment").select();
+	$("#comment").click(checkdefault);
+	$("#comment").focusin(checkdefault);
+	
+	//allow #innerscroll1 (in thanscroll) to dynamically scroll
+	$('#innerscroll1').bxSlider({
+		auto: true,
+		autoHover: true,
+		margin: 70,
+	    controls: false,
+	    pause: 15000,
+	    speed: 5000,
+	    pager: false
+	});
+		
+	//show the hint if the support express is voted!
+	if($(":input[type=radio]").attr("disabled") =="disabled"){
+		$("#info1").html("您已经表达过您的支持了");		
+	}	
+	
+	/*
+	 * when the window is loaded, show the comments for roadfee list
+	 */
+	$.post("../roadfeeListAction!getExpressCount", {},function(returnedData,status){
+		if("success" == status){
+			$("#totalzaike").html(returnedData);
+		}
+	});
+	
+	/*
+	 * when the window is loaded, show the comments for roadfee list
+	 */
+	$.post("../roadfeeListAction!getRoadfeeComments", {}, function(returnedData,status) {
+		if ("success" == status) {
+			var result = eval(returnedData);
+			
+			$("#content").html("");
+			for ( var index in result) {
+				var c = result[index];
+				//$("#content").prepend("<tr align='center'><td width='10%' bgcolor='#9ff'>" + c.nickname + "</td><td width='70%' bgcolor='#cff'>" + c.comment+ "</td><td bgcolor='#fcf'>" + c.commentDate + "</td>");
+				var nn = c.nickname;
+				if("" == nn)
+					nn = "空";
+				$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + c.comment +"</div><div class='date'>" + c.commentDate + "</div></div>");
+			}
+						
+			//how much items per page to show
+			var show_per_page = 10; 
+			//getting the amount of elements inside content div
+			var number_of_items = $('#content').children().size();
+			//calculate the number of pages we are going to have
+			var number_of_pages = Math.ceil(number_of_items/show_per_page);
+			
+			//set the value of our hidden input fields
+			$('#current_page').val(0);
+			$('#show_per_page').val(show_per_page);
+			
+			//now when we got all we need for the navigation let's make it '
+			
+			/* 
+			what are we going to have in the navigation?
+				- link to previous page
+				- links to specific pages
+				- link to next page
+			*/
+			//var navigation_html = '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var navigation_html = '<a class="first_link" href="javascript:go_to_page(0);">第一页</a>' + '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var current_link = 0;
+			while(number_of_pages > current_link){
+				navigation_html += '<a class="page_link" href="javascript:go_to_page(' + current_link +')" longdesc="' + current_link +'">'+ (current_link + 1) +'</a>';
+				current_link++;
+			}
+			//navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>';
+			navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>' + '<a class="first_link" href="javascript:go_to_page(' + (number_of_pages-1) + ');">最后一页</a>';
+			
+			$('#page_navigation').html(navigation_html);
+			
+			//add active_page class to the first page link
+			$('#page_navigation .page_link:first').addClass('active_page');
+			
+			//hide all the elements inside content div
+			$('#content').children().css('display', 'none');
+			
+			//and show the first n (show_per_page) elements
+			$('#content').children().slice(0, show_per_page).css('display', 'block');
+		}
+	});
+	
+	//2. register click event on #btn to add comment on roadfee_comment
+	$("#btn").click(function() {
+		if($("#comment").val() == "" || $("#comment").val() == "请在这里发表您的评论，谢谢"){//simple validation with empty or default condition
+			$("#commentSpan").html("<p><b>评论不能为空</b></p>");
+			return false;		
+		}else{//submit the json object {nickname,comment}
+			$("#commentSpan").html("<p>谢谢您的评论</p>");
+			$.post("../roadfeeListAction!addRoadfeeComment", {"nickname":encodeURI($("#nickname").val()),"comment":encodeURI($("#comment").val())}, 
+				function(returnedData,status) {
+					if ("success" == status){
+						//$("#content").prepend($("#comment").val() + "<br/>");  //insert the new comment firstly;
+						var nn = $("#nickname").val();
+						if("" == nn)
+							nn = "空";
+						$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + $("#comment").val() +"</div><div class='date'>" 
+						+ new Date().toLocaleString() + "</div></div>");
+						$("#commentSpan").html("");
+					}
+				});
+			$(this).attr("disabled","disabled");
+		}			
+	});
+	
+	/*
+	 * bind the click event to each radio box to vote the express support on this roadfee list
+	 */
+	$(":input[type=radio]").click(function() {
+		//1. if any radio box is selected, disable all;
+		$(":input[type=radio]").attr("disabled","disabled"); 
+		//1.5 increment the total support count
+		$("#totalzaike").html(parseInt($("#totalzaike").html()) + 1);
+		//2.show chart1 div
+		$("#info1").html("");
+		$("#chart1").show();
+		$("#chart1").html("请稍候...");
+		//3.pass the user choice to action via ajax post() method
+		$.post("../roadfeeListAction!express", {support:$(this).val()}, function(returnedData,status) {
+			if ("success" == status) {
+				$("#chart1").html("");
+				var result = eval(returnedData);
+				temp = result;
+				//4. define plot element to be shown
+				$.jqplot.config.enablePlugins = true;
+			    var ticks = ['完全支持', '支持', '中立', '不太支持', '不支持'];
+			    //5. draw the plot 
+			    plot1 = $.jqplot('chart1', [result], {
+			        // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
+			        animate: !$.jqplot.use_excanvas,
+			        seriesDefaults:{
+			            renderer:$.jqplot.BarRenderer,
+			            pointLabels: { show: true }
+			        },
+			        axes: {
+			            xaxis: {
+			                renderer: $.jqplot.CategoryAxisRenderer,
+			                ticks: ticks
+			            }
+			        },
+			        highlighter: { show: false }
+			    });			 	
+			}
+		});
+	});
+});
+
+//used for default comment hint
+function checkdefault() {
+	var txt = $(this).val();  //the current text in the area
+	if(txt == "请在这里发表您的评论，谢谢")
+		$(this).val("");
+	$(this).focusout(retdefault);	
+}
+//used for default comment hint
+function retdefault(){
+	var txt = $(this).val();
+	if(txt == ""){
+		$(this).val("请在这里发表您的评论，谢谢");
+		$(this).select();
+	}		
+	$(this).click(checkdefault);
+	$(this).focusin(checkdefault);
+}
+
+function previous(){
+	
+	new_page = parseInt($('#current_page').val()) - 1;
+	//if there is an item before the current active link run the function
+	if($('.active_page').prev('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function next(){
+	new_page = parseInt($('#current_page').val()) + 1;
+	//if there is an item after the current active link run the function
+	if($('.active_page').next('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function go_to_page(page_num){
+	//get the number of items shown per page
+	var show_per_page = parseInt($('#show_per_page').val());
+	
+	//get the element number where to start the slice from
+	start_from = page_num * show_per_page;
+	
+	//get the element number where to end the slice
+	end_on = start_from + show_per_page;
+	
+	//hide all children elements of content div, get specific items and show them
+	$('#content').children().css('display', 'none').slice(start_from, end_on).css('display', 'block');
+	
+	/*get the page link that has longdesc attribute of the current page and add active_page class to it
+	and remove that class from previously active page link*/
+	$('.page_link[longdesc=' + page_num +']').addClass('active_page').siblings('.active_page').removeClass('active_page');
+	
+	//update the current page input field
+	$('#current_page').val(page_num);
+};
+</script>
+</head>
+
+<body>
+<div id="header">
+  <iframe src="../header.html" width=980 height=91 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="nav">
+  <iframe src="../nav.html" width=980 height=40 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="primary">
+  <div id="baike">
+    <iframe src="../baike.html" width=120 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+  <div id="main">
+    <div id="location"><a name="articletop">您的位置</a>： <a href="../index.html">旅游宰客榜首页</a> 》》<a href="../commonlist/listindex.html">旅游宰客榜</a> 》》过路费对比榜</div>
+    <div id="list">
+		<h2 align="center">过路费对比榜</h2>
+		<div id="share">
+			<!-- JiaThis Button BEGIN -->
+			<div class="jiathis_style">
+				<span class="jiathis_txt">分享到：</span>
+				<a class="jiathis_button_qzone" /><a class="jiathis_button_tsina" />
+				<a class="jiathis_button_tqq" /><a class="jiathis_button_renren" />
+				<a class="jiathis_button_kaixin001" /><a class="jiathis_button_tsohu" />
+				<a class="jiathis_button_feixin" /><a class="jiathis_button_douban" />
+				<a class="jiathis_button_fb" /><a class="jiathis_button_tieba" />
+				<a class="jiathis_button_tianya" /><a class="jiathis_button_twitter" />
+				<a class="jiathis_button_googleplus" /><a class="jiathis_button_t163" />
+				<a class="jiathis_button_xiaoyou" /><a class="jiathis_button_mop" />
+				<a class="jiathis_button_tifeng" /><a class="jiathis_button_gmail" />
+				
+				<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+				<a class="jiathis_counter_style"></a>
+			</div>
+			<script type="text/javascript" >
+			var jiathis_config={
+				boldNum:15,
+				siteNum:15,
+				sm:"taobao,hi,meilishuo,51,sohu,tpeople,189share,huaban,ifensi,hexun,ydnote,ymail,hotmail,tyaolan,toeeee",
+				summary:"",
+				hideMore:false
+			}
+			</script>
+			<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+			<!-- JiaThis Button END -->
+		</div>
+		<div class="comp" id="intro">
+			<table border="0" style="color: #060606;" cellspacing="0" cellpadding="0">
+				<tr align="center">
+					<td>前往其他榜单：</td>
+					<td><a href="../commonlist/city.html">国内城市榜&nbsp&nbsp</a></td>
+					<td><a href="../commonlist/resort.html">国内景区榜&nbsp&nbsp</a></td>
+					<td><a href="../commonlist/intercity.html">海外国家榜&nbsp&nbsp</a></td>
+					<td><a href="../commonlist/interresort.html">海外景区榜&nbsp&nbsp</a></td>
+					<td><a href="hill.html">名山宰客榜&nbsp&nbsp</a></td>
+					<td><a href="temple.html">烧香拜佛榜&nbsp&nbsp</a></td>
+					<td><a href="park.html">公园对比榜&nbsp&nbsp</a></td>
+					<td><a href="museum.html">博物馆榜&nbsp&nbsp</a></td>
+				</tr>
+			</table>
+			<br/>
+			<p>一、过路费对比榜的意义。</p>
+			<p>自驾游的方兴未艾，过路费和收费站成为万众瞩目的焦点。沉重的过路费负担和过于密集的收费站意味着什么？打个比方。
+			   如果说中华大地代表一个人，公路相当于血管，汽车就是运送氧分的红细胞。收费站是什么呢？众所周知血栓会严重阻碍血液流动，导致人缺氧。</p>
+			<p>那么收费站就是公路上的血栓，妨碍公路的正常效能，大大抬高了运输成本。由于沉重的过路费负担和过于密集的收费站设置，我们国家严重缺氧，高度营养不良！显而易见的公路资源配置失当，严重影响到整体经济的良性发展。</p>
+			<p>有相当多的人在网上晒国内过路费收取状况，还有一些人晒美国的过路费作为比较。虽然比较很多，但是过于粗线条，不够系统，不够量化。</p>
+			<p>旅游宰客榜不揣冒昧得提出了一个更加量化，更加直观的比较方式，目的在于让更多的人了解中国公路收费制度与世界的差距，对旅游业（乃至国民经济）的不良影响。</p>
+			<p style="color: blue;">我们的过路费对比榜只是抛砖引玉，也许部分资料不一定完全准确，比较方式不一定科学，不过这也许是有益的尝试，在相当程度上反映了实际情况。
+			   希望有兴趣的读者能够积极评论（在页面最下方），或者给我们<a href="mailto:lyzk.org@gmail.com">发邮件</a>，提出更加合理有效的比较方法和数据，及时提供给我们，好做更正，在此诚挚感谢。</p>
+			<p>本榜单具有以下特征：</p>
+			<p>1. 尽可能做到有据可依，有凭可查。所有过路费对比榜的参考资料来源于通过搜索引擎得到的公开信息，包括搜索引擎数据、含国家标准的新闻、权威网站、网友旅游共享信息。</p>
+			<p>2. 指定比较路线，量化比较标准。比如，指定两个城市，以它们之间的过路费和汽油价格做为基准，算出路线所需费用。</p>
+			<p>3. 引入城市居民收入做为对比的宏观指标。在上一步计算出过路费和全程路线所需汽油费用的基础上，继续除以居民每周收入，得到的比重代表一趟城际旅行相对居民每周收入的负担程度。</p>
+			<p>二、背景材料</p>
+			<p>根据【参考1】在全世界14万公里的收费公路中，10万公里在中国。只需要举两个例子就可以说明问题：京石高速公路在盈余近6亿元以后仍在继续收费，北京机场高速公路在过去14年里更是创下投资12亿收费上百亿的“奇迹”。
+			   两条公路原本都是政府还贷路，中途被转给了首发公司，收费期限也大大延长。</p>
+			<p>与此形成鲜明对照的是，美国拥有8.9万公里高速公路，只有大约8000公里是收费路段，而且收费金额很低，在美国中西部地区，绝大多数公路甚至连收费站都没有。</p>
+			<p>根据【参考2】，截至2011年底我国高速公路总里程达8.5万公里，接近了拥有最长高速公路总里程的美国。</p>
+			<p>请注意，由于笔者只有美国和中国的驾驶经验，所以目前为止这个过路费对比榜只做了中美之间的对比。衷心希望有海外驾驶经验的读者能够补充其他国家的对比，我们会及时总结，不断更新，把读者们添加的可靠详实情况补充进来。</p>
+			<p>随着家用轿车的普及，自驾游在中国方兴未艾。想了解自驾游的旅游风险和旅游安全事项，请前往<a href="../download/download.html">下载页面</a>下载最新版的《旅游风险红宝书》和《旅游安全红宝书》以及其他文档。</p>
+			<p>三、榜单说明</p>
+			<p>1. 居民年平均收入。很遗憾无法找到权威的中国人均国民收入(per capita person income)，只能以人均国内生产总值（gross domestic product per capita）代替中国的居民年平均收入；
+			   美国是以年人均国民收入代表居民年平均收入，引用年份为2010年度。需要注意的是，国民收入是国内生产总值的一个组成部分，因此小于国内生产总值。
+			   一般而言，人均可支配收入 小于 人均国民收入 小于 人均国内生产总值。</p>
+			<p>2. 中国过路费、人均国内生产总值以人民币为计数单位；美国过路费、人均国民收入以美元为计数单位，2012年10月1日的美元兑人民币的官方汇率为 1美元 = 6.2845 元人民币。</p>
+			<p>3. 千公里支出代表过路费的负担指数。千公里支出 = 过路费 * 1000（公里） / 行车距离（公里）。中国以元每千公里计算，美国以美元每千公里计算。
+			   此外，实际上城市之间的来回方向过路费很可能并不一样，出于计算方便，我们只统计一个方向的费用。</p>
+			<p>4. 过路费系数 = 居民每天平均收入 / 过路费 = 居民年平均收入 / （过路费 * 365）。用于衡量居民城际旅行的费用支出程度，
+			   系数越大说明过路费负担越轻。直观的含义就是，某城市居民每天的收入如果全部用于支付指定城际路线的过路费，他（她）能够跑多少趟（假定无汽油费支出）。
+			   比如，路线是费城到纽约，费城居民的过路费系数是12.08，就是说费城的人均每天收入可以跑纽约12趟（假定无汽油费支出）；
+			   与此对比，路线广州至深圳，广州居民过路费系数3.24，那么广州的人均收入每天可以跑深圳3趟而已。</p>
+			<p>5. 距离换算关系：1 英里 大约等于 1.61 公里。</p>
+			<p>6. 使用上海通用雪佛兰景程1.8L手自一体汽车作为路线实验车辆，网友油耗均值9.88升每100公里【参考24】，那么油耗就是0.0988升每公里。</p>
+			<p>7. 总费用/周收入比重。城际路线上某一端的居民开车前往另一端，总费用 = 过路费 + 汽油费； 比重 = 总费用 / 居民每周人均收入（中国年人均国内生产总值 / 52周，美国年人均国民收入 /52周）。
+			   假定不在路途中加油，只算出发城市油价，以2012年9月24日为例，中国城市油价信息来源于【参考22】，使用93号本周城市最低价汽油；美国城市油价来源于【参考23】，使用87号当日城市平均价汽油。
+			   美国的汽油容积单位是加仑，每加仑约等于3.785升。</p>
+			<p>8. 需要重点关注的指标在下面的各个表中均以黄色和红色标识。</p>
+		</div>
+		<div class="comp" id="short">
+			<div id="firstpair">
+				<label class="pairtitle">1. 西雅图至波特兰  VS  上海至杭州</label>
+				<br/>
+				<table border="1" style="color: navy;" cellspacing="0" cellpadding="0">
+					<tr align="center"><td width="120px">对比城市</td><td>西雅图至波特兰</td><td>上海至杭州</td></tr>
+					<tr align="center"><td>距离性质</td><td>短途</td><td>短途</td></tr>
+					<tr align="center"><td>行车距离（公里）</td><td>173.9 英里（280公里）【谷歌】</td><td>176.9公里【参考4】</td></tr>
+					<tr align="center"><td>主要路线</td><td>I5【谷歌】</td><td>G92 G60 S2【参考4】</td></tr>
+					<tr align="center"><td>估计时长</td><td>2小时58分钟【谷歌】</td><td>小于3小时（估算）</td></tr>
+					<tr align="center"><td>城市简介</td>
+						<td>西雅图是美国西海岸第三大城市，都市区人口近400万；波特兰是美国西海岸第四大城市，都市区人口200万左右【维基】</td>
+						<td>上海是中国第一大城市，都市区人口超过2300万；杭州是浙江省会，都市区人口超过600万【维基】</td></tr>
+					<tr style="color: orange; font-weight: bold;" align="center"><td>过路费金额</td><td>0美元【参考3】</td><td>70-80元【参考4】</td></tr>
+					<tr align="center"><td>千公里支出</td><td>0美元每千公里</td><td>（按70元计算）395.7元每千公里</td></tr>
+					<tr align="center"><td>居民年平均收入</td><td>西雅图49115美元；波特兰39843美元【参考9】</td><td>上海76074元【参考5】和杭州69830元【参考5】</td></tr>
+					<tr style="color: red; font-size: 16px; font-weight: bold;" align="center"><td>过路费系数</td><td>无穷大；无穷大</td><td>上海2.98；杭州2.73</td></tr>
+				</table>
+				<br/>
+				<center>表1：西雅图至波特兰 对比 上海至杭州</center>
+				<br/>
+				<table border="1" style="color: purple;" cellspacing="0" cellpadding="0">
+					<tr align="center"><td width="120px">出发方向</td><td>西雅图-》波特兰</td><td>波特兰-》西雅图</td>
+						<td>上海-》杭州</td><td>杭州-》上海</td></tr>
+					<tr style="color: orange; font-weight: bold;" align="center"><td>出发地油价</td><td>4.015美元每加仑=1.061美元每升</td><td>3.935美元每加仑=1.040美元每升</td>
+						<td>7.75元每升</td><td>7.60元每升</td></tr>
+					<tr align="center"><td>全程油耗（升）</td><td>27.664</td><td>27.664</td><td>17.48</td><td>17.48</td></tr>
+					<tr align="center"><td>油费</td><td>29.35美元</td><td>28.77美元</td><td>135.5元</td><td>132.8元</td></tr>
+					<tr align="center"><td>过路费</td><td>0美元</td><td>0美元</td><td>70元</td><td>70元</td></tr>
+					<tr align="center"><td>总费用</td><td>29.35美元</td><td>28.77美元</td><td>205.5元</td><td>202.8元</td></tr>
+					<tr align="center"><td>居民每周收入</td><td>944.5美元</td><td>766.2 美元</td><td>1463.0元</td><td>1342.9元</td></tr>
+					<tr style="color: red; font-size: 16px; font-weight: bold;" align="center"><td>总费用/周收入</td><td>3.1%</td><td>3.7%</td><td>14.0%</td><td>15.1%</td></tr>
+				</table>
+				<br/>
+				<center>表2：西雅图至波特兰 对比 上海至杭州</center>
+				<br/>
+				<p>小结：1. 表1中，由于西雅图至波特兰的路线上不会产生过路费，因此过路费系数是无穷大（除以0）。</p>
+				<p>2. 表2中，即使只是短途城际旅行，中国城市之间的过路费和油费负担相对于收入的比率已经是双位数了，而美国城市的这个数字是低于4的个位数。</p>
+				<br/>
+			</div>
+			<div id="secondpair">
+				<label class="pairtitle">2. 费城至纽约  VS  广州至深圳</label>
+				<br/>
+				<table border="1" style="color: navy;" cellspacing="0" cellpadding="0">
+					<tr align="center"><td width="120px">对比城市</td><td>费城至纽约</td><td>广州至深圳</td></tr>
+					<tr align="center"><td>距离性质</td><td>短途</td><td>短途</td></tr>
+					<tr align="center"><td>行车距离（公里）</td><td>94.3英里（151.8公里）【谷歌】</td><td>超过122.8公里（广深高速长度）【参考10】</td></tr>
+					<tr align="center"><td>主要路线</td><td>I-95 S和New Jersey Turnpike S【谷歌】</td><td>广深高速【参考10】</td></tr>
+					<tr align="center"><td>估计时长</td><td>2个小时【谷歌】</td><td>不超过1个半小时（按最高限速120公里/小时估计）</td></tr>
+					<tr align="center"><td>城市简介</td>
+						<td>纽约，世界第一大都市，城区（不含卫星城）人口超过820万；费城，宾夕法尼亚州最大城市，都市区人口超过152万【维基】</td>
+						<td>广州是仅次于北京上海的中国大陆第三大都市，都市区人口1270万；深圳，毗邻香港的经济特区，都市区人口1037万【维基】</td></tr>
+					<tr style="color: orange; font-weight: bold;" align="center"><td>过路费金额</td><td>10.7美元【参考7】</td><td>74元【参考10】</td></tr>
+					<tr align="center"><td>千公里支出</td><td>70.49美元每千公里</td><td>602.6元每千公里</td></tr>
+					<tr align="center"><td>居民年平均收入</td><td>费城47184美元；纽约54365美元【参考9】</td><td>广州87458；深圳94296元【参考5】</td></tr>
+					<tr style="color: red; font-size: 16px; font-weight: bold;" align="center"><td>过路费系数</td><td>费城12.08；纽约13.92</td><td>广州3.24；深圳3.49</td></tr>
+				</table>
+				<br/>
+				<center>表3：费城至纽约 对比 广州至深圳</center>
+				<br/>
+				<table border="1" style="color: purple;" cellspacing="0" cellpadding="0">
+					<tr align="center"><td width="120px">出发方向</td><td>费城-》纽约</td><td>纽约-》费城</td>
+						<td>广州-》深圳</td><td>深圳-》广州</td></tr>
+					<tr style="color: orange; font-weight: bold;" align="center"><td>出发地油价</td><td>3.902美元每加仑=1.030美元每升</td><td>4.126美元每加仑=1.090美元每升</td>
+						<td>8.10元每升</td><td>7.50元每升</td></tr>
+					<tr align="center"><td>全程油耗（升）</td><td>15.00</td><td>15.00</td><td>12.13</td><td>12.13</td></tr>
+					<tr align="center"><td>油费</td><td>15.4美元</td><td>16.4美元</td><td>98.3元</td><td>91.0元</td></tr>
+					<tr align="center"><td>过路费</td><td>10.7美元</td><td>10.7美元</td><td>74元</td><td>74元</td></tr>
+					<tr align="center"><td>总费用</td><td>26.1美元</td><td>27.1美元</td><td>172.3元</td><td>165.0元</td></tr>
+					<tr align="center"><td>居民每周收入</td><td>907.4美元</td><td>1045.5美元</td><td>1681.9 元</td><td>1813.4 元</td></tr>
+					<tr style="color: red; font-size: 16px; font-weight: bold;" align="center"><td>总费用/周收入</td><td>2.9%</td><td>2.6%</td><td>10.2%</td><td>9.1%</td></tr>
+				</table>
+				<br/>
+				<center>表4：费城至纽约 对比 广州至深圳</center>
+				<br/>
+				<p>小结： 表4中，终于看到深圳的总费用/周收入比率低于10%，也是所有对比表中的唯一一次。</p>
+				<br />
+				<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+				<br/>
+				<br/>
+			</div>
+		</div>
+		<div class="comp" id="middle">
+			<div>
+				<label class="pairtitle">3. 波士顿至华盛顿DC  VS  北京至沈阳</label>
+				<br/>
+				<table border="1" style="color: navy;" cellspacing="0" cellpadding="0">
+					<tr align="center"><td width="120px">对比城市</td><td>波士顿至华盛顿DC</td><td>北京至沈阳</td></tr>
+					<tr align="center"><td>距离性质</td><td>中途</td><td>中途</td></tr>
+					<tr align="center"><td>行车距离（公里）</td><td>451.3英里（726.6公里）【谷歌】</td><td>658公里【参考11】</td></tr>
+					<tr align="center"><td>主要路线</td><td>I95【谷歌】</td><td>京沈高速【参考11】</td></tr>
+					<tr align="center"><td>估计时长</td><td>8个小时【谷歌】</td><td>至少5小时【参考11】</td></tr>
+					<tr align="center"><td>城市简介</td><td>波士顿，北美最早的大城市，都市区人口超过760万；华盛顿DC，美国首都，城区（不含卫星城）人口近62万【维基】</td>
+						<td>北京，中国首都，都市区人口近2000万；沈阳，东北第一大城市，都市区人口近800万【维基】</td></tr>
+					<tr style="color: orange; font-weight: bold;" align="center"><td>过路费金额</td><td>44美元【参考6】</td><td>280元【参考11】</td></tr>
+					<tr align="center"><td>千公里支出</td><td>60.56 美元每千公里</td><td>425.53 元每千公里</td></tr>
+					<tr align="center"><td>居民年平均收入</td><td>波士顿57343美元；华盛顿DC55431美元【参考9】</td><td>北京75943元；沈阳62357元【参考5】</td></tr>
+					<tr style="color: red; font-size: 16px; font-weight: bold;" align="center"><td>过路费系数</td><td>波士顿3.57；华盛顿DC3.45</td><td>北京0.74；沈阳0.61</td></tr>
+				</table>
+				<br/>
+				<center>表5：波士顿至华盛顿DC 对比 北京至沈阳</center>
+				<br/>
+				<table border="1" style="color: purple;" cellspacing="0" cellpadding="0">
+					<tr align="center"><td width="120px">出发方向</td><td>波士顿-》华盛顿DC</td><td>华盛顿DC-》波士顿</td>
+						<td>北京-》沈阳</td><td>沈阳-》北京</td></tr>
+					<tr style="color: orange; font-weight: bold;" align="center"><td>出发地油价</td><td>3.885美元每加仑=1.026美元每升</td><td>4.008美元每加仑 = 1.059美元每升</td>
+						<td>7.86元每升</td><td>7.59元每升</td></tr>
+					<tr align="center"><td>全程油耗（升）</td><td>71.8</td><td>71.8</td><td>65.0</td><td>65.0</td></tr>
+					<tr align="center"><td>油费</td><td>73.7美元</td><td>76.0美元</td><td>511.0元</td><td>493.4元</td></tr>
+					<tr align="center"><td>过路费</td><td>44美元</td><td>44美元</td><td>280元</td><td>280元</td></tr>
+					<tr align="center"><td>总费用</td><td>117.7美元</td><td>120.0美元</td><td>791.0元</td><td>773.4 元</td></tr>
+					<tr align="center"><td>居民每周收入</td><td>1102.8美元</td><td>1066.0美元</td><td>1460.4元</td><td>1199.2元</td></tr>
+					<tr style="color: red; font-size: 16px; font-weight: bold;" align="center"><td>总费用/周收入</td><td>10.7%</td><td>11.3%</td><td>54.2%</td><td>64.5%</td></tr>
+				</table>
+				<br/>
+				<center>表6：波士顿至华盛顿DC 对比 北京至沈阳</center>
+				<br/>
+				<p>小结： 1. 表5中，北京和沈阳的过路费系数双双低于1，意味着居民一天的收入不够支付城际旅行的过路费。</p>
+				<p>2. 表6中，无论是波士顿还是华盛顿DC，居民每周收入的十分之一多一点即可支付城际旅行的单程费用（每周法定工作时间40小时，即大约4个小时，半天的薪水）；
+				   反之，北京和沈阳的居民每周收入的一半以上才够。北京是刚超过50%，即20多个小时的薪水用于这趟单程城际旅行。</p>
+				<br />
+			</div>
+			<div>
+				<label class="pairtitle">4. 迈阿密至亚特兰大  VS  上海至武汉</label>
+				<br/>
+				<table border="1" style="color: navy;" cellspacing="0" cellpadding="0">
+					<tr align="center"><td width="120px">对比城市</td><td>迈阿密至亚特兰大</td><td>上海至武汉</td></tr>
+					<tr align="center"><td>距离性质</td><td>中长途</td><td>中长途</td></tr>
+					<tr align="center"><td>行车距离（公里）</td><td>661.7英里（1065.3公里）【谷歌】</td><td>928.3公里【参考13】</td></tr>
+					<tr align="center"><td>主要路线</td><td>FL-91 N和I-75 N【谷歌】</td><td>G40和G42【参考13】</td></tr>
+					<tr align="center"><td>估计时长</td><td>10小时50分钟【谷歌】</td><td>介于8个半到11个小时之间【参考13】</td></tr>
+					<tr align="center"><td>城市简介</td><td>迈阿密，佛罗里达州第一大城市，都市区人口超过550万；亚特兰大，乔治亚州第一大城市，城区（不含卫星城）人口超过42万【维基】；</td>
+						<td>上海，中国第一大城市，都市区人口超过2300万；武汉，都市区人口超过1000万【维基】</td></tr>
+					<tr style="color: orange; font-weight: bold;" align="center"><td>过路费金额</td><td>20美元【参考12】</td><td>385元【参考13】</td></tr>
+					<tr align="center"><td>千公里支出</td><td>18.77美元每千公里</td><td>414.74元每千公里</td></tr>
+					<tr align="center"><td>居民年平均收入</td><td>迈阿密41769美元；亚特兰大38321美元【参考9】</td><td>上海76074元；武汉58944元【参考5】</td></tr>
+					<tr style="color: red; font-size: 16px; font-weight: bold;" align="center"><td>过路费系数</td><td>迈阿密5.72；亚特兰大5.25</td><td>上海0.54；武汉0.42</td></tr>
+				</table>
+				<br/>
+				<center>表7：迈阿密至亚特兰大 对比 上海至武汉</center>
+				<br/>
+				<table border="1" style="color: purple;" cellspacing="0" cellpadding="0">
+					<tr align="center"><td width="120px">出发方向</td><td>迈阿密-》亚特兰大</td><td>亚特兰大-》迈阿密</td>
+						<td>上海-》武汉</td><td>武汉-》上海</td></tr>
+					<tr style="color: orange; font-weight: bold;" align="center"><td>出发地油价</td><td>3.850美元每加仑=1.017美元每升</td><td>3.669美元每加仑=0.969美元每升</td>
+						<td>7.75元每升</td><td>7.65元每升</td></tr>
+					<tr align="center"><td>全程油耗（升）</td><td>105.3</td><td>105.3</td><td>91.7</td><td>91.7</td></tr>
+					<tr align="center"><td>油费</td><td>107.0美元</td><td>102.0美元</td><td>710.8元</td><td>701.5元</td></tr>
+					<tr align="center"><td>过路费</td><td>20美元</td><td>20美元</td><td>385元</td><td>385元</td></tr>
+					<tr align="center"><td>总费用</td><td>127.0美元</td><td>122.0美元</td><td>1095.8元</td><td>1086.5元</td></tr>
+					<tr align="center"><td>居民每周收入</td><td>803.3美元</td><td>736.9美元</td><td>1463.0元</td><td>1133.5元</td></tr>
+					<tr style="color: red; font-size: 16px; font-weight: bold;" align="center"><td>总费用/周收入</td><td>15.8%</td><td>16.6%</td><td>74.9%</td><td>95.9%</td></tr>
+				</table>
+				<br/>
+				<center>表8：迈阿密至亚特兰大 对比 上海至武汉</center>
+				<br/>
+				<p>小结：1. 表7中，武汉的过路费系数是0.42，意味着武汉居民将近2天半的收入才够支付单程城际旅行的过路费。</p>
+				<p>2. 表8中，仍然是武汉，接近100%的总费用/周收入比重说明武汉居民干了一周的活儿才赚到了去上海的单程费用；而亚特兰大居民可以往返迈阿密三圈，</p>
+				<br />
+				<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+				<br/>
+				<br/>
+			</div>
+		</div>
+		<div class="comp" id="long">
+			<div>
+				<label class="pairtitle">5. 芝加哥至华盛顿DC  VS  上海至成都</label>
+				<br/>
+				<table border="1" style="color: navy;" cellspacing="0" cellpadding="0">
+					<tr align="center"><td width="120px">对比城市</td><td>芝加哥至华盛顿DC</td><td>上海至成都</td></tr>
+					<tr align="center"><td>距离性质</td><td>长途</td><td>长途</td></tr>
+					<tr align="center"><td>行车距离（公里）</td><td>700至750英里（1127至1207.5公里）【参考14，15】</td><td>1768公里【参考16】</td></tr>
+					<tr align="center"><td>主要路线</td><td>I94/I90，I65，I70，I79，I68，I270，I495【参考14】</td><td>沪渝高速【参考16】</td></tr>
+					<tr align="center"><td>估计时长</td><td>12个小时【参考15】</td><td>20小时【参考16】</td></tr>
+					<tr align="center"><td>城市简介</td><td>华盛顿DC，美国首都，城区（不含卫星城）人口近62万；芝加哥，美国第三大城市，城区（不含卫星城）人口近270万【维基】</td>
+						<td>上海，中国第一大城市，都市区人口超过2300万；成都，西部第一大城市，都市区人口超过1400万【维基】</td></tr>
+					<tr style="color: orange; font-weight: bold;" align="center"><td>过路费金额</td><td>0【参考14】</td><td>1275元【参考16】</td></tr>
+					<tr align="center"><td>千公里支出</td><td>0美元每千公里</td><td>721.1 元每千公里</td></tr>
+					<tr align="center"><td>居民年平均收入</td><td>芝加哥44344美元；华盛顿DC55431美元【参考9】</td><td>上海76074元；成都41253元【参考5】</td></tr>
+					<tr style="color: red; font-size: 16px; font-weight: bold;" align="center"><td>过路费系数</td><td>无穷大；无穷大</td><td>上海0.16；成都0.09</td></tr>
+				</table>
+				<br/>
+				<center>表9：芝加哥至华盛顿DC 对比 上海至成都</center>
+				<br/>
+				<table border="1" style="color: purple;" cellspacing="0" cellpadding="0">
+					<tr align="center"><td width="120px">出发方向</td><td>芝加哥-》华盛顿DC</td><td>华盛顿DC-》芝加哥</td>
+						<td>上海-》成都</td><td>成都-》上海</td></tr>
+					<tr style="color: orange; font-weight: bold;" align="center"><td>出发地油价</td><td>4.210美元每加仑=1.112美元每升</td><td>4.008美元每加仑=1.059美元每升</td>
+						<td>7.75元每升</td><td>7.75元每升</td></tr>
+					<tr align="center"><td>全程油耗（升）</td><td>119.3</td><td>119.3</td><td>174.7</td><td>174.7</td></tr>
+					<tr align="center"><td>油费</td><td>132.7美元</td><td>126.3美元</td><td>1353.8元</td><td>1353.8元</td></tr>
+					<tr align="center"><td>过路费</td><td>0美元</td><td>0美元</td><td>1275元</td><td>1275元</td></tr>
+					<tr align="center"><td>总费用</td><td>132.7美元</td><td>126.3美元</td><td>2628.8元</td><td>2628.8元</td></tr>
+					<tr align="center"><td>居民每周收入</td><td>852.8美元</td><td>1066.0美元</td><td>1463.0元</td><td>793.3元</td></tr>
+					<tr style="color: red; font-size: 16px; font-weight: bold;" align="center"><td>总费用/周收入</td><td>15.6%</td><td>11.9%</td><td>179.7%</td><td>331.4%</td></tr>
+				</table>
+				<br/>
+				<center>表10：芝加哥至华盛顿DC 对比 上海至成都</center>
+				<br/>
+				<p>小结：1. 表9中，对比过于悬殊。芝加哥与华盛顿DC居民走参考14的路线可以不用过路费，尽管有些绕，然而所经过的都是路况良好的高速公路。
+				   鲜明对比的是，成都居民10天的收入才够单程前往上海的过路费。</p>
+				<p>2. 表10中，芝加哥的居民一天的收入就可以支付前往华盛顿DC的单程费用了，上海的居民需要9天收入去成都，成都居民17天收入去上海（假设每月工作日23天）。</p>
+				<br />
+				<br/>
+			</div>
+			<div>
+				<label class="pairtitle">6. 波士顿至奥兰多  VS  北京至广州</label>
+				<br/>
+				<table border="1" style="color: navy;" cellspacing="0" cellpadding="0">
+					<tr align="center"><td width="120px">对比城市</td><td>波士顿到奥兰多</td><td>北京到广州</td></tr>
+					<tr align="center"><td>距离性质</td><td>长途</td><td>长途</td></tr>
+					<tr align="center"><td>行车距离（公里）</td><td>1300英里（2093公里）【谷歌】</td><td>2300公里【参考18】</td></tr>
+					<tr align="center"><td>主要路线</td><td>I95，I90【谷歌，参考17】</td><td>京珠高速【参考18】</td></tr>
+					<tr align="center"><td>估计时长</td><td>21小时53分钟【谷歌】</td><td>25小时【参考18】</td></tr>
+					<tr align="center"><td>城市简介</td><td>波士顿，北美最早的大城市，都市区人口超过760万；奥兰多，著名的佛罗里达旅游城市，城区（不含卫星城）人口超过137万【维基】</td>
+						<td>北京，中国首都，都市区人口近2000万；广州，仅次于北京上海的中国大陆第三大都市，都市区人口1270万【维基】</td></tr>
+					<tr style="color: orange; font-weight: bold;" align="center"><td>过路费金额</td><td>30美元【参考17】</td><td>410元【参考18】</td></tr>
+					<tr align="center"><td>千公里支出</td><td>14.33 美元每千公里</td><td>178.26 元每千公里</td></tr>
+					<tr align="center"><td>居民年平均收入</td><td>57343美元和34368美元【参考9】</td><td>75943元和87458元【参考5】</td></tr>
+					<tr style="color: red; font-size: 16px; font-weight: bold;" align="center"><td>过路费系数</td><td>5.24和3.14</td><td>0.51和0.58</td></tr>
+				</table>
+				<br/>
+				<center>表11：波士顿至奥兰多 对比 北京至广州</center>
+				<br/>
+				<table border="1" style="color: purple;" cellspacing="0" cellpadding="0">
+					<tr align="center"><td width="120px">出发方向</td><td>波士顿-》奥兰多</td><td>奥兰多-》波士顿</td>
+						<td>北京-》广州</td><td>广州-》北京</td></tr>
+					<tr style="color: orange; font-weight: bold;" align="center"><td>出发地油价</td><td>3.885美元每加仑=1.026美元每升</td><td>3.665美元每加仑=0.968美元每升</td>
+						<td>7.86元每升</td><td>8.10元每升</td></tr>
+					<tr align="center"><td>全程油耗（升）</td><td>206.8</td><td>206.8</td><td>227.2升</td><td>227.2升</td></tr>
+					<tr align="center"><td>油费</td><td>212.2美元</td><td>200.2美元</td><td>1786.1元</td><td>1840.3元</td></tr>
+					<tr align="center"><td>过路费</td><td>30美元</td><td>30美元</td><td>410元</td><td>410元</td></tr>
+					<tr align="center"><td>总费用</td><td>242.2美元</td><td>230.2美元</td><td>2196.1元</td><td>2250.3元</td></tr>
+					<tr align="center"><td>居民每周收入</td><td>1102.8美元</td><td>660.9美元</td><td>1460.4元</td><td>1681.9元</td></tr>
+					<tr style="color: red; font-size: 16px; font-weight: bold;" align="center"><td>总费用/周收入</td><td>22.0%</td><td>34.8%</td><td>150.4%</td><td>133.8%</td></tr>
+				</table>
+				<br/>
+				<center>表12：波士顿至奥兰多 对比 北京至广州</center>
+				<br/>
+				<p>小结：表11和表12中，虽然没有表9与表10那么对比过于悬殊，差异也是比较大的。波士顿是美国二线大城市，奥兰多是人均收入比较低的旅游城市；而北京和广州都是中国人均收入顶级的大都市。
+				   然而奥兰多居民每周只需要工作15个小时左右就可以攒够前往波士顿的单程费用，而广州居民需要工作55个小时左右。</p>
+				<br />
+				<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+				<br/>
+				<br/>
+			</div>
+		</div>
+		<div class="comp" id="average">
+			<div>
+				<p>收费高速公路每公里平均价格：中国人民币，美国美元；中国高速公路收费标准（一类车）来源于【参考19】，美国收费公路来源于【维基】和【参考21】。</p>
+				<br />
+				<table border="1" cellspacing="0" cellpadding="0">
+					<tr align="center"><td width="90px">经济发达地区</td><td>北京</td><td width="40px">上海</td><td width="60px">广东</td>
+						<td>加利福尼亚</td><td>马萨诸塞</td><td>新泽西</td></tr>
+					<tr align="center"><td>收费高速每公里均价</td><td>G106京广，S15京津：<b>0.5元每公里</b>；G2京沪：<b>0.34元每公里</b>
+						</td><td><b>0.6元每公里</b></td><td><b>0.45元每公里</b>【参考20】</td>
+						<td>South Bay Expressway：3.75美元/16.1公里=<b>0.23美元每公里</b>;Eastern Toll Road：3.5美元（东）/38.64公里=<b>0.09美元每公里</b></td>
+						<td>Massachusetts Turnpike：8.60美元（西向）/222.25公里=<b>0.04美元每公里</b></td>
+						<td>Atlantic City Expressway：3.75美元/71.12公里=<b>0.05美元每公里</b></td></tr>					
+				</table>
+				<br/>
+				<center>表13：经济发达地区高速公路收费对比</center>
+				<br/>
+				<table border="1" cellspacing="0" cellpadding="0">
+					<tr align="center"><td width="80px">经济较发达地区</td><td>四川</td><td width="70px">湖北</td><td width="40px">浙江</td>
+						<td>佛罗里达</td><td width="70px">北卡罗莱纳</td><td>宾夕法尼亚</td></tr>
+					<tr align="center"><td>收费高速每公里均价</td><td>G42沪蓉（某段），G5京昆（某段）:<b>0.45元每公里</b>;G75兰海:<b>0.35元每公里</b></td>
+						<td>京东:<b>0.836元每公里</b>;京珠:<b>0.44元每公里</b></td><td><b>0.4元每公里</b></td>
+						<td>Snapper Creek Expressway:0.8美元/4.3公里=<b>0.19美元每公里</b>;Florida's Turnpike:18.2美元/426.6公里=<b>0.04美元每公里</b></td>
+						<td>0.24美元每英里=<b>0.15美元每公里</b></td>
+						<td>Southern Beltway:0.5美元/6.8公里=<b>0.07美元每公里</b>;Pennsylvania Turnpike:35.55美元/579.0公里=<b>0.06美元每公里</b></td></tr>
+				</table>
+				<br/>
+				<center>表14：经济较发达地区高速公路收费对比</center>
+				<br/>
+				<table border="1" cellspacing="0" cellpadding="0">
+					<tr align="center"><td width="80px">经济欠发达地区</td><td width="40px">陕西</td><td width="40px">安徽</td><td>贵州</td>
+						<td>阿拉巴马</td><td>科罗拉多</td><td>路易斯安那</td></tr>
+					<tr align="center"><td>收费高速每公里均价</td><td><b>0.5元每公里</b></td><td><b>0.4元每公里</b></td>
+						<td>G75兰海:<b>0.5元每公里</b>;G60沪昆（某段）:<b>0.35元每公里</b></td>
+						<td>Emerald Mountain Expressway:1.5美元/1.9公里=<b>0.79美元每公里</b>;Foley Beach Express:3美元/22.54公里=<b>0.13美元每公里</b></td>
+						<td>Northwest Parkway:3美元/17.7公里=<b>0.17美元每公里</b></td>
+						<td>E-470:12.25美元/75.7公里=<b>0.16美元每公里</b>;Lake Pontchartrain Causeway:3美元（南向）/38.442公里=<b>0.08美元每公里</b></td></tr>
+				</table>
+				<br/>
+				<center>表15：经济欠发达地区高速公路收费对比</center>
+				<br/>
+				<p>小结：1. 上面三个表中，所有的美国收费公路基本都是高速公路，而且很多有替代的免费路线，无非是多绕几个弯儿走次等级公路，多费一些时间即可。</p>
+				<p>2. 中国的这些收费高速公路，替代者是大多数收费的一级公路，或者部分收费的二级公路，交费少了些，时间一般而言长了不少。其实三个表中的对比并不公平，是把美国少量的收费公路与中国普遍的高速收费公路做了比较。
+				   正如前言中所说，美国的大多数高速公路是免费的。</p>
+				<br />
+				<p><b>总结：1. 对比标准。对美国不公平一些，因为美国采用的人均国民收入的指标是低于人均国内生产总值的；出发城市的油价一般情况下要稍微高于途中油价的，更何况美国城市油价是平均价格，中国城市
+				   油价是最低价；美国城际交通费用剔除了入城费或者过桥费，实际来往要稍微多一些，不过与油费相比，九牛一毛而已；只是计算主要路线油费，由于中国的油价相对高得多，其他辅助线路的油费其实不能忽略不计。</b></p>
+				<p><b>2. 美元兑换人民币的汇率是 1美元 = 6.2845元人民币。之所以不把美元折算成人民币计算油价、过路费、总费用、过路费系数和比率，是因为中国实际上的人均国民收入比人均国内生产总值要低，
+				   对大中城市而言也就是几万的标准，与美国大中城市类似。本榜单最重要的衡量指标是（总费用/周收入）比率，不换算的数字代表真实的费用负担。</b></p>
+				<p><b>3. 即使统计手段偏向于少算中国城际旅行的费用，多算居民平均收入，与美国类似城市的对比仍然算得上触目惊心！</b></p>
+				<p><b>意犹未尽的朋友们可以订阅我们的<a href="../mail/mailindex.html">邮件服务</a>，毫不费力了解更多榜单信息、宰客奇闻、安全常识等。
+					也可以前往<a href="../news/newsindex.html">新闻主页</a>浏览更多与收费公路相关的内容。</b></p>
+				<p><b>感谢所有能够耐心看到这里的朋友们，欢迎你们提出中肯宝贵的意见和建议。</b></p>
+				<br />
+			</div>
+		</div>
+		<div id="reference">
+			<p>【<a href="http://www.google.com" target="_blank">谷歌</a>，<a href="http://www.wikipedia.org" target="_blank">维基百科</a>，
+			<a href="http://www.lawfirm.com.cn/Article/Article_Info.asp?id=666" target="_blank">参考1</a>，
+			<a href="http://www.chinanews.com/gn/2011/12-31/3573689.shtml" target="_blank">参考2</a>，
+			<a href="http://answers.yahoo.com/question/index?qid=20100122104810AAAL2jQ" target="_blank">参考3</a>，
+			<a href="http://zhidao.baidu.com/question/277326351.html" target="_blank">参考4</a>，
+			<a href="http://zh.wikipedia.org/wiki/中国大陆人均国内生产总值过万美元地级以上城市列表" target="_blank">参考5</a>，
+			<a href="http://wiki.answers.com/Q/What_are_the_tolls_between_Washington_DC_and_Boston" target="_blank">参考6</a>，
+			<a href="http://answers.yahoo.com/question/index?qid=20100324194346AAsVU89" target="_blank">参考7</a>，
+			<a href="http://quickfacts.census.gov/qfd/states/36000.html" target="_blank">参考8</a>，
+			<a href="http://research.stlouisfed.org/fred2/release?rid=139&soid=18" target="_blank">参考9</a>，
+			<a href="http://baike.baidu.com/view/230152.htm" target="_blank">参考10</a>，
+			<a href="http://zhidao.baidu.com/question/81406570.html" target="_blank">参考11</a>，
+			<a href="http://wiki.answers.com/Q/How_much_will_you_spend_in_tolls_from_Miami_to_Atlanta" target="_blank">参考12</a>，
+			<a href="http://zhidao.baidu.com/question/322066929.html" target="_blank">参考13</a>，
+			<a href="http://answers.yahoo.com/question/index?qid=20090304132401AA7ciRd" target="_blank">参考14</a>，
+			<a href="http://www.distance-cities.com/distance-washington-dc-to-chicago-il" target="_blank">参考15</a>，
+			<a href="http://news.iqilu.com/china/gedi/2009/1220/145626.shtml" target="_blank">参考16</a>，
+			<a href="http://answers.yahoo.com/question/index?qid=20090408205828AAiRC41" target="_blank">参考17</a>，
+			<a href="http://wenwen.soso.com/z/q133091325.htm" target="_blank">参考18</a>，
+			<a href="http://sfbz.156580.com/" target="_blank">参考19</a>，
+			<a href="http://politics.people.com.cn/GB/14562/18048950.html" target="_blank">参考20</a>，
+			<a href="http://costoftolls.com/Tolls_in_USA.html" target="_blank">参考21</a>，
+			<a href="http://www.liche365.com/Fee_DayOilTrend.php" target="_blank">参考22</a>，
+			<a href="http://gasbuddy.com/GB_Price_List.aspx" target="_blank">参考23</a>，
+			<a href="http://data.auto.qq.com/car_serial/178/fuelcost.shtml"  target="_blank">参考24</a></p>
+			<br/>
+		</div>
+	</div>
+	<div id="bottom" style="float: left; width: 750px;">
+		<br/>
+		<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+		<br/>
+	</div>
+	<div id="express">
+		<b>民意小测验：</b>
+		<label>您认可这个排行榜吗？请选择下面的一项表个态吧</label> 
+		<br /> 
+		<input type="radio" name="support" value="roadfee1" />完全支持
+		<input type="radio" name="support" value="roadfee2" />支持
+		<input type="radio" name="support" value="roadfee3" />中立
+		<input type="radio" name="support" value="roadfee4" />不太支持
+		<input type="radio" name="support" value="roadfee5" />不支持 
+		<br />
+		<br />
+		&nbsp;已经有<label id="totalzaike"></label>个表态了
+		<div id="info1"></div>
+	</div>
+	<div id="chart1"></div>
+	<br /> 
+	<div id="innercomment">
+		<h3>请发表您的意见：</h3><br />
+		<input type='hidden' id='current_page' /> 
+		<input type='hidden' id='show_per_page' />
+		<table>
+			<tr><td>昵称(可选):</td><td><input type="text" id="nickname" name="nickname" size="12" maxlength="12"/></td></tr>
+			<tr><td>评论:（限200字）</td><td><textarea rows="10" cols="75" id="comment" name="comment" maxlength="200"></textarea></td></tr>
+			<tr><td><input id="btn" type="button" value="发表评论" /></td><td><span id="commentSpan"></span></td></tr>
+		</table>			 
+		<br />
+	现有评论如下：
+		<br/>
+		<table>
+			<tr align="center"><td width="50px">用户名</td><td width="610px">评论</td><td>日期</td></tr>
+		</table>			
+	</div>
+	<br />
+	<div id="content">评论正在加载中，请稍候</div>
+	<div id='page_navigation'></div>
+  </div>
+  <div id="right">
+    <iframe src="../right.html" width=90 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+</div>
+<div id="footer">
+  <iframe src="../footer.html" width=980 height=70 frameborder="0" scrolling="no"></iframe>
+</div>
+</body>
+</html>
+

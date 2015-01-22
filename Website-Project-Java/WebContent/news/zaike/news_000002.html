@@ -1,0 +1,458 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- 宰客新闻——，旅游安全——，宰客实录——或政策更新—— -->
+<title>宰客新闻——45万自驾车涌入厦门 停车场宰客5元/小时变成一口价30元</title>
+
+<script type="text/javascript" src="../../jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="../../jslib/jquery.bxslider2.min.js"></script>
+<script type="text/javascript" src="../../jslib/jquery.easing.1.3.min.js"></script>
+<script type="text/javascript" src="../../jslib/jquery.jqplot.min.js"></script>
+<script type="text/javascript" src="../../jslib/jqplot.barRenderer.min.js"></script>
+<script type="text/javascript" src="../../jslib/jqplot.categoryAxisRenderer.min.js"></script>
+<script type="text/javascript" src="../../jslib/jqplot.pointLabels.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../../style/jquery.jqplot.css" />
+<link rel="stylesheet" type="text/css" href="../../style/style2.css" />
+<link rel="stylesheet" type="text/css" href="../../style/individual.novote.css" />
+<link rel="stylesheet" type="text/css" href="../../style/news.css" />
+<link rel="stylesheet" type="text/css" href="../../style/search.css" />
+
+<script type="text/javascript">
+/*
+ * 一共有4类新闻：宰客新闻，旅游安全，宰客实录和政策更新，分别对应的名称是/zaike/news_000001, /safe/safe_000001, /shilu/shilu_000001, /rule/rule_000001。
+ * 一共有3类表情系统：宰客（zaike），支持（support），态度（attitude），分别用于表示宰客程度，大众支持程度和类似新浪表情符号表达。
+ * 因此应该根据新闻的内容和标题来决定使用哪个表情系统。 
+ * 一条新闻的诞生需要以下一些步骤，既然使用copy-modify的方式来产生：
+ * 1. 找到该新闻，觉得有价值后，首先决定该划分进入哪个新闻类别。这样就可以起相应的名称，比如正式的第一个宰客新闻就（内部）起名为news_000001；
+ * 2. 在新闻主页（newsindex.html）和旅游新闻汇总页面（zaikenews.html）分别加入该新闻的链接，也许会加在新闻主页的头条或者某个图片显示中；
+ * 3. 如果需要，在宰客榜主页加到新闻显示或者图片显示区域。至此，所有需要添加链接的HTML页面已经就绪；
+ * 4. 从模板页中拷贝并且改为现用名；
+ * 5. 根据其新闻类别和表情系统分类修改：变量news_name， ../newsAction!get***Count， ../newsAction!express*** 以及发送的变量
+ * {***:$(this).val()..}根据三种表情类型， 生成图表的ticks描述。就完成了涉及ajax表情系统程序的修改；
+ * 6. 接下来是html格式和内容部分的修改。修改网页标题， div main部分的位置标题信息，图片，新闻来源，日期，编辑等实质内容。
+ * 以及根据选择的表情系统，修改div express的输入内容；
+ * 7. 使用后台或者前台网页管理端在数据库中三个表express_zaike express_attitude express_support中对选中的那个添加名称为
+ * zaike(attitude or support)+news_name的一项，代表其表情，完毕！后台管理端使用ExpressZaike(Support,Attitude)AdminServiceTest中的一个添加。
+ */
+ 
+//此处名称，遵循这个规范：宰客新闻，旅游安全，宰客实录和政策更新，对应news_000001, safe_000001, shilu_000001, rule_000001。
+var news_name = "news_000002";
+$(function() {
+	//set default comment hint
+	$("#comment").val("请在这里发表您的评论，谢谢");
+	$("#comment").select();
+	$("#comment").click(checkdefault);
+	$("#comment").focusin(checkdefault);
+	
+	//allow #innerscroll1 (in thanscroll) to dynamically scroll
+	$('#innerscroll1').bxSlider({
+		auto: true,
+		autoHover: true,
+		margin: 70,
+	    controls: false,
+	    pause: 15000,
+	    speed: 5000,
+	    pager: false
+	});
+	
+	//show the hint if the support express is voted!
+	if($(":input[type=radio]").attr("disabled") =="disabled"){
+		$("#info1").html("您已经表达过您的支持了");		
+	}
+		
+	/*
+	 * 根据三种表情系统，此处宰客表情应该用getZaikeCount，支持表情应该用getSupportCount，态度表情应该用getAttitudeCount
+	 */
+	$.post("../../newsAction!getZaikeCount", {"name":news_name},function(returnedData,status){
+		if("success" == status){
+			$("#total").html(returnedData);
+		}
+	}); 
+	
+	/*
+	 * when the window is loaded, show the comments for this news
+	 */
+	$.post("../../newsAction!getNewsComments", {"name":news_name}, function(returnedData,status) {
+		if ("success" == status) {
+			var result = eval(returnedData);
+			
+			$("#content").html("");
+			for ( var index in result) {
+				var c = result[index];
+				//$("#content").prepend("<tr align='center'><td width='10%' bgcolor='#9ff'>" + c.nickname + "</td><td width='70%' bgcolor='#cff'>" + c.comment+ "</td><td bgcolor='#fcf'>" + c.commentDate + "</td>");
+				var nn = c.nickname;
+				if("" == nn)
+					nn = "空";
+				$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + c.comment +"</div><div class='date'>" + c.commentDate + "</div></div>");
+			}
+						
+			//how much items per page to show
+			var show_per_page = 10; 
+			//getting the amount of elements inside content div
+			var number_of_items = $('#content').children().size();
+			//calculate the number of pages we are going to have
+			var number_of_pages = Math.ceil(number_of_items/show_per_page);
+			
+			//set the value of our hidden input fields
+			$('#current_page').val(0);
+			$('#show_per_page').val(show_per_page);
+			
+			//now when we got all we need for the navigation let's make it '
+			
+			/* 
+			what are we going to have in the navigation?
+				- link to previous page
+				- links to specific pages
+				- link to next page
+			*/
+			//var navigation_html = '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var navigation_html = '<a class="first_link" href="javascript:go_to_page(0);">第一页</a>' + '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var current_link = 0;
+			while(number_of_pages > current_link){
+				navigation_html += '<a class="page_link" href="javascript:go_to_page(' + current_link +')" longdesc="' + current_link +'">'+ (current_link + 1) +'</a>';
+				current_link++;
+			}
+			//navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>';
+			navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>' + '<a class="first_link" href="javascript:go_to_page(' + (number_of_pages-1) + ');">最后一页</a>';
+			
+			$('#page_navigation').html(navigation_html);
+			
+			//add active_page class to the first page link
+			$('#page_navigation .page_link:first').addClass('active_page');
+			
+			//hide all the elements inside content div
+			$('#content').children().css('display', 'none');
+			
+			//and show the first n (show_per_page) elements
+			$('#content').children().slice(0, show_per_page).css('display', 'block');
+		}
+	});
+	
+	//2. register click event on #btn to add comment on this news
+	$("#btn").click(function() {
+		if($("#comment").val() == "" || $("#comment").val() == "请在这里发表您的评论，谢谢"){//simple validation with empty or default condition
+			$("#commentSpan").html("<p><b>评论不能为空</b></p>");
+			return false;		
+		}else{//submit the json object {nickname,comment}
+			$("#commentSpan").html("<p>谢谢您的评论</p>");
+			$.post("../../newsAction!addNewsComment", {"name":news_name, "nickname":encodeURI($("#nickname").val()),"comment":encodeURI($("#comment").val())}, 
+				function(returnedData,status) {
+					if ("success" == status){
+						//$("#content").prepend($("#comment").val() + "<br/>");  //insert the new comment firstly;
+						var nn = $("#nickname").val();
+						if("" == nn)
+							nn = "空";
+						$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + $("#comment").val() +"</div><div class='date'>" 
+						+ new Date().toLocaleString() + "</div></div>");
+						$("#commentSpan").html("");
+					}
+				});
+			$(this).attr("disabled","disabled");
+		}			
+	});
+	
+	/*
+	 * bind the click event to each radio box to vote the express zaike or attitude or support on this news
+	 */
+	$(":input[type=radio]").click(function() {
+		//1. if any radio box is selected, disable all;
+		$(":input[type=radio]").attr("disabled","disabled"); 
+		//1.5 increment the total support count
+		$("#total").html(parseInt($("#total").html()) + 1);
+		//2.show chart1 div
+		$("#info1").html("");
+		$("#chart1").show();
+		$("#chart1").html("请稍候...");
+		//3.pass the user choice to action via ajax post() method
+		//根据三种表情系统，此处宰客表情应该用expressZaike，变量zaike；支持表情应该用expressSupport，变量support;
+		//态度表情应该用expressAttitude，变量attitude
+		$.post("../../newsAction!expressZaike", {zaike:$(this).val(),"name":news_name}, function(returnedData,status) {
+			if ("success" == status) {
+				$("#chart1").html("");
+				var result = eval(returnedData);
+				temp = result;
+				//4. define plot element to be shown
+				$.jqplot.config.enablePlugins = true;
+				//根据新闻的性质，决定这里图标的显示文字内容
+				var ticks = ['愤怒', '遗憾', '中立', '无聊', '可笑'];
+			    //5. draw the plot 
+			    plot1 = $.jqplot('chart1', [result], {
+			        // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
+			        animate: !$.jqplot.use_excanvas,
+			        seriesDefaults:{
+			            renderer:$.jqplot.BarRenderer,
+			            pointLabels: { show: true }
+			        },
+			        axes: {
+			            xaxis: {
+			                renderer: $.jqplot.CategoryAxisRenderer,
+			                ticks: ticks
+			            }
+			        },
+			        highlighter: { show: false }
+			    });			 	
+			}
+		});
+	});
+});
+
+//used for default comment hint
+function checkdefault() {
+	var txt = $(this).val();  //the current text in the area
+	if(txt == "请在这里发表您的评论，谢谢")
+		$(this).val("");
+	$(this).focusout(retdefault);	
+}
+//used for default comment hint
+function retdefault(){
+	var txt = $(this).val();
+	if(txt == ""){
+		$(this).val("请在这里发表您的评论，谢谢");
+		$(this).select();
+	}		
+	$(this).click(checkdefault);
+	$(this).focusin(checkdefault);
+}
+
+function previous(){
+	
+	new_page = parseInt($('#current_page').val()) - 1;
+	//if there is an item before the current active link run the function
+	if($('.active_page').prev('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function next(){
+	new_page = parseInt($('#current_page').val()) + 1;
+	//if there is an item after the current active link run the function
+	if($('.active_page').next('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function go_to_page(page_num){
+	//get the number of items shown per page
+	var show_per_page = parseInt($('#show_per_page').val());
+	
+	//get the element number where to start the slice from
+	start_from = page_num * show_per_page;
+	
+	//get the element number where to end the slice
+	end_on = start_from + show_per_page;
+	
+	//hide all children elements of content div, get specific items and show them
+	$('#content').children().css('display', 'none').slice(start_from, end_on).css('display', 'block');
+	
+	/*get the page link that has longdesc attribute of the current page and add active_page class to it
+	and remove that class from previously active page link*/
+	$('.page_link[longdesc=' + page_num +']').addClass('active_page').siblings('.active_page').removeClass('active_page');
+	
+	//update the current page input field
+	$('#current_page').val(page_num);
+};
+</script>
+</head>
+
+<body>
+<div id="header">
+  <iframe src="../../header.html" width=980 height=91 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="nav">
+  <iframe src="../../nav.html" width=980 height=40 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="primary">
+  <div id="baike">
+    <iframe src="../../baike.html" width=120 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+  <div id="main">
+   <div id="location"><a name="articletop"></a>您的位置： <a href="../../index.html">旅游宰客榜首页</a> 》》<a href="../newsindex.html">新闻</a> 》》45万自驾车涌入厦门 停车场宰客5元/小时变成一口价30元</div>
+   <div id="newstitle"><h2>45万自驾车涌入厦门 停车场宰客5元/小时变成一口价30元</h2></div><!-- 新闻的标题应该写在此处以及上一行末尾 -->
+   <div id="resource">
+   		文章来源：厦门网 于 2012-10-04   本网站新闻取自各大新闻媒体，新闻内容并不代表本网站立场！
+   		<table border="0">
+			<tr align="center" valign="middle">
+			<td align="center">
+				<!-- 新浪关注 -->
+				<iframe width="63" height="24" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0" scrolling="no" border="0" src="http://widget.weibo.com/relationship/followbutton.php?language=zh_cn&width=63&height=24&uid=1782515283&style=1&btn=red&dpc=1"></iframe>
+			</td>
+			<td align="center">
+				<!-- 人人喜欢 -->
+				<script type="text/javascript" charset="utf-8">
+					(function(){
+						var p = [], w=92, h=24,
+						lk = {
+						url:'http://www.lyzk.org'||location.href, /*喜欢的URL(不含如分页等无关参数)*/
+						title:'旅游宰客榜'||document.title, /*喜欢标题(可选)*/
+						description:'', /*喜欢简介(可选)*/
+						image:'' /*喜欢相关图片的路径(可选)*/
+						};
+						for(var i in lk){
+							p.push(i + '=' + encodeURIComponent(lk[i]||''));
+						}
+						document.write('<iframe scrolling="no" frameborder="0" allowtransparency="true" src="http://www.connect.renren.com/like/v2?'+p.join('&')+'" style="width:'+w+'px;height:'+h+'px;"></iframe>');
+					})();
+				</script>
+			</td>
+			<td align="center">
+				<!-- 人人关注 -->
+				<iframe scrolling="no" frameborder="0" allowtransparency="true" src="http://widget.renren.com/plugin/followbutton?page_id=601522402&color=0&model=0" style="width:78px;height:24px;" ></iframe>
+			</td>
+			<td align="center">
+				<!-- 开心转贴 -->
+				<script src="http://rest.kaixin001.com/api/Repaste_js.php" type="text/javascript"></script>
+				<div id="kx001_btn_repaste" style="margin: 0px; padding: 0px"></div>
+				<script type="text/javascript">
+					KX001_REPASTE_LINK.init(2,"转帖");
+				</script>
+			</td>
+			<td align="center">
+				<!-- 开心赞 -->
+				<iframe allowTransparency='true'  id='like_view' frameborder='0' scrolling='no' marginheight='0' marginwidth='0' hspace='0' vspace='0' style='height:24px;width:65px;' src='http://www.kaixin001.com/like/like.php?url=http%3A%2F%2Fwww.lyzk.org&show_faces=false'></iframe>
+			</td>
+			<td align="center">
+				<!-- qq赞 -->
+				<a version="1.0" class="qzOpenerDiv" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_likeurl" target="_blank">赞</a>
+				<script  src="http://qzonestyle.gtimg.cn/qzone/app/qzlike/qzopensl.js#jsdate=20110603&style=3&showcount=1&width=87&height=24" charset="utf-8" defer="defer" ></script>
+			</td>
+			</tr>
+		</table>
+   </div>
+   <div id="list"><!-- 此处是新闻内容，图片什么的，可以放在中间 -->
+   		<br/>
+   		
+   		   		
+   		<p align="center"><img src="../../images/news/news_000002_001.jpg" border="0" /></p>
+   		<p>厦门网讯 据海峡导报10月3日报道 （记者 詹文 崔晓旭 见习记者 陈思亲/文 吴晓平/图）8天长假，厦门开辟了一些临时停车场应对45万自驾游大军。哪知道，竟有停车场坐地起价，喊出“30元”！</p>
+		<p>景区附近的停车场爆满，以致某些停车场漫天要价，宰起客来。
+		昨天和前天，导报记者连续走访了岛内多个临时停车场发现，“有的 ‘撑死’，有的‘饿着’”。景区附近停车场，爆满、车位紧张；一些略偏僻的停车场，放眼望去，车子却没几辆。</p>
+		<p>乱象1 宰客 5元/小时变成一口价30元</p>
+		<p>“政府的车来也是这个价”</p>
+		<p>停车费，原本5元/小时，这个黄金周，在第一码头附近的一处停车场，变成了一口价——— 30元。
+		昨天上午，鹭江道堵车，导报记者将车子停在离轮渡最近的停车场，第一码头附近。
+		停好车，熄火、下车。
+		“多少钱？”导报记者问道。
+		“30元。”一停车场收费男，手拿发票答道。
+		“这么贵？”
+		“就这个价，政府的车来，也是这个价格。你要停多久？”
+		“我们到轮渡码头采访，很快就走。”
+		“那20元。”
+		导报记者和停车收费男辩解了几句，问“谁规定这个收费标准？”
+		“收你10块钱，最低了。”
+		导报记者未同意这个价格，停车收费男说：“那你不要停这里了。”说罢，摆手示意，让导报记者驶离该停车场。
+		导报记者上车后，车子还未开出停车场。只见远处，一女子慌慌张张跑来，拦住了导报记者的车。
+		“你停在这里吧，收5块钱。他是临时工，新来的，不知道收费标准。”该女子解释道。
+		“一开口就是30元，也太能宰人了吧。”导报记者说。
+		“不好意思，不好意思，他是临时工，不懂。”该女子继续辩解道，并一直让导报记者把车子停在这里，最后竟说不收钱，免费停车。</p>
+		<p>多数车主被“一口价”</p>
+		<p>导报记者了解到，这是一处临时停车场，为了黄金周专门开辟的。沙土路，停车位是临时用一些旧布条或塑料条贴在地面上的。停车场内，除了一些泉州、漳州、莆田及浙江牌照的小车外，还有不少是厦门本地牌照的私家车。
+　　在停车场门口，导报记者拦下几位私家车主，询问其停车费交了多少钱。
+　　“30元，没办法，找不到停车位。”一外地车主很无奈地抱怨。
+　　“收了我20元，估计看我是厦门牌照的车吧。”一厦门车主说。 
+		</p>
+		<p>乱象2 乱停车 大巴拦路“一个也别想走”</p>
+		<p>身形硕大的旅游大巴强势 “拦截”路口，停车场被封得严严实实，颇有点“此路是我开”、“我爱怎么停，就怎么停”的气势。
+　　私家车主们焦急万分，找不到大巴车主，自己的车只能被困在里面。情急之下，只有求救110。
+　　前天14时，这一幕发生在理工学院门口的停车场。
+　　理工学院门口，有一块空地，场地不大，只能停放小型车辆。但一辆旅游大巴，不走寻常路，一个强势横卧，把众小车拦截在里面。
+　　“哪有这么蛮横停车的。”大家议论纷纷，无奈之下，车主们只好报警。几经周折，联系到大巴车主，10分钟后，其赶到现场，将大巴开离。
+　　据了解，这辆旅游大巴是到南普陀和厦大一带旅游的。双节期间车流量巨大，停车场紧张，看到这有一个“空地”，大巴车主就见缝插针，将车停在此处。 
+		</p>
+		<p>记者观察　有的“撑死”，有的“饿着”
+		</p>
+		<p>景区附近停车场，爆满、车位紧张；一些略偏僻的停车场，放眼望去，车子没几辆。
+　　昨天，导报记者来到海湾公园停车场、胡里山东侧临时停车场和华侨博物院对面的思明小学临时停车场，发现这几个停车场，没有乱收费的现象，均按时收费。
+　　胡里山东侧临时停车场，位置醒目，加之停车场靠近热门景点胡里山炮台，因此前来这里停放的私家车络绎不绝。
+　　“满了、满了，没有车位了。”停车场工作人员大声喊道。无奈，不少车主只能继续在环岛路上寻找停车位。
+　　根据收费标准，在这里停车4小时以内，小型车5元、大型车10元；超过4小时，小型车每小时加1元，大型车加2元。晚上6点钟，停车场关闭。
+　　相比胡里山东侧临时停车场，海湾公园停车场就略显冷清了。偌大的停车场，可以停靠400多辆小型车、60辆大型车，但导报记者放眼望去，空空一片，停靠在此的小车不足30辆。
+　　“许多外地车主对厦门情况不熟，比较偏僻的临时停车场，他们不知道。”一位导游建议，有关部门要进一步加强宣传告知，“要不然，有的‘撑死’，有的‘饿着’”。
+		</p>
+		<br/>
+		<br/>
+		<br/>
+		<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+		<br/>
+		<div id="editor">责任编辑：harry</div>
+		<div id="bottomshare">
+			<div class="jiathis_style">
+				<span class="jiathis_txt">分享到：</span>
+				<a class="jiathis_button_qzone">QQ空间</a><a class="jiathis_button_tsina">新浪微薄</a>
+				<a class="jiathis_button_tqq">腾讯微薄</a><a class="jiathis_button_renren">人人网</a>
+				<a class="jiathis_button_kaixin001">开心网</a><a class="jiathis_button_tsohu">搜狐微博</a>
+				<a class="jiathis_button_feixin">飞信</a><a class="jiathis_button_douban">豆瓣</a>
+				<a class="jiathis_button_fb">Facebook</a><a class="jiathis_button_tieba">百度贴吧</a>
+				<a class="jiathis_button_tianya">天涯社区</a>	<a class="jiathis_button_twitter">Twitter</a>
+				<a class="jiathis_button_googleplus">Google+</a><a class="jiathis_button_t163">网易微博</a>
+				<a class="jiathis_button_xiaoyou">朋友网</a><a class="jiathis_button_mop">猫扑推客</a>
+				<a class="jiathis_button_tifeng">凤凰微博</a>	<a class="jiathis_button_gmail">Gmail邮箱</a>
+			
+				<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+				<a class="jiathis_counter_style"></a>
+			</div>
+			<script type="text/javascript" >
+				var jiathis_config={
+					boldNum:15,
+					siteNum:15,
+					sm:"taobao,hi,meilishuo,51,sohu,tpeople,189share,huaban,ifensi,hexun,ydnote,ymail,hotmail,tyaolan,toeeee",
+					summary:"",
+					hideMore:false
+				}
+			</script>
+			<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+			<!-- JiaThis Button END -->
+		</div>				
+	</div>
+	
+	<!-- 根据选择的表情系统，修改div express的输入内容。也必须根据文章内容修改5项文字表达，必须和生成图的ticks内容一致
+	分别在以下5项输入项的name和value处替换为：宰客表情 zaike 支持表情 support 态度表情 attitude
+	-->
+	<div id="express">
+		<b>民意小测验：</b>
+		<label>厦门景区的停车场这么胡作非为，您的态度是？请选择下面的一项表个态吧</label> 
+		<br /> 
+		<input type="radio" name="zaike" value="zaike1" />愤怒
+		<input type="radio" name="zaike" value="zaike2" />遗憾
+		<input type="radio" name="zaike" value="zaike3" />中立
+		<input type="radio" name="zaike" value="zaike4" />无聊
+		<input type="radio" name="zaike" value="zaike5" />可笑
+		<br />
+		<br />
+		&nbsp;已经有<label id="total"></label>个表态了
+		<div id="info1"></div>
+	</div>
+	<div id="chart1"></div>
+	<br /> 
+	<div id="innercomment">
+		<h3>请发表您的意见：</h3><br />
+		<input type='hidden' id='current_page' /> 
+		<input type='hidden' id='show_per_page' />
+		<table>
+			<tr><td>昵称(可选):</td><td><input type="text" id="nickname" name="nickname" size="12" maxlength="12"/></td></tr>
+			<tr><td>评论:（限200字）</td><td><textarea rows="10" cols="75" id="comment" name="comment" maxlength="200"></textarea></td></tr>
+			<tr><td><input id="btn" type="button" value="发表评论" /></td><td><span id="commentSpan"></span></td></tr>
+		</table>			 
+		<br />
+	现有评论如下：
+		<br/>
+		<table>
+			<tr align="center"><td width="50px">用户名</td><td width="610px">评论</td><td>日期</td></tr>
+		</table>			
+	</div>
+	<br />
+	<div id="content">评论正在加载中，请稍候</div>
+	<div id='page_navigation'></div>
+  </div>
+  <div id="right">
+    <iframe src="../../right.html" width=90 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+</div>
+<div id="footer">
+  <iframe src="../../footer.html" width=980 height=70 frameborder="0" scrolling="no"></iframe>
+</div>
+</body>
+</html>

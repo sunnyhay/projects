@@ -1,0 +1,694 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>公园对比榜</title>
+
+<script type="text/javascript" src="../jslib/jquery-1.7.2.js"></script>
+<script type="text/javascript" src="../jslib/jquery.bxslider2.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.easing.1.3.min.js"></script>
+<script type="text/javascript" src="../jslib/jquery.jqplot.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.barRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.categoryAxisRenderer.min.js"></script>
+<script type="text/javascript" src="../jslib/jqplot.pointLabels.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../style/jquery.jqplot.css" />
+<link rel="stylesheet" type="text/css" href="../style/style2.css" />
+<link rel="stylesheet" type="text/css" href="../style/individual.novote.css" />
+<link rel="stylesheet" type="text/css" href="../style/search.css" />
+
+<script type="text/javascript">
+$(function() {
+	//set default comment hint
+	$("#comment").val("请在这里发表您的评论，谢谢");
+	$("#comment").select();
+	$("#comment").click(checkdefault);
+	$("#comment").focusin(checkdefault);
+	
+	//allow #innerscroll1 (in thanscroll) to dynamically scroll
+	$('#innerscroll1').bxSlider({
+		auto: true,
+		autoHover: true,
+		margin: 70,
+	    controls: false,
+	    pause: 15000,
+	    speed: 5000,
+	    pager: false
+	});
+		
+	//show the hint if the support express is voted!
+	if($(":input[type=radio]").attr("disabled") =="disabled"){
+		$("#info1").html("您已经表达过您的支持了");		
+	}
+	
+	/*
+	 * when the window is loaded, show the comments for park list
+	 */
+	$.post("../parkListAction!getExpressCount", {},function(returnedData,status){
+		if("success" == status){
+			$("#totalzaike").html(returnedData);
+		}
+	});
+	
+	/*
+	 * when the window is loaded, show the comments for park list
+	 */
+	$.post("../parkListAction!getParkComments", {}, function(returnedData,status) {
+		if ("success" == status) {
+			var result = eval(returnedData);
+			
+			$("#content").html("");
+			for ( var index in result) {
+				var c = result[index];
+				//$("#content").prepend("<tr align='center'><td width='10%' bgcolor='#9ff'>" + c.nickname + "</td><td width='70%' bgcolor='#cff'>" + c.comment+ "</td><td bgcolor='#fcf'>" + c.commentDate + "</td>");
+				var nn = c.nickname;
+				if("" == nn)
+					nn = "空";
+				$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + c.comment +"</div><div class='date'>" + c.commentDate + "</div></div>");
+			}
+						
+			//how much items per page to show
+			var show_per_page = 10; 
+			//getting the amount of elements inside content div
+			var number_of_items = $('#content').children().size();
+			//calculate the number of pages we are going to have
+			var number_of_pages = Math.ceil(number_of_items/show_per_page);
+			
+			//set the value of our hidden input fields
+			$('#current_page').val(0);
+			$('#show_per_page').val(show_per_page);
+			
+			//now when we got all we need for the navigation let's make it '
+			
+			/* 
+			what are we going to have in the navigation?
+				- link to previous page
+				- links to specific pages
+				- link to next page
+			*/
+			//var navigation_html = '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var navigation_html = '<a class="first_link" href="javascript:go_to_page(0);">第一页</a>' + '<a class="previous_link" href="javascript:previous();">前一页</a>';
+			var current_link = 0;
+			while(number_of_pages > current_link){
+				navigation_html += '<a class="page_link" href="javascript:go_to_page(' + current_link +')" longdesc="' + current_link +'">'+ (current_link + 1) +'</a>';
+				current_link++;
+			}
+			//navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>';
+			navigation_html += '<a class="next_link" href="javascript:next();">后一页</a>' + '<a class="first_link" href="javascript:go_to_page(' + (number_of_pages-1) + ');">最后一页</a>';
+			
+			$('#page_navigation').html(navigation_html);
+			
+			//add active_page class to the first page link
+			$('#page_navigation .page_link:first').addClass('active_page');
+			
+			//hide all the elements inside content div
+			$('#content').children().css('display', 'none');
+			
+			//and show the first n (show_per_page) elements
+			$('#content').children().slice(0, show_per_page).css('display', 'block');
+		}
+	});
+	
+	//2. register click event on #btn to add comment on park_comment
+	$("#btn").click(function() {
+		if($("#comment").val() == "" || $("#comment").val() == "请在这里发表您的评论，谢谢"){//simple validation with empty or default condition
+			$("#commentSpan").html("<p><b>评论不能为空</b></p>");
+			return false;		
+		}else{//submit the json object {nickname,comment}
+			$("#commentSpan").html("<p>谢谢您的评论</p>");
+			$.post("../parkListAction!addParkComment", {"nickname":encodeURI($("#nickname").val()),"comment":encodeURI($("#comment").val())}, 
+				function(returnedData,status) {
+					if ("success" == status){
+						//$("#content").prepend($("#comment").val() + "<br/>");  //insert the new comment firstly;
+						var nn = $("#nickname").val();
+						if("" == nn)
+							nn = "空";
+						$("#content").prepend("<div class='component'><div class='nick'>" + nn + 
+						"</div><div class='comment'>" + $("#comment").val() +"</div><div class='date'>" 
+						+ new Date().toLocaleString() + "</div></div>");
+						$("#commentSpan").html("");
+					}
+				});
+			$(this).attr("disabled","disabled");
+		}			
+	});
+	
+	/*
+	 * bind the click event to each radio box to vote the express support on this park list
+	 */
+	$(":input[type=radio]").click(function() {
+		//1. if any radio box is selected, disable all;
+		$(":input[type=radio]").attr("disabled","disabled"); 
+		//1.5 increment the total support count
+		$("#totalzaike").html(parseInt($("#totalzaike").html()) + 1);
+		//2.show chart1 div
+		$("#info1").html("");
+		$("#chart1").show();
+		$("#chart1").html("请稍候...");
+		//3.pass the user choice to action via ajax post() method
+		$.post("../parkListAction!express", {support:$(this).val()}, function(returnedData,status) {
+			if ("success" == status) {
+				$("#chart1").html("");
+				var result = eval(returnedData);
+				temp = result;
+				//4. define plot element to be shown
+				$.jqplot.config.enablePlugins = true;
+			    var ticks = ['完全支持', '支持', '中立', '不太支持', '不支持'];
+			    //5. draw the plot 
+			    plot1 = $.jqplot('chart1', [result], {
+			        // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
+			        animate: !$.jqplot.use_excanvas,
+			        seriesDefaults:{
+			            renderer:$.jqplot.BarRenderer,
+			            pointLabels: { show: true }
+			        },
+			        axes: {
+			            xaxis: {
+			                renderer: $.jqplot.CategoryAxisRenderer,
+			                ticks: ticks
+			            }
+			        },
+			        highlighter: { show: false }
+			    });			 	
+			}
+		});
+	});
+});
+
+//used for default comment hint
+function checkdefault() {
+	var txt = $(this).val();  //the current text in the area
+	if(txt == "请在这里发表您的评论，谢谢")
+		$(this).val("");
+	$(this).focusout(retdefault);	
+}
+//used for default comment hint
+function retdefault(){
+	var txt = $(this).val();
+	if(txt == ""){
+		$(this).val("请在这里发表您的评论，谢谢");
+		$(this).select();
+	}		
+	$(this).click(checkdefault);
+	$(this).focusin(checkdefault);
+}
+
+function previous(){
+	
+	new_page = parseInt($('#current_page').val()) - 1;
+	//if there is an item before the current active link run the function
+	if($('.active_page').prev('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function next(){
+	new_page = parseInt($('#current_page').val()) + 1;
+	//if there is an item after the current active link run the function
+	if($('.active_page').next('.page_link').length==true){
+		go_to_page(new_page);
+	}	
+};
+
+function go_to_page(page_num){
+	//get the number of items shown per page
+	var show_per_page = parseInt($('#show_per_page').val());
+	
+	//get the element number where to start the slice from
+	start_from = page_num * show_per_page;
+	
+	//get the element number where to end the slice
+	end_on = start_from + show_per_page;
+	
+	//hide all children elements of content div, get specific items and show them
+	$('#content').children().css('display', 'none').slice(start_from, end_on).css('display', 'block');
+	
+	/*get the page link that has longdesc attribute of the current page and add active_page class to it
+	and remove that class from previously active page link*/
+	$('.page_link[longdesc=' + page_num +']').addClass('active_page').siblings('.active_page').removeClass('active_page');
+	
+	//update the current page input field
+	$('#current_page').val(page_num);
+};
+</script>
+</head>
+
+<body>
+<div id="header">
+  <iframe src="../header.html" width=980 height=91 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="nav">
+  <iframe src="../nav.html" width=980 height=40 frameborder="0" scrolling="no"></iframe>
+</div>
+<div id="primary">
+  <div id="baike">
+    <iframe src="../baike.html" width=120 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+  <div id="main">
+    <div id="location"><a name="articletop">您的位置</a>： <a href="../index.html">旅游宰客榜首页</a> 》》<a href="../commonlist/listindex.html">旅游宰客榜</a> 》》公园对比榜</div>
+    <div id="list">
+		<h2 align="center">公园对比榜</h2>
+		<div id="share">
+			<!-- JiaThis Button BEGIN -->
+			<div class="jiathis_style">
+				<span class="jiathis_txt">分享到：</span>
+				<a class="jiathis_button_qzone" /><a class="jiathis_button_tsina" />
+				<a class="jiathis_button_tqq" /><a class="jiathis_button_renren" />
+				<a class="jiathis_button_kaixin001" /><a class="jiathis_button_tsohu" />
+				<a class="jiathis_button_feixin" /><a class="jiathis_button_douban" />
+				<a class="jiathis_button_fb" /><a class="jiathis_button_tieba" />
+				<a class="jiathis_button_tianya" /><a class="jiathis_button_twitter" />
+				<a class="jiathis_button_googleplus" /><a class="jiathis_button_t163" />
+				<a class="jiathis_button_xiaoyou" /><a class="jiathis_button_mop" />
+				<a class="jiathis_button_tifeng" /><a class="jiathis_button_gmail" />
+				
+				<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+				<a class="jiathis_counter_style"></a>
+			</div>
+			<script type="text/javascript" >
+			var jiathis_config={
+				boldNum:15,
+				siteNum:15,
+				sm:"taobao,hi,meilishuo,51,sohu,tpeople,189share,huaban,ifensi,hexun,ydnote,ymail,hotmail,tyaolan,toeeee",
+				summary:"",
+				hideMore:false
+			}
+			</script>
+			<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+			<!-- JiaThis Button END -->
+		</div>
+		<div id="intro">
+			<table border="0" style="color: #060606;" cellspacing="0" cellpadding="0">
+				<tr align="center">
+					<td>前往其他榜单：</td>
+					<td><a href="../commonlist/city.html">国内城市榜&nbsp&nbsp</a></td>
+					<td><a href="../commonlist/resort.html">国内景区榜&nbsp&nbsp</a></td>
+					<td><a href="../commonlist/intercity.html">海外国家榜&nbsp&nbsp</a></td>
+					<td><a href="../commonlist/interresort.html">海外景区榜&nbsp&nbsp</a></td>
+					<td><a href="hill.html">名山宰客榜&nbsp&nbsp</a></td>
+					<td><a href="temple.html">烧香拜佛榜&nbsp&nbsp</a></td>
+					<td><a href="museum.html">博物馆榜&nbsp&nbsp</a></td>
+					<td><a href="roadfee.html">过路费榜&nbsp&nbsp</a></td>
+				</tr>
+			</table>
+			<br/>
+			<p>目前对比两类公园：地质公园和皇家园林。以后有机会我们会对比植物园，城市休闲公园，动物园，主题公园等。
+				欢迎大家<a href="mailto:lyzk.org@gmail.com">联系我们</a>或者发表评论（页面最下面），提供您的建议和意见，丰富完善公园对比榜。</p>
+			<p>首先对比地质公园。目前越来越多的游客倾向于自驾车前往著名景点（不仅仅是地质公园）游览，因此地质公园的对比主题之一是自驾车花费。</p>
+			<p>每个地质公园都有自己的特色，每位游客也有自己的欣赏标准。对于地质公园，我们通过简介大概了解该公园的特色，还会简要提到该公园的宰客风险和和旅游安全。</p>
+			<p>自驾游花费主要由门票、路途油费、停车费和吃住费用构成。公园门票和园内（周围）停车费相对固定，油费和吃住费用取决于游客的车型、当地油价、吃住标准和等级，没有一个统一的标准来比较。</p>
+			<p>因此我们使用一个简单的比较方式：找出两个距离该公园较近的大中城市，以该城市每周人均收入作为统计的分母，以（一天门票+一天停车费+100公里油费）为分子，
+			   除下来的结果代表一个临近城市居民在该公园一天游览费用占每周收入的百分比。不包括路途中消耗的油费，是因为城市距离公园有远有近，难以比较，
+			   所以假定游客前往公园或者在公园内驾车至少100公里，以100公里产生的油费作为标准。</p>
+			<p>使用上海通用雪佛兰景程1.8L手自一体汽车作为标准车辆，该车网友油耗均值9.88升每100公里【参考1】，即0.0988升每公里，那么100公里的油耗就是9.88升；汽油价格为2012年9月27日该城市（中国最低，美国平均）油价。
+			   公园内汽油价格肯定比外面高，假定该游客车辆在出发城市灌满了油，无需中途加油。</p>
+			<p>很遗憾无法找到权威的中国人均国民收入(per capita person income)，只能以人均国内生产总值（gross domestic product per capita）代替中国的居民年平均收入；
+			   美国是以年人均国民收入代表居民年平均收入，引用年份为2010年度。需要注意的是，国民收入是国内生产总值的一个组成部分，因此小于国内生产总值。
+			   一般而言，人均可支配收入 小于 人均国民收入 小于 人均国内生产总值。除以52即为每周平均收入。中国城市油价信息来源于【参考2】，
+				使用93号本周城市最低价汽油；美国城市油价来源于【参考3】，使用87号当日城市平均价汽油。美国的汽油容积单位是加仑，每加仑约等于3.785升。
+			</p>
+			<p>地质公园比较三对：世界知名国家公园两对（庐山对黄石公园，九寨沟对加州优胜美地公园），国家驰名国家公园一对（雁荡山对缅因州阿卡迪亚公园）。
+			   重点关注的部分是门票、停车费和收入比重，分别用紫色、黄色和红色字体标明。收入比重是三对地质公园比较中最重要的衡量参数，代表一天游览该公园的核心费用（门票+停车费+百公里油费）
+			   占居民周收入的比重，直观反映居民的旅游品质！</p>
+			<p>希望在其他国家生活或者学习或者旅游过的中国游客提供其他对比实例，在此诚挚感谢。</p>
+			【<a href="http://data.auto.qq.com/car_serial/178/fuelcost.shtml"  target="_blank">参考1</a>,
+			 <a href="http://www.liche365.com/Fee_DayOilTrend.php" target="_blank">参考2</a>，
+			 <a href="http://gasbuddy.com/GB_Price_List.aspx" target="_blank">参考3</a>，】
+		</div>
+		</div>
+		<div class="pic" id="firstpic">
+			<img align="left" src="../images/lists/list_park_lushan.jpg" width="375" height="240" 
+					title="庐山"  alt="黄石" />
+			<img align="right" src="../images/lists/list_park_yellowstone.jpg" width="375" height="240" 
+					title="庐山"  alt="黄石" />
+		</div>
+		<div class="pair" id="firstpair">
+			<br/>
+			<br/>
+			<center>左图为庐山胜景，右图为黄石某个间歇泉</center>
+			<br/>
+			<br/>
+			<table border="1" style="color: navy;" cellspacing="0" cellpadding="0">
+				<tr align="center"><td width="28px">地质公园</td><td>庐山</td><td>黄石</td></tr>
+				<tr align="center"><td>简介</td>
+								<td>匡庐奇秀甲天下山。千年来，这句名言成为中国人对庐山众口皆碑的评论。庐山奇秀，突出表现在险峰、幽谷、瀑布、云雾等类型的景观之中。庐山地质公园内发育有地垒式断块山与第四纪冰川遗迹，
+									以及第四纪冰川地层剖面和早元古代星子岩群地层剖面。迄今为止，在庐山共发现一百余处重要冰川地质遗迹，完整地记录了冰雪堆积、冰川形成、冰川运动、侵蚀岩体、搬运岩石、沉积泥砾的全过程，
+									是中国东部古气候变化和地质特征的历史记录。</td>
+								<td>yellow stone national park，世界上第一个，也是最原始最古老的国家公园。总面积8956平方公里，分五个区：西北的马默斯温泉区以石灰石台阶为主，故也称热台阶区；
+									罗斯福区，保留着老西部景观；中间为峡谷区，可观赏黄石大峡谷和瀑布；
+									东南为黄石湖区，主要是湖光山色；西及西南为间歇喷泉区，遍布间歇喷泉、温泉、蒸气、热水潭、泥地和喷气孔。有世界上最大的间歇泉集中地带，全球一半以上的间歇泉都在这里。
+									这些地热奇观是世界上最大的活火山存在的证据。黄石公园还是个野生动物保护区，栖息着北美水野牛、灰狼、棕熊、驼鹿、麋鹿、巨角岩羊、羚羊、羚牛等野生动物。黄石公园以熊为其象征。
+									园内大约有200多只黑熊，100多只灰熊，250多只狼。</td></tr>
+				<tr align="center" style="color: purple; font-size: 16px; font-weight: bold;"><td>票价</td>
+								<td>庐山：旺季180元/人，淡季135元/人;学生票：135元/人;其他一些小景区也收费，多则五六十元，少则二三十元;据说可以签票短期多次进出，无须重复购票。不过官方网站上没有详细说明。</td>
+								<td>普通车辆25美元，摩托车20美元，步行或者骑自行车游客每位（16岁以上）12美元；门票有效期7天。年票50美元（62岁以上老人10美元；盲人等残疾人免费）；还有针对军人和教育目的的免票措施</td></tr>
+				<tr align="center"  style="color: orange; font-weight: bold;" align="center"><td>停车费</td>
+								<td>通行、停车费45元/辆，交了后不管停在景区的任何地点都不用再次付费了（指定能停的地方）</td><td>无</td></tr>
+				<tr align="center"><td>附近城市</td><td>九江 南昌</td><td>科罗拉多丹佛 犹他盐湖城</td></tr>
+				<tr align="center"><td>人均收入</td>
+								<td>九江21825元每年/52周=419.71元;南昌43770元每年/52周=841.73元</td>
+								<td>丹佛46871美元每年/52周=901.37美元;盐湖城38248美元每年/52周=735.54美元</td></tr>
+				<tr align="center"><td>城市油价</td>
+								<td>九江7.25元每升；南昌7.66元每升</td><td>丹佛3.695美元/加仑=0.98美元/升；盐湖城3.740美元/加仑=0.99美元/升</td></tr>
+				<tr align="center"><td>总费用</td><td>九江淡季135+45+9.88*7.25=251.63元;南昌淡季135+45+9.88*7.66=255.68元</td>
+								<td>丹佛25美元+9.88*0.98=34.68美元；盐湖城25美元+9.88*0.99=34.78美元</td></tr>
+				<tr align="center" style="color: red; font-size: 16px; font-weight: bold;"><td>收入比重</td>
+								<td>九江251.63元/419.71元=60.0%;南昌255.68元/841.73元=30.4%</td>
+								<td>丹佛34.68美元/901.37美元=3.8%；盐湖城34.78美元/735.54美元=4.7%</td></tr>
+				<tr align="center"><td>宰客风险</td>
+								<td>作为热门旅游名山，庐山高举名山宰客榜榜首，并列烧香拜佛榜第十名！被骗被宰的风险不是一般的大，详情请参阅这两个榜单。</td>
+								<td>公园内物价比较昂贵，不过没有恶意宰客事件，可以放心游览</td></tr>
+				<tr align="center"><td>旅游安全</td>
+								<td>庐山山势险峻，盘山公路崎岖，需要小心</td>
+								<td>不要接近危险动物、也不要停留在危险的区域，许多地热地型的温度都达到沸点，而且气体可能是有毒的；发生过几起熊袭击人事件，有人为此丧生；道路状况不错，开车和停车方便</td></tr>
+			</table>
+			<br/>
+			<center>表1：庐山对黄石</center>
+			<br/>
+			<p>小结：1. 表1中，收入较高的南昌居民的收入比重是30%，意味着每周工作12个小时（法定每周工作时间40个小时），即1天半才够支付游览庐山一天的门票费用、停车费和百公里油费。</p>
+			<p>2. 收入较低的盐湖城居民的收入比重是4.7%，意味着每周工作不到2小时，就足够支付游览黄石公园一天的门票费用和百公里油费。</p>
+			<p>3. 庐山宰客风险比较高（请参阅<a href="hill.html">名山宰客榜</a>和<a href="temple.html">烧香拜佛榜</a>），
+				所以以上数据都是假定九江和南昌居民深谙庐山宰客之道，所以完全能够避开！</p>
+			<br />
+			【对比<a href="http://www.china-lushan.com/" target="_blank">参考1</a>，参考2：百度百科，
+			<a href="http://blog.sina.com.cn/s/blog_58f0a9370100bhv1.html?tj=1" target="_blank">参考3</a>，
+			<a href="http://www.51763.com/%E5%BA%90%E5%B1%B1%E6%97%85%E6%B8%B8%E6%94%BB%E7%95%A5.html" target="_blank">参考4</a>，参考5：维基百科，
+			<a href="http://www.nps.gov/yell/index.htm" target="_blank">参考6</a>】
+			<br/>
+		</div>			
+		<div class="pic" id="secondpic">
+			<img align="left" src="../images/lists/list_park_jiuzhaigou.jpg" width="375" height="240" 
+					title="九寨沟"  alt="优胜美地" />
+			<img align="right" src="../images/lists/list_park_yosimate.jpg" width="375" height="240" 
+					title="九寨沟"  alt="优胜美地" />
+		</div>
+		<div class="pair" id="secondpair">
+			<br/>
+			<br/>
+			<center>左图为九寨沟美景，右图为优胜美地瀑布</center>
+			<br/>
+			<br/>
+			<table border="1" style="color: navy;" cellspacing="0" cellpadding="0">
+				<tr align="center"><td width="28px">地质公园</td><td>九寨沟</td><td>优胜美地</td></tr>
+				<tr align="center"><td>简介</td>
+								<td>九寨沟位于四川省阿坝藏族羌族自治州九寨沟县漳扎镇，是白水沟上游白河的支沟，以有九个藏族村寨（又称何药九寨）而得名。九寨沟海拔在2000m以上，遍布原始森林，沟内分布108个湖泊，
+									有“童话世界”之誉。九寨沟景区长约六公里，面积6万多公顷，有长海、剑岩、诺日朗、树正、扎如、黑海六大景观，呈“Y”字形分布，以水景最为奇丽。</td>
+								<td>yosemite national park,是美国西部最美丽、参观人数最多的国家公园之一，与大峡谷国家公园、黄石国家公园齐名，位于加利福尼亚州东部内华达山脉。占地面积达2849平方公里。
+									公园以优胜美地溪谷为中心，峡谷内有默塞德河流过，以及一些瀑布，包括著名的优胜美地瀑布。景观中还有许多美丽的山峰，其中最著名的是船长峰，这是一个由谷底垂直向上高达1099米的花岗岩壁，
+									是世界上最高的不间断陡崖之一。公园内的地势落差极大，不断映入眼帘的山峰、峡谷、河流、瀑布，构成了山谷内鬼斧神工的雄伟景色。园内有1000多种花草植物，生长着黑橡树、雪松、黄松木，
+									还有树王巨杉等植物。著名的太平洋山脊径(Pacific Crest Trail）以及约翰·缪尔径(John Muir Trail）都从公园东部穿过。公园里形形色色的野生动物特别多，包括常见的鹿、松鼠等以及
+									比较不常见的灰熊、黑熊、山狮子、狼、狐狸等。</td></tr>
+				<tr align="center" style="color: purple; font-size: 16px; font-weight: bold;"><td>票价</td>
+								<td>旺季（4月1日至11月15日）门票220元，观光车票90元；淡季（11月16日-次年3月31日）门票80元，观光车票80元；，同时可办理二次进沟手续（需交纳20元手续费）；观光车票80元/人，次日进沟车票需另购；
+									门票半价优惠对象：18岁以下学生以及大学生；持省外省级宗教团体统一印发的皈依证等有效证件的同一宗教信教群众；60-70岁老人；残疾人士。
+									免票对象：6周岁以下或身高1.2米以下儿童；现役军人，残疾军人、离休干部；70岁以上老年人。</td>
+								<td>每车20美元，有效期7天。步行、乘坐摩托自行车、骑马的游客10美元（15岁以下免费）；年票40美元（军人免费，残疾人免费，老人10美元）</td></tr>
+				<tr align="center" style="color: orange; font-weight: bold;" align="center"><td>停车费</td>
+								<td>不额外收停车或者进山费；收费停车场，比如九寨沟沟口有荷叶停车场，收费20元/天，</td><td>无</td></tr>
+				<tr align="center"><td>附近城市</td><td>绵阳 成都</td><td>圣何塞 洛杉矶</td></tr>
+				<tr align="center"><td>人均收入</td>
+								<td>绵阳20811元/52周=400.21元;成都39518元/52周=759.96元</td><td>圣何塞 57338每年/52周=1102.65美元;洛杉矶43688每年/52周=840.15美元</td></tr>
+				<tr align="center"><td>城市油价</td>
+								<td>绵阳7.31元每升;成都7.70元每升</td><td>圣何塞4.148美元/加仑=1.10美元/升;洛杉矶4.127美元/加仑=1.07美元/升 </td></tr>
+				<tr align="center"><td>总费用</td><td>绵阳150+9.88*7.31=222.22元;成都150+9.88*7.70=226.08元;鉴于旺季淡季票价差距悬殊，计算时采用平均值220+80/2=150元;就简单按照没有停车费计算</td>
+								<td>圣何塞20美元+9.88*1.10 =30.87美元;洛杉矶20美元+9.88*1.07 =30。57美元</td></tr>
+				<tr align="center" style="color: red; font-size: 16px; font-weight: bold;"><td>收入比重</td>
+								<td>绵阳222.22元/400.21元=55.5%;成都226.08元/759.96元=29.7%</td>
+								<td>圣何塞30.87美元/1102.65美元=2.8%;洛杉矶美元30.57/840.15美元=3.6%</td></tr>
+				<tr align="center"><td>宰客风险</td>
+								<td>名列国内景区宰客榜第四，堪称宰客胜地</td>
+								<td>与黄石公园一样，无风险</td></tr>
+				<tr align="center"><td>旅游安全</td>
+								<td>海拔稍高，有心脏病史的游客小心在意</td>
+								<td>有时会有致命的汉坦病毒传染风险；山路陡峭，小心脚下，尤其在攀岩和沿瀑布走动时</td></tr>
+			</table>
+			<br/>
+			<center>表2：九寨沟对优胜美地</center>
+			<br/>
+			<p>小结：1. 表2中，收入较高的成都居民的收入比重接近30%，意味着每周工作12个小时（法定每周工作时间40个小时），即1天半才够支付游览九寨沟一天的门票费用、停车费和百公里油费。</p>
+			<p>2. 收入较低的洛杉矶居民的收入比重是3.6%，意味着每周工作一个半小时，就足够支付游览优胜美地公园一天的门票费用和百公里油费。</p>
+			<p>3. 九寨沟宰客风险也是比较高（请参阅<a href="../commonlist/resort.html">国内景区宰客榜</a>和<a href="temple.html">烧香拜佛榜</a>），
+				所以以上数据都是假定成都和绵阳居民深谙九寨沟宰客之道，所以完全能够避开！</p>
+			<br />
+			【对比<a href="http://www.jiuzhai.com/" target="_blank">参考1</a>，参考2：百度百科，
+			<a href="http://www.hotelaah.com/gdp_per_2010_337.html" target="_blank">参考3</a>】
+			<br/>
+			<br/>
+			<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+			<br/>
+		</div>
+		<div class="pic" id="thirdpic">
+			<img align="left" src="../images/lists/list_park_yandangshan.jpg" width="375" height="240" 
+					title="雁荡山"  alt="阿卡迪亚" />
+			<img align="right" src="../images/lists/list_park_acadia.jpg" width="375" height="240" 
+					title="雁荡山"  alt="阿卡迪亚" />
+		</div>
+		<div class="pair" id="thirdpair">
+			<br/>
+			<br/>
+			<center>左图为雁荡山美景，右图为阿卡迪亚美景</center>
+			<br/>
+			<br/>
+			<table border="1" style="color: navy;" cellspacing="0" cellpadding="0">
+				<tr align="center"><td width="28px">地质公园</td><td>雁荡山</td><td>阿卡迪亚</td></tr>
+				<tr align="center"><td>简介</td>
+								<td>雁荡山，中国十大名山之一。这个集世界地质公园、首批国家重点风景名胜区、国家AAAAA级旅游区，是滨海山岳型风景名胜区，位于浙江省温州市乐清境内，面积450平方公里，
+									分为灵峰、灵岩、大龙湫、三折瀑、雁湖、显胜门、羊角洞、仙桥八大景区，有500多处景点。景区内峡深谷幽，峰奇崖险，秀中有险峻，奇中有幽奥。素以独特的奇峰怪石、飞瀑流泉、古洞畸穴、
+									雄嶂胜门和凝翠碧潭扬名海内外，被誉为“海上名山，寰中绝胜”，史称“东南第一山”</td>
+								<td>acadia national park，
+									阿卡迪亚国家公园在美国缅因州大西洋沿岸，弗伦奇曼湾两侧，面积168平方公里。1916年初建。1919年成为拉斐特国家公园，1929年改为现名。主要部分为芒特迪瑟特岛森林地带，
+									以凯迪拉克山为主体，有阿内蒙洞和西厄尔德芒茨泉；其他地区还包括峭壁耸立的半个欧岛和斯库迪克半岛。该园处在北方和温带交接处，寒冷的浅水海湾中栖息著大量海生动物</td></tr>
+				<tr align="center" style="color: purple; font-size: 16px; font-weight: bold;"><td>票价</td>
+								<td>雁荡各景区单独售票。 灵峰景区日景41元/人；夜景41元/人；日景、夜景门票合并80元/人（可自由选择）。灵岩景区：40元/人，大龙湫景区：40元/人，三折瀑景区：15元/人，
+								    雁湖景区：15元/人，显胜门：15元/人，羊角洞景区：15元/人，还有一些其他小景区票价不等。免票和优惠对象划分详细，按照岁数、节日、团体、协会会员、离休、职业身份（军人，学生、记者，佛道信徒）、
+									残疾人、劳模、当地居民优惠程度不一</td>
+								<td>旺季20美元每车（6月23日至10月初），淡季10美元每车（5月1日至6月22日，10月初至10月31日），有效期7天。个人门票5美元，适用于步行、乘坐摩托车自行车的游客；有效期7天。
+									年票40美元每车；老人10美元，残疾人和超过250小时服务时间的志愿者免费</td></tr>
+				<tr align="center" style="color: orange; font-weight: bold;" align="center"><td>停车费</td>
+								<td>景点分散，停车场一般收费，三个主要景区停车费合计至少20元</td><td>无</td></tr>
+				<tr align="center"><td>附近城市</td><td>杭州 温州</td><td>缅因波特兰 波士顿</td></tr>
+				<tr align="center"><td>人均收入</td>
+								<td>杭州68340/52周=1314.23元；温州32071/52周=616.75元</td><td>缅因波特兰41901每年/52周=805.79美元;波士顿55431每年/52周=1065.98美元</td></tr>
+				<tr align="center"><td>城市油价</td>
+								<td>杭州7.60元每升；温州7.68元每升</td><td>缅因波特兰3.94美元/加仑=1.04美元/升;波士顿3.878美元/加仑=1.02美元/升 </td></tr>
+				<tr align="center"><td>总费用</td><td>杭州120+20+9.88*7.6=215.09元；温州120+20+9.88*7.68=215.88元。门票费用就简单计算三个主要景区的和=41+40+40=121元，停车费按照最少20元</td>
+								<td>缅因波特兰20美元+9.88* 1.04= 30.28美元;波士顿20美元+9.88*1.02 = 30.08美元</td></tr>
+				<tr align="center" style="color: red; font-size: 16px; font-weight: bold;"><td>收入比重</td>
+								<td>杭州215.09/1314.23=16.1%；温州215.88/616.75=35.0%</td>
+								<td>缅因波特兰30.28美元/805.79美元=3.8%;波士顿美元30.08/1065.98美元=2.8%</td></tr>
+				<tr align="center"><td>宰客风险</td>
+								<td>虽然位居名山宰客榜榜尾，也是让很多游客望而生畏</td>
+								<td>公园里面的小镇物价不菲，龙虾餐馆有名但是确实不便宜</td></tr>
+				<tr align="center"><td>旅游安全</td>
+								<td>由于景区分散，道路崎岖，因此驾车路线绵延漫长，小心为上</td>
+								<td>安全</td></tr>
+			</table>
+			<br/>
+			<center>表3：雁荡山对阿卡迪亚</center>
+			<br/>
+			<p>小结：1. 表3中，欣喜发现收入较高的杭州居民的收入比重终于跌破20%，意味着每周工作6个小时（法定每周工作时间40个小时）就能支付游览雁荡山一天的门票费用、停车费和百公里油费。</p>
+			<p>2. 收入较低的缅因波特兰居民的收入比重是3.8%，意味着每周工作接近2个小时，就足够支付游览阿卡迪亚公园一天的门票费用和百公里油费。</p>
+			<p>3. 雁荡山宰客风险中等（请参阅<a href="hill.html">名山宰客榜</a>），所以以上数据都是假定杭州和温州居民不受雁荡山宰客之扰！</p>
+			<br />
+			<p><b>地质公园对比总结：1. 美国采用的人均国民收入的指标是低于人均国内生产总值的；美国城市油价是平均价格，中国城市油价是最低价。</b></p>
+			<p><b>2. 美国城市中，盐湖城居民的收入比重最高，接近5%；中国城市中，九江居民的收入比重最高，达到60%！即每周一位九江居民需要工作3天共24个小时才能攒够钱支付庐山一天的门票费用、停车费和百公里油费。
+					而盐湖城一位居民只需要2个小时攒够同性质费用去黄石。</b></p>
+			<p><b>3. 美元兑换人民币的汇率是 1美元 = 6.2845元人民币。之所以不把美元折算成人民币计算门票、停车费和收入比重，是因为中国实际上的人均国民收入比人均国内生产总值要低，
+				   对大中城市而言也就是几万的标准，与美国大中城市类似。本榜单最重要的衡量指标是收入比重，不换算的数字代表真实的费用负担。</b></p>
+			<p><b>4. 一定要记住，上述三个美国国家公园（以及几乎所有其他的美国国家公园）的门票通常是以车计算的（自驾车方式），而且有效期7天！</b></p>
+			<p><b>不止是地质公园，国内很多热门景区都收费昂贵，宰客凶猛！可以前往<a href="../download/download.html">下载页面</a>下载最新版的《旅游风险手册》和《旅游安全手册》了解宰客行情。</b></p>						
+			<br />
+			【对比<a href="http://www.wzyds.com/index.aspx" target="_blank">参考1</a>，参考2：百度百科，
+			<a href="http://notes.fengjing.com/603018/2561_1.shtml" target="_blank">参考3</a>，
+			<a href="http://www.lvping.com/travel-d217-s628826/yandangshan.html" target="_blank">参考4</a>，
+			<a href="http://www.mainegasprices.com/GasPriceSearch.aspx" target="_blank">参考5</a>】
+			<br/>
+			<br/>
+			<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+			<br/>
+		</div>
+		<div id="secondintro">
+			<p>皇家园林的比较，我们参考博物馆对比的方式（见博物馆对比榜）。从票价，开放时间，门票优惠范围，简介，主要景致，导游，服务设施这七个方面。
+				一共比较两组皇家园林：布达拉宫对德国的新天鹅堡，颐和园对法国凡尔赛宫。布达拉宫和新天鹅堡都是地方诸侯所建；颐和园和凡尔赛宫都是中央王朝君主构筑。</p>
+		</div>
+		<div class="pic" id="fourthpic">
+			<img align="left" src="../images/lists/list_park_budalagong.jpg" width="375" height="240" 
+					title="布达拉宫"  alt="新天鹅堡" />
+			<img align="right" src="../images/lists/list_park_xintianebao.jpg" width="375" height="240" 
+					title="布达拉宫"  alt="新天鹅堡" />
+		</div>
+		<div class="pair" id="fourthpair">
+			<br/>
+			<br/>
+			<center>左图为布达拉宫外观，右图为新天鹅堡外观</center>
+			<br/>
+			<br/>
+			<table border="1" style="color: navy;" cellspacing="0" cellpadding="0">
+				<tr align="center"><td width="28px">皇家园林</td><td>布达拉宫</td><td>新天鹅堡</td></tr>
+				<tr align="center"><td>简介</td>
+								<td>布达拉宫（the Potala Palace）俗称“第二普陀山”，屹立在西藏首府拉萨市区西北的红山上，是一座规模宏大的宫堡式建筑群。最初是松赞干布为迎娶文成公主而兴建的，17世纪重建后，
+									布达拉宫成为历代达赖喇嘛的冬宫居所，也是西藏政教合一的统治中心。整座宫殿具有鲜明的藏式风格，依山而建，气势雄伟。布达拉宫中还收藏了无数的珍宝，堪称是一座艺术的殿堂</td>
+								<td>新天鹅堡（德语：Schloss Neuschwanstein）全名新天鹅石城堡，是19世纪晚期的建筑，位在今天的德国巴伐利亚西南方，距离菲森镇约4公里，离德国与奥地利边界不远。
+									这座城堡是巴伐利亚国王路德维希二世的行宫之一。共有360个房间，其中只有14个房间依照设计完工，其他的346个房间则因为国王在1886年逝世而未完成。是德国境内受拍照最多的建筑物。
+									也是最受欢迎的旅游景点之一</td></tr>
+				<tr align="center"><td>票价</td>
+								<td>旺季（11月1日至次年4月30日）200元每人；淡季（5月1日至10月31日）100元每人；对信教群众继续实行优惠票价。每天限量2300张门票，其中700张为散客门票，
+									其余为旅行社团队门票。散客需要提前一天购买购票凭证，然后第二天凭该证购买正式门票</td>
+								<td>12欧元</td></tr>
+				<tr align="center"><td>门票优惠</td>
+								<td>身高在1.30米以下儿童免门票；革命伤残军人、70岁以上老年人、离休干部请凭有效证件免购门票；当地藏人参观只需2元；学生、教师、现役军人、残疾人，
+									票价为200元时可以享受五折优惠，票价100元时无优惠</td>
+								<td>18岁以下免费。对团体、协会会员、教育目的学生、残疾人、65岁以上老人等有优惠。购买联票（含其他景点）的游客也可以享受优惠，幅度不一</td></tr>
+				<tr align="center"><td>开放时间</td>
+								<td>布达拉宫参观限时一小时是从进入布达拉宫大殿（宫殿入口处有验票点）开始算起，自助游的游客一定要把握好参观时间。开门时间是从早上九点开始，可以进入参观，
+									下午三点就不能进入布达拉宫，到下午四点就全部关门无法进出</td>
+								<td>4月至9月早上9点到下午6点；10月至3月早上10点至下午4点</td></tr>
+				<tr align="center"><td>主要景观</td>
+								<td>主体建筑分白宫和红宫，主楼十三层，高115.7米，由寝宫、佛殿、灵塔殿、僧舍等组成。收藏和保存了极为丰富的历史文物，如释迦牟尼的舍利子；108函2500余卷经书；特别是金字缮写的甘珠尔、
+									天竺等地的贝叶经；以及明、清以来中央政府关于西藏的各种封敕达赖喇嘛的金册、玉册、金印和乾隆皇帝御赐为挑选达赖转世灵童而设的金本巴瓶。还有布达拉宫内设置的八座灵塔，
+									最大的是为五世达赖喇嘛修建的，耗黄金3721公斤，上万颗宝石。这些灵塔包以金皮、镶嵌大量珠宝，塔内安放着历世达赖喇嘛的肉身。还有藏族匠师制作的各种金银器物，镶嵌珠宝的法器、供器和民族工艺品，
+									琳琅满目，价值连城；布达拉宫还珍藏着大量书籍，从佛教经典到医学、天文历算，十明(十类学问)学科无所不有。这些文物对于研究西藏的政治、经济、历史、文化等都具有重大的价值。
+									布达拉宫的主要看点在红宫里，以佛殿、灵塔、壁画为主，佛殿以法王洞——曲杰竹普、圣观音殿——帕巴拉康最为有名。圣观音像是布达拉宫的镇宫之宝，成像于公元七世纪左右，由天然檀香木制成，外贴金粉。
+									高不足1米，宽10厘米左右，观音像是天然生长而成，面部贴金。藏于布达拉宫，圣观音殿内。灵塔以五世达赖喇嘛的灵塔最为宏伟壮观，也被认为是布达拉宫的镇宫之宝；壁画以红宫二回廊为名，有壁画近700幅</td>
+								<td>迪斯尼动画片中城堡的原型，也有人叫白雪公主城堡。建于1869年。由于白色城堡耸立在高高的山上，其四周环山和湖泊。所以一年四季，风光各异。城堡在四季中呈现了不同风貌。
+									堡内到处装饰有天鹅的日常用品、帏帐、壁画，就连盥洗室的自来水水龙头，也装饰着天鹅形状。进古堡的大门后，只见入口，窗户，列柱廊等全都是半圆头拱，这是罗马式的建筑的特征之一。
+									国王起居室是哥德式的建筑，并以瓦格纳的歌剧作品中世纪的传说作为题材人物所绘制的壁画作为主题装饰</td></tr>
+				<tr align="center"><td>导游</td>
+								<td>导游费用一般按天支付，每天约150元~450元，导游费用因旅游淡旺季、导游语种的不同而不同。布达拉宫内部提供的付费讲解员，是从进入白宫正式参观布达拉宫算起、至参观完毕为止，
+									讲解费用约50~80元每次，时间约1小时</td>
+								<td>包含在门票中，只接受导游引领餐馆，只有英语和德语人工讲解，其他语言的讲解可使用音频导览，有十几种语言，包括中文普通话。讲解时长30分钟</td></tr>
+				<tr align="center"><td>服务设施</td><td>各项服务设施齐全，不过因为地处拉萨市中心的原因，餐饮住宿价格比较高，交通方便，一般乘坐火车或者飞机抵达拉萨，有各路公交到达</td>
+								<td>内设餐馆商店，别的服务设施没有在网站上见到。推荐交通方式，火车转公交车或者自驾车或者随团大巴</td></tr>
+			</table>
+			<br/>
+			<center>表4：布达拉宫对新天鹅堡</center>
+			<br/>
+			<p>小结：1. 表4中，从主要景观来看，布达拉宫的馆藏品无论从数量还是品质都远远超过新天鹅堡，尽管票价昂贵，但是物超所值，是游客领略神秘藏文化的最佳观赏地点！</p>
+			<p>2. 与此相对的，一个小时的布达拉宫有限参观时间只能令游客管中窥豹，只见一斑了！遗憾备至啊！</p>
+			<p>3. 布达拉宫导游服务过于复杂和昂贵，散客买票麻烦，门票优惠范围也过于细致；不象新天鹅堡这样导游服务优良、门票优惠幅度大范围广。</p>
+			<br />
+			【对比<a href="http://www.potala-palace.com/" target="_blank">参考1</a>，参考2：百度百科，
+			<a href="http://www.neuschwanstein.de/englisch/tourist/index.htm" target="_blank">参考3</a>】
+			<br/>
+			<br/>
+			<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+			<br/>
+		</div>
+		<div class="pic" id="fifthpic">
+			<img align="left" src="../images/lists/list_park_yiheyuan.jpg" width="375" height="240" 
+					title="颐和园"  alt="凡尔赛宫" />
+			<img align="right" src="../images/lists/list_park_fanersaigong.jpg" width="375" height="240" 
+					title="颐和园"  alt="凡尔赛宫" />
+		</div>
+		<div class="pair" id="fifthpair">
+			<br/>
+			<br/>
+			<center>左图为颐和园万寿山和昆明湖，右图为凡尔赛宫镜厅</center>
+			<br/>
+			<br/>
+			<table border="1" style="color: navy;" cellspacing="0" cellpadding="0">
+				<tr align="center"><td width="28px">皇家园林</td><td>颐和园</td><td>凡尔赛宫</td></tr>
+				<tr align="center"><td>简介</td>
+								<td>中国现存规模最大、保存最完整的皇家园林，中国四大名园（另三座为承德避暑山庄、苏州拙政园、苏州留园）之一。位于北京市海淀区，距北京城区十五公里，占地约二百九十公顷。
+									利用昆明湖、万寿山为基址，以杭州西湖风景为蓝本，汲取江南园林的某些设计手法和意境而建成的一座大型天然山水园，也是保存得最完整的一座皇家行宫御苑，被誉为皇家园林博物馆</td>
+								<td>凡尔赛宫（法文：Chateau de Versailles）位于法国巴黎西南郊外伊夫林省省会凡尔赛镇，作为法兰西宫廷长达107年（1682-1789）。1979年被列为《世界文化遗产名录》。由路易十四建造，
+									以其奢华富丽和充满想象力的建筑设计闻名于世。建筑群总长580米，包括皇宫城堡、花园、特里亚农宫等，由巨大落地窗和镜子组成的镜厅(Galerie des Glaces)和战争画廊是凡尔赛的亮点，
+									夏季在花园里的音乐喷泉和周末节日期间的烟火也引人注目</td></tr>
+				<tr align="center"><td>票价</td>
+								<td>旺季30，淡季20；园中园从10元至20元不等；月票30</td>
+								<td>通票（含所有附属景点）18欧元；25欧元 大型音乐喷泉表演和音乐花园活动期间。凡尔赛宫门票 13欧元：优惠价（根据条件）；15 欧元</td></tr>
+				<tr align="center"><td>门票优惠</td>
+								<td>对儿童、学生、老人、节日类别、本市居民、残疾人、职业（军人、离休、劳模）社会保障金领取者实现免票或者半价优惠措施</td>
+								<td>免票并可免费使用语音向导：18周岁。免票周日11月至次年3月每月第一个周日，凡尔赛景区免费对外开放。
+									持巴黎博物馆通票，您可以免费游览凡尔赛宫、大特里亚侬宫、小特里亚侬宫和巴黎市及周边地区的60多处博物馆和古迹</td></tr>
+				<tr align="center"><td>开放时间</td>
+								<td>旺季 （4月1日至10月31日） 淡季 （11月1日至次年3月31日）</td>
+								<td>旺季4月1日至10月31日，关门稍晚；淡季11月1日至3月31日，关门早</td></tr>
+				<tr align="center"><td>主要景观</td>
+								<td>景区规模宏大，占地面积2.97平方公里（293公顷），主要由万寿山和昆明湖两部分组成，其中水面占四分之三（大约220公顷）。园内建筑以佛香阁为中心，园中有景点建筑物百余座、大小院落20余处，3555古建筑，
+									面积70000多平方米，共有亭、台、楼、阁、廊、榭等不同形式的建筑3000多间。古树名木1600余株。其中佛香阁、长廊、石舫、苏州街、十七孔桥、谐趣园、大戏台等都已成为家喻户晓的代表性建筑。 
+									颐和园集传统造园艺术之大成，万寿山、昆明湖构成其基本框架，借景周围的山水环境，饱含中国皇家园林的恢弘富丽气势，又充满自然之趣，高度体现了“虽由人作，宛自天开”的造园准则。
+									颐和园亭台、长廊、殿堂、庙宇和小桥等人工景观与自然山峦和开阔的湖面相互和谐、艺术地融为一体，整个园林艺术构思巧妙，是集中国园林建筑艺术之大成的杰作，在中外园林艺术史上地位显著，有声有色</td>
+								<td>皇宫中有三个展室，一号展室主要展示精美壁画和重要人物的雕像，二号展室展出宫内的帝王用品，三号展室主要放映一部200年来巴黎历史的影片。宫殿西面是一座典型的法兰西式大花园，讲究严格的对称和图案感。
+									标准的十字形水道沿宫殿中轴线向外延伸，碧波荡漾，两侧的草坪、水池、喷泉和林荫道勾勒出变化多端的几何图形。法国人骄傲地认为凡尔赛宫花园是世界上最漂亮的花园之一。凡尔赛宫的主要景观集中于主楼二层和花园中。
+									包括：大理石庭院；海格立斯厅（Salon d'Hercule）；丰收厅（Salon de l'Abondance）；维纳斯厅：又名金星厅；狄安娜厅：又称月神厅；玛尔斯厅：又名战神厅或火星厅；墨丘利厅：又名水星厅或御床厅；
+									阿波罗厅：又名太阳神厅；战争厅（Salon de la Guerre）；镜厅（Galerie des glaces）：又称镜廊，凡尔赛宫最著名的大厅；和平厅（Salon de la Paix）；国王套房；王后套房；剧场；教堂；战争画廊；
+									花园；大特里亚农宫；小特里亚农宫</td></tr>
+				<tr align="center"><td>导游</td>
+								<td>三种讲解路线,提供多种语言讲解。路线一（1.5小时）： 路线二(2小时)：路线三（2.5小时）：价格需要电话联系。可以租售导游机，价格一般为10元/机</td>
+								<td>游览凡尔赛宫时，票价中含11种讲解语言的语音向导。8周岁以上儿童可以使用语音向导。 以11种语言发行：法语、英语、德语、西班牙语、意大利语、波兰语、俄语、汉语、日语、葡萄牙语、韩语;
+									提供两种类型的游览：讲解游览和主题游览,仅提供法语和英语讲解。全票16欧元 上午9时即可开始当天的游览计划，最后一批出发时间一般为下午15时15分</td></tr>
+				<tr align="center"><td>服务设施</td><td>服务设施齐备，公交或者自驾车前往</td>
+								<td>网站有不少网页已经有中文简体。服务设施周到，交通便利，可乘坐火车或者公交车抵达。内部有两种便利通行车辆：电动车从南平台出发游览五条线路（游览花园、特里亚侬宫和王后农庄、环游大运河、完整游览王后宫苑）,
+									（每小时30欧元）- 穿梭小火车，从北平台出发游览玛丽－安托瓦内特宫苑（小特里亚侬宫）、大特里亚侬宫、小威尼斯，</td></tr>
+			</table>
+			<br/>
+			<center>表5：颐和园对凡尔赛宫</center>
+			<br/>
+			<p>小结：1. 表5中，从主要景观来看，凡尔赛宫和颐和园半斤八两，都是游客在两国首都游览必到之所！</p>
+			<p>2. 颐和园不足之处在于门票优惠幅度小，园中园另外收费；导游费用不透明；园内交通另行收费（比如坐船）。</p>
+			<p>3. 凡尔赛宫的长处就是颐和园的短处，除此之外，活动和表演期间的25欧元通票物超所值！</p>
+			<br />
+			<p><b>皇家园林对比总结：1. 我国的皇家园林（以这两处皇家园林为代表）是非常值得游览的，仍需要在门票环节、导游服务和园区设施方面继续提高服务质量。</b></p>
+			<p><b>2. 欧元兑换人民币的汇率是 1欧元 = 8.1885元人民币。之所以不把欧元折算成人民币计算门票、导游费和其他费用，是因为法国和德国的人均国民收入
+				   对大中城市而言也是几万欧元的标准，数量上与我国区别不大，所以不换算就可以知道门票与实际收入的比重。</b></p>
+			<p><b>意犹未尽的朋友们可以订阅我们的<a href="../mail/mailindex.html">邮件服务</a>，毫不费力了解更多榜单信息、宰客奇闻、安全常识等。
+					也可以前往<a href="../news/newsindex.html">新闻主页</a>浏览更多与地质公园和皇家园林相关的内容。</b></p>
+			<br />
+			【对比<a href="http://www.summerpalace-china.com/" target="_blank">参考1</a>，参考2：百度百科，
+			<a href="http://zh.chateauversailles.fr/homepage" target="_blank">参考3</a>，
+			<a href="http://www.lvping.com/attraction_review-d308-s12900-versailles.html" target="_blank">参考4</a>】
+			<br/>
+			<p align="center"><a href="javascript:window.print();">--打印本页--</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			&nbsp;&nbsp;&nbsp;<a href="#articletop">--返回顶部--</a></p>
+			<br/>
+		</div>
+	</div>
+	<div id="express">
+		<b>民意小测验：</b>
+		<label>您认可这个排行榜吗？请选择下面的一项表个态吧</label> 
+		<br /> 
+		<input type="radio"	name="support" value="park1" />完全支持 
+		<input type="radio"	name="support" value="park2" />支持 
+		<input type="radio"	name="support" value="park3" />中立 
+		<input type="radio"	name="support" value="park4" />不太支持 
+		<input type="radio"	name="support" value="park5" />不支持 
+		<br />
+		<br />
+		&nbsp;已经有<label id="totalzaike"></label>个表态了
+		<div id="info1"></div>
+	</div>
+	<div id="chart1"></div>
+	<br /> 
+	<div id="innercomment">
+		<h3>请发表您的意见：</h3><br />
+		<input type='hidden' id='current_page' /> 
+		<input type='hidden' id='show_per_page' />
+		<table>
+			<tr><td>昵称(可选):</td><td><input type="text" id="nickname" name="nickname" size="12" maxlength="12"/></td></tr>
+			<tr><td>评论:（限200字）</td><td><textarea rows="10" cols="75" id="comment" name="comment" maxlength="200"></textarea></td></tr>
+			<tr><td><input id="btn" type="button" value="发表评论" /></td><td><span id="commentSpan"></span></td></tr>
+		</table>			 
+		<br />
+	现有评论如下：
+		<br/>
+		<table>
+			<tr align="center"><td width="50px">用户名</td><td width="610px">评论</td><td>日期</td></tr>
+		</table>			
+	</div>
+	<br />
+	<div id="content">评论正在加载中，请稍候</div>
+	<div id='page_navigation'></div>
+  </div>
+  <div id="right">
+    <iframe src="../right.html" width=90 height=1328 frameborder="0" scrolling="no"></iframe>
+  </div>
+</div>
+<div id="footer">
+  <iframe src="../footer.html" width=980 height=70 frameborder="0" scrolling="no"></iframe>
+</div>
+</body>
+</html>

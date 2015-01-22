@@ -1,0 +1,33 @@
+@CHARSET "UTF-8";
+
+#primary #main #newstitle{
+	height: 50px;
+	text-align: center;
+}
+
+#primary #main #resource{
+	color: blue;
+	height: 50px;
+	text-align: left;
+}
+
+#primary #main #list p{
+	text-indent: 32px;
+	font-size: 16px;
+	margin-bottom: 4px;
+	margin-top: 4px;
+}
+
+#primary #main #list #bottomshare{
+	width: 757px;
+	height: 45px;
+	margin-bottom: 5px;
+	padding-bottom: 5px;	
+}
+
+#primary #main #list #editor{
+	text-align: right;
+	margin: 0px;
+	margin-top: 45px;
+	color: #3c003a;		
+}
